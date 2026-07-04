@@ -1,42 +1,56 @@
 import * as B from '@babylonjs/core';
 import type { UIConfig } from '../types/UI';
 
-export const ModelConfigs: Record<string, UIConfig> = {
+// --- Model Config: unifica registry + configuração + loader ---
+
+export interface ModelConfig extends UIConfig {
+    label: string; // Label para o seletor de modelo (ex: 'Esfera')
+    loader: (scene: B.Scene) => Promise<B.AbstractMesh>;
+}
+
+export const ModelConfigs = {
     sphere: {
+        label: 'Esfera',
         title: 'Propriedades da Esfera',
+        loader: async (scene: B.Scene) =>
+            B.MeshBuilder.CreateSphere('sphere', { diameter: 2, segments: 32 }, scene),
         parameters: [
             {
                 property: 'scale',
                 label: 'Escala Global',
-                type: 'float',
-                defaultValue: .5,
+                type: 'float' as const,
+                defaultValue: 0.5,
                 min: 0.1, max: 3, step: 0.1,
-                // Lógica isolada aqui
-                onApply: (mesh: B.Mesh, value: number) => {
-                    mesh.scaling = new B.Vector3(value, value, value);
+                onApply: (mesh: B.AbstractMesh, value: number) => {
+                    mesh.scaling.setAll(value);
                 }
             }
         ]
     },
     box: {
+        label: 'Caixa',
         title: 'Propriedades da Caixa',
+        loader: async (scene: B.Scene) =>
+            B.MeshBuilder.CreateBox('box', { size: 1 }, scene),
         parameters: [
             {
                 property: 'width',
                 label: 'Largura (X)',
-                type: 'float',
+                type: 'float' as const,
                 defaultValue: 1,
                 min: 0.1, max: 3, step: 0.1,
-                onApply: (mesh: B.Mesh, value: number) => { mesh.scaling.x = value; }
+                onApply: (mesh: B.AbstractMesh, value: number) => { mesh.scaling.x = value; }
             },
             {
                 property: 'height',
                 label: 'Altura (Y)',
-                type: 'float',
+                type: 'float' as const,
                 defaultValue: 1,
                 min: 0.1, max: 3, step: 0.1,
-                onApply: (mesh: B.Mesh, value: number) => { mesh.scaling.y = value; }
+                onApply: (mesh: B.AbstractMesh, value: number) => { mesh.scaling.y = value; }
             }
         ]
     }
-};
+} as const satisfies Record<string, ModelConfig>;
+
+export type ModelId = keyof typeof ModelConfigs;

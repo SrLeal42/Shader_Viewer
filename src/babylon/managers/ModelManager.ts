@@ -1,47 +1,54 @@
 import * as B from '@babylonjs/core';
 import '@babylonjs/loaders'; // Essencial para o Babylon entender .gltf e .glb futuramente
+import { ModelConfigs, type ModelId } from '../../configs/ModelConfigs';
 
 export class ModelManager {
     private scene: B.Scene;
-    public currentMesh: B.Mesh | null = null;
+
+    private cache = new Map<ModelId, B.AbstractMesh>();
+
+    public currentMesh: B.AbstractMesh | null = null;
 
     constructor(scene: B.Scene) {
         this.scene = scene;
     }
 
-    // Agora retorna uma Promise, preparando o terreno para os assets externos
-    public async loadModel(modelId: string): Promise<B.Mesh> {
+    public async loadModel(modelId: ModelId): Promise<B.AbstractMesh> {
+        // 1. Esconde o atual (não destrói)
         if (this.currentMesh) {
-            this.currentMesh.dispose();
+            this.currentMesh.setEnabled(false);
         }
 
-        let mesh: B.Mesh;
-
-        switch (modelId) {
-            case 'sphere':
-                mesh = B.MeshBuilder.CreateSphere('sphere', { diameter: 2, segments: 32 }, this.scene);
-                break;
-            case 'box':
-                mesh = B.MeshBuilder.CreateBox('box', { size: 1 }, this.scene);
-                break;
-            case 'suzanne':
-                // FUTURO: É aqui que faremos o carregamento real do arquivo!
-                // const result = await B.SceneLoader.ImportMeshAsync('', '/assets/', 'suzanne.glb', this.scene);
-                // mesh = result.meshes[0] as B.Mesh;
-
-                // Placeholder temporário enquanto não baixamos o modelo 3D
-                mesh = B.MeshBuilder.CreateTorus('suzanne_temp', { diameter: 1.5, thickness: 0.4 }, this.scene);
-                break;
-            default:
-                throw new Error(`Modelo não reconhecido: ${modelId}`);
+        // 2. Cache hit → reativa
+        if (this.cache.has(modelId)) {
+            const cached = this.cache.get(modelId)!;
+            cached.setEnabled(true);
+            this.currentMesh = cached;
+            return cached;
         }
 
-        // Se for um modelo gerado via código, garante que tem um material
+        // 3. Cache miss → cria via config.loader
+        const config = ModelConfigs[modelId];
+        const mesh = await config.loader(this.scene);
+
+        // Garante material padrão
         if (!mesh.material) {
-            mesh.material = new B.StandardMaterial(`${modelId}Mat`, this.scene);
+            mesh.material = new B.StandardMaterial(`${modelId}_mat`, this.scene);
         }
 
+        this.cache.set(modelId, mesh);
         this.currentMesh = mesh;
+
         return mesh;
+    }
+
+    public dispose() {
+
+        for (const mesh of this.cache.values()) {
+            mesh.dispose();
+        }
+
+        this.cache.clear();
+        this.currentMesh = null;
     }
 }
