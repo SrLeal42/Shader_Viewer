@@ -24,13 +24,13 @@ Além do resultado visual, o projeto serve como veículo de aprendizado/aprofund
 
 - Dithering
 - ASCII
-- Portal Effect
 - Edge Detector
 
 ### Materiais com shader próprio
 
 - Cartoon (toon shading)
 - Pixel Art
+- Portal Effect
 - Vidro (_talvez_)
 - Espelho (_talvez_)
 
