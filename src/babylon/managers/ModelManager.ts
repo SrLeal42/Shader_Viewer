@@ -5,9 +5,14 @@ import { ModelConfigs, type ModelId } from '../../configs/ModelConfigs';
 export class ModelManager {
     private scene: B.Scene;
 
-    private cache = new Map<ModelId, B.AbstractMesh>();
+    private cache = new Map<ModelId, {
+        mesh: B.AbstractMesh;
+        originalMaterials: Map<B.AbstractMesh, B.Material | null>;
+    }>();
 
     public currentMesh: B.AbstractMesh | null = null;
+
+    public currentModelId: ModelId | null = null;
 
     constructor(scene: B.Scene) {
         this.scene = scene;
@@ -22,9 +27,13 @@ export class ModelManager {
         // 2. Cache hit → reativa
         if (this.cache.has(modelId)) {
             const cached = this.cache.get(modelId)!;
-            cached.setEnabled(true);
-            this.currentMesh = cached;
-            return cached;
+
+            cached.mesh.setEnabled(true);
+
+            this.currentMesh = cached.mesh;
+            this.currentModelId = modelId;
+
+            return cached.mesh;
         }
 
         // 3. Cache miss → cria via config.loader
@@ -36,19 +45,37 @@ export class ModelManager {
             mesh.material = new B.StandardMaterial(`${modelId}_mat`, this.scene);
         }
 
-        this.cache.set(modelId, mesh);
+        // 4. Snapshot dos materiais originais
+        const originalMaterials = new Map<B.AbstractMesh, B.Material | null>();
+        originalMaterials.set(mesh, mesh.material);
+
+        for (const child of mesh.getChildMeshes()) {
+            originalMaterials.set(child, child.material);
+        }
+
+        this.cache.set(modelId, { mesh, originalMaterials });
         this.currentMesh = mesh;
+        this.currentModelId = modelId;
 
         return mesh;
     }
 
-    public dispose() {
-
-        for (const mesh of this.cache.values()) {
-            mesh.dispose();
+    /** Restaura os materiais originais de um modelo (desfaz qualquer shader aplicado) */
+    public restoreOriginalMaterials(modelId: ModelId): void {
+        const entry = this.cache.get(modelId);
+        if (!entry) return;
+        for (const [meshNode, originalMat] of entry.originalMaterials) {
+            meshNode.material = originalMat;
         }
+    }
 
+
+    public dispose() {
+        for (const entry of this.cache.values()) {
+            entry.mesh.dispose();
+        }
         this.cache.clear();
         this.currentMesh = null;
     }
+
 }
