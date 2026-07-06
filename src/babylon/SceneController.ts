@@ -53,30 +53,40 @@ export class SceneController {
 
         this.currentParams = {};
 
-        // 1. Monta a UI (instantâneo)
+        // Monta a UI (instantâneo)
         this.uiManager.buildDynamicPanel(config, this.currentParams, (param, value) => {
             if (param.onApply && this.modelManager.currentMesh) {
                 param.onApply(this.modelManager.currentMesh, value as never);
             }
         });
 
-        // 2. Carrega o modelo (potencialmente assíncrono)
+        // Carrega o modelo (potencialmente assíncrono)
         const mesh = await this.modelManager.loadModel(modelId);
 
-        // 3. Guard: se outra troca já foi disparada, descarta
+        // Guard: se outra troca já foi disparada, descarta
         if (gen !== this.switchGeneration) {
             mesh.setEnabled(false);
             return;
         }
 
-        // 4. Aplica defaults e enquadra câmera
+        // Aplica defaults
         config.parameters.forEach(param => {
             if (param.onApply) {
                 param.onApply(mesh, this.currentParams[param.property] as never);
             }
         });
 
-        this.cameraManager.frameMesh(mesh);
+        // Normaliza a posição de todos os modelos recém-carregados
+        // Centraliza em X e Z, e apoia a base (min.y) no Y = 0 (chão)
+        const boundingInfo = mesh.getHierarchyBoundingVectors();
+        const center = boundingInfo.max.add(boundingInfo.min).scale(0.5);
+
+        mesh.position.x -= center.x;
+        mesh.position.z -= center.z;
+        mesh.position.y -= boundingInfo.min.y;
+
+
+        // this.cameraManager.frameMesh(mesh);
     }
 
     private onResize = () => { this.engine.resize(); };

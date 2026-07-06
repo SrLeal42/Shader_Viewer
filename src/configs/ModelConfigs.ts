@@ -50,7 +50,68 @@ export const ModelConfigs = {
                 onApply: (mesh: B.AbstractMesh, value: number) => { mesh.scaling.y = value; }
             }
         ]
-    }
+    },
+    suzanne: {
+        label: 'Suzanne',
+        title: 'Propriedades da Suzanne',
+        loader: async (scene: B.Scene) => {
+            const result = await B.SceneLoader.ImportMeshAsync(
+                '',           // nome do mesh (vazio = todos)
+                '/models/',   // path da pasta
+                'suzanne.glb', // nome do arquivo
+                scene
+            );
+
+            const root = result.meshes[0];
+
+            return root;
+        },
+        parameters: [
+            {
+                property: 'scale',
+                label: 'Escala Global',
+                type: 'float' as const,
+                defaultValue: 1,
+                min: 0.1, max: 3, step: 0.1,
+                onApply: (mesh: B.AbstractMesh, value: number) => {
+                    const baseScale = 0.6; // O modelo precisa ser reduzido 10x
+
+                    mesh.scaling.setAll(baseScale * value); // Escala absoluta baseada no fator
+                }
+            }
+        ]
+    },
+    candelabra: {
+        label: 'Candelabra',
+        title: 'Propriedades do Candelabro',
+        loader: async (scene: B.Scene) => {
+            const result = await B.SceneLoader.ImportMeshAsync(
+                '',
+                '/models/',
+                'candelabra.glb',
+                scene
+            );
+
+            const root = result.meshes[0];
+
+            return root;
+        },
+        parameters: [
+            {
+                property: 'scale',
+                label: 'Escala Global',
+                type: 'float' as const,
+                defaultValue: 1,
+                min: 0.1, max: 5, step: 0.1,
+                onApply: (mesh: B.AbstractMesh, value: number) => {
+                    const baseScale = 0.02;
+
+                    mesh.scaling.setAll(baseScale * value);
+                }
+            }
+        ]
+    },
+
 } as const satisfies Record<string, ModelConfig>;
 
 export type ModelId = keyof typeof ModelConfigs;

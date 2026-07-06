@@ -4,16 +4,21 @@ export class CameraManager {
     public camera: B.ArcRotateCamera;
 
     constructor(scene: B.Scene, canvas: HTMLCanvasElement) {
-        this.camera = new B.ArcRotateCamera(
-            'camera', Math.PI / 2, Math.PI / 3, 5, B.Vector3.Zero(), scene
-        );
-        this.camera.attachControl(canvas, true);
-        this.camera.wheelPrecision = 50;
-        this.camera.minZ = 0.1;
 
-        // Limites de zoom para não perder o modelo de vista
-        this.camera.lowerRadiusLimit = 1;
-        this.camera.upperRadiusLimit = 20;
+        const target = new B.Vector3(0, .5, 0);
+
+        this.camera = new B.ArcRotateCamera(
+            'camera', Math.PI / 2, Math.PI / 3, 5, target, scene
+        );
+
+        this.camera.position = new B.Vector3(0, .5, -4);
+        // this.camera.attachControl(canvas, true);
+        // this.camera.wheelPrecision = 50;
+        // this.camera.minZ = 0.1;
+
+        // // Limites de zoom para não perder o modelo de vista
+        // this.camera.lowerRadiusLimit = 1;
+        // this.camera.upperRadiusLimit = 20;
     }
 
     /** Enquadra a câmera automaticamente ao redor de um mesh */
