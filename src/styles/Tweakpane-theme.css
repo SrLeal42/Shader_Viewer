@@ -1,0 +1,39 @@
+:root {
+    /* Fonte */
+    --tp-font-family: 'Roboto', sans-serif;
+
+    /* Fundo principal do painel (Cinza bem escuro) */
+    --tp-base-background-color: hsla(0, 0%, 12%, 0.95);
+    --tp-base-shadow-color: hsla(0, 0%, 0%, 0.5);
+
+    /* Fundo de pastas/folders (Levemente mais claro que o fundo principal) */
+    --tp-container-background-color: hsla(0, 0%, 16%, 1.0);
+    --tp-container-background-color-hover: hsla(0, 0%, 20%, 1.0);
+    --tp-container-background-color-focus: hsla(0, 0%, 24%, 1.0);
+    --tp-container-background-color-active: hsla(0, 0%, 24%, 1.0);
+    --tp-container-foreground-color: hsla(0, 0%, 90%, 1.0);
+
+    /* Textos de rótulos/labels */
+    --tp-label-foreground-color: hsla(0, 0%, 75%, 1.0);
+
+    /* Inputs (campos de texto, dropdowns) */
+    --tp-input-background-color: hsla(0, 0%, 22%, 1.0);
+    --tp-input-background-color-hover: hsla(0, 0%, 26%, 1.0);
+    --tp-input-background-color-focus: hsla(0, 0%, 35%, 1.0);
+    --tp-input-background-color-active: hsla(0, 0%, 40%, 1.0);
+    --tp-input-foreground-color: hsla(0, 0%, 95%, 1.0);
+
+    /* Botões gerais */
+    --tp-button-background-color: hsla(0, 0%, 30%, 1.0);
+    --tp-button-background-color-hover: hsla(0, 0%, 35%, 1.0);
+    --tp-button-background-color-focus: hsla(0, 0%, 40%, 1.0);
+    --tp-button-background-color-active: hsla(0, 0%, 20%, 1.0);
+    --tp-button-foreground-color: hsla(0, 0%, 95%, 1.0);
+
+    /* Sliders (linha indicadora de progresso do slider) */
+    --tp-groove-foreground-color: hsla(0, 0%, 60%, 1.0);
+
+    /* Monitores (campos de leitura / read-only) */
+    --tp-monitor-background-color: hsla(0, 0%, 8%, 1.0);
+    --tp-monitor-foreground-color: hsla(0, 0%, 85%, 1.0);
+}
