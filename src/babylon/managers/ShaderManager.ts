@@ -9,6 +9,8 @@ export class ShaderManager {
     private scene: B.Scene;
     private camera: B.Camera;
 
+    private light: B.HemisphericLight;
+
     // Material: mutuamente exclusivo
     private _activeMaterialId: MaterialShaderId | null = null;
     private materialCache = new Map<MaterialShaderId, B.ShaderMaterial>();
@@ -16,9 +18,11 @@ export class ShaderManager {
     // Post-process: empilhável
     private activePostProcesses = new Map<PostProcessShaderId, B.PostProcess>();
 
-    constructor(scene: B.Scene, camera: B.Camera) {
+    constructor(scene: B.Scene, camera: B.Camera, light: B.HemisphericLight) {
         this.scene = scene;
         this.camera = camera;
+
+        this.light = light;
     }
 
     // ─── Getters ───
@@ -103,6 +107,7 @@ export class ShaderManager {
         if (this._activeMaterialId) {
             const mat = this.materialCache.get(this._activeMaterialId);
             mat?.setFloat('u_time', time);
+            mat?.setVector3('u_lightDir', this.light.direction);
         }
 
         // Todos os post-process ativos

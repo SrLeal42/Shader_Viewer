@@ -13,6 +13,8 @@ export class SceneController {
     private engine: B.Engine;
     public scene: B.Scene;
 
+    private light: B.HemisphericLight;
+
     private cameraManager: CameraManager;
     private uiManager: UIManager;
 
@@ -36,9 +38,10 @@ export class SceneController {
         this.cameraManager = new CameraManager(this.scene, canvas);
         this.uiManager = new UIManager(tweakpaneContainer);
         this.modelManager = new ModelManager(this.scene);
-        this.shaderManager = new ShaderManager(this.scene, this.cameraManager.camera);
 
-        new B.HemisphericLight('light1', new B.Vector3(0, 1, 0), this.scene);
+        this.light = new B.HemisphericLight('light1', new B.Vector3(0, 1, -0.8), this.scene);
+
+        this.shaderManager = new ShaderManager(this.scene, this.cameraManager.camera, this.light);
 
         this.uiManager.setupGlobalControls((id) => {
             this.switchModel(id);

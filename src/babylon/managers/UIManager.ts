@@ -131,14 +131,24 @@ export class UIManager {
                 targetProxy[u.uniform] = u.defaultValue;
             }
 
-            this.shaderFolder!.addBinding(targetProxy, u.uniform, {
+            const bindingOptions: Record<string, unknown> = {
                 label: u.label,
-                min: 'min' in u ? u.min : undefined,
-                max: 'max' in u ? u.max : undefined,
-                step: 'step' in u ? u.step : undefined,
-            }).on('change', (ev) => {
-                onChange(u, ev.value);
-            });
+            };
+
+            if (u.type === 'color') {
+                bindingOptions.color = { type: 'float' };
+            } else {
+                bindingOptions.min = 'min' in u ? u.min : undefined;
+                bindingOptions.max = 'max' in u ? u.max : undefined;
+                bindingOptions.step = 'step' in u ? u.step : undefined;
+            }
+
+
+            this.shaderFolder!.addBinding(targetProxy, u.uniform, bindingOptions)
+                .on('change', (ev) => {
+                    onChange(u, ev.value);
+                });
+
         });
     }
 

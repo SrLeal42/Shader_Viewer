@@ -17,8 +17,8 @@ export const ToonConfig: MaterialShaderConfig = {
         return new B.ShaderMaterial('toonMat', scene, 'toon', {
             attributes: ['position', 'normal'],
             uniforms: [
-                'worldViewProjection', 'world',  // Babylon preenche automaticamente
-                'u_time', 'u_color', 'u_levels'  // Nossos uniforms customizados
+                'worldViewProjection', 'world',                // Babylon preenche automaticamente
+                'u_time', 'u_color', 'u_levels', 'u_lightDir'  // Nossos uniforms customizados
             ],
         });
     },

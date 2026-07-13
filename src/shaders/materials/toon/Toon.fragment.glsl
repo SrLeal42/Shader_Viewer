@@ -7,13 +7,11 @@ varying vec3 vWorldPosition;
 uniform vec3 u_color;
 uniform float u_levels;
 uniform float u_time;
-
-// Direção da luz (fixa por agora)
-const vec3 lightDir = normalize(vec3(0.0, 1.0, 0.0));
+uniform vec3 u_lightDir;
 
 void main() {
     // Cálculo de intensidade difusa
-    float NdotL = dot(normalize(vNormal), lightDir);
+    float NdotL = dot(normalize(vNormal), normalize(u_lightDir));
     float intensity = max(NdotL, 0.0);
 
     // Quantiza a intensidade em "degraus" (efeito toon)
