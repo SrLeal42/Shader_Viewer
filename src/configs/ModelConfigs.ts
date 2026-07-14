@@ -7,6 +7,7 @@ export interface ModelConfig extends UIConfig {
     label: string; // Label para o seletor de modelo (ex: 'Esfera')
     loader: (scene: B.Scene) => Promise<B.AbstractMesh>;
     colliderType: number; // PhysicsShapeType (número para compatibilidade com as const)
+    initialRotation?: B.Vector3; // Em radianos/Euler
 }
 
 export const ModelConfigs = {
@@ -58,6 +59,7 @@ export const ModelConfigs = {
         label: 'Suzanne',
         title: 'Propriedades da Suzanne',
         colliderType: B.PhysicsShapeType.CONVEX_HULL,
+        initialRotation: new B.Vector3(0, Math.PI, 0),
         loader: async (scene: B.Scene) => {
             const result = await B.SceneLoader.ImportMeshAsync(
                 '',           // nome do mesh (vazio = todos)

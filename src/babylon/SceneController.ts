@@ -6,7 +6,7 @@ import { UIManager } from './managers/UIManager';
 import { ModelManager } from './managers/ModelManager';
 import { ShaderManager } from './managers/ShaderManager';
 
-import { ModelConfigs, type ModelId } from '../configs/ModelConfigs';
+import { ModelConfigs, type ModelConfig, type ModelId } from '../configs/ModelConfigs';
 import { EnvironmentConfigs } from '../configs/EnviromentConfigs';
 import { PhysicsConfigs } from '../configs/PhysicsConfigs';
 
@@ -138,7 +138,9 @@ export class SceneController {
 
     private async switchModel(modelId: ModelId) {
         const gen = ++this.switchGeneration;
-        const config = ModelConfigs[modelId];
+
+        const config: ModelConfig = ModelConfigs[modelId];
+
         if (!config) return;
 
         // Captura velocidades do modelo atual
@@ -189,17 +191,30 @@ export class SceneController {
 
         // Centraliza o modelo na origem
         entity.mesh.position = B.Vector3.Zero();
-        const boundingInfo = entity.mesh.getHierarchyBoundingVectors();
-        const center = boundingInfo.max.add(boundingInfo.min).scale(0.5);
-        entity.mesh.position.subtractInPlace(center);
+        // const boundingInfo = entity.mesh.getHierarchyBoundingVectors();
+        // const center = boundingInfo.max.add(boundingInfo.min).scale(0.5);
+        // entity.mesh.position.subtractInPlace(center);
 
         if (prevPosition) {
             entity.mesh.position.addInPlace(prevPosition);
         }
 
-        if (prevRotationQuat) {
-            entity.mesh.rotationQuaternion = prevRotationQuat;
+        // 3. CALCULA E APLICA A ROTAÇÃO (Herança + Offset do Modelo)
+        let finalRotation = B.Quaternion.Identity();
+
+        // 3a. Se o modelo pede uma correção inicial (como a Suzanne)
+        if (config.initialRotation) {
+            const offsetQuat = B.Quaternion.FromEulerVector(config.initialRotation);
+            finalRotation.multiplyInPlace(offsetQuat);
         }
+        // 3b. Se existe uma rotação herdada do modelo antigo, multiplicamos as duas
+        if (prevRotationQuat) {
+            // A ordem aqui importa: aplicamos a correção local primeiro, depois a rotação do mundo
+            finalRotation = prevRotationQuat.multiply(finalRotation);
+        }
+        // 3c. Aplica na malha (o Havok lida perfeitamente com Quaternions)
+        entity.mesh.rotationQuaternion = finalRotation;
+
 
         // Habilita física (após posicionamento)
         entity.enablePhysics();
