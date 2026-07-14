@@ -4,6 +4,8 @@ import type { UIConfig, UIParameter } from '../../types/UI';
 import type { ShaderUniform } from '../../shaders/Types';
 
 import { ModelConfigs, type ModelId } from '../../configs/ModelConfigs';
+import { InteractionConfigs, type InteractionId } from '../../configs/InteractionConfigs';
+
 
 import {
     MaterialShaders, PostProcessShaders,
@@ -13,17 +15,24 @@ import {
 
 
 export class UIManager {
-    private pane: Pane;
+    private paneRight: Pane;
+    private paneLeft: Pane;
 
     private dynamicFolder: FolderApi | null = null;
     private shaderFolder: FolderApi | null = null;
 
-    constructor(container: HTMLElement) {
-        this.pane = new Pane({ title: 'Controles Principais', container });
+    constructor(tweakpaneRightContainer: HTMLElement, tweakpaneLeftContainer: HTMLElement) {
+        // O painel Direita
+        this.paneRight = new Pane({ container: tweakpaneRightContainer });
+
+        // O painel Esquerda
+        this.paneLeft = new Pane({ container: tweakpaneLeftContainer });
     }
 
     // 1. Controle Fixo: Trocar de Modelo (data-driven a partir dos ModelConfigs)
     public setupGlobalControls(onModelSelect: (id: ModelId) => void) {
+        const folder = this.paneRight.addFolder({ title: 'Opções dos Modelos' });
+
         const params = { model: Object.keys(ModelConfigs)[0] as ModelId };
 
         // Constrói as options dinamicamente: { 'Esfera': 'sphere', 'Caixa': 'box', ... }
@@ -32,14 +41,34 @@ export class UIManager {
             options[config.label] = id;
         }
 
-        this.pane.addBinding(params, 'model', {
+        folder.addBinding(params, 'model', {
             options,
             label: 'Modelo 3D'
         }).on('change', (ev) => {
             onModelSelect(ev.value as ModelId);
         });
 
-        this.pane.addBlade({ view: 'separator' });
+        folder.addBlade({ view: 'separator' });
+    }
+
+    public setupInteractionControls(
+        initialInteraction: InteractionId,
+        onChange: (id: InteractionId) => void
+    ) {
+        const folder = this.paneLeft.addFolder({ title: 'Interações' });
+
+        const params = { tool: initialInteraction };
+
+        const options = Object.fromEntries(
+            Object.values(InteractionConfigs).map(cfg => [cfg.label, cfg.id])
+        );
+
+        folder.addBinding(params, 'tool', {
+            options: options,
+            label: 'Interação'
+        }).on('change', (ev) => {
+            onChange(ev.value as InteractionId);
+        });
     }
 
 
@@ -54,7 +83,7 @@ export class UIManager {
         }
 
         const shaderParams = { material: 'none' };
-        this.pane.addBinding(shaderParams, 'material', {
+        this.paneRight.addBinding(shaderParams, 'material', {
             options: materialOptions,
             label: 'Material Shader'
         }).on('change', (ev) => {
@@ -63,9 +92,9 @@ export class UIManager {
 
         // --- Checkboxes de Post-Process (quando houver) ---
         if (Object.keys(PostProcessShaders).length > 0) {
-            this.pane.addBlade({ view: 'separator' });
+            this.paneRight.addBlade({ view: 'separator' });
 
-            const ppFolder = this.pane.addFolder({ title: 'Pós-Processamento' });
+            const ppFolder = this.paneRight.addFolder({ title: 'Pós-Processamento' });
             for (const [id, config] of Object.entries(PostProcessShaders)) {
                 const ppParams = { [id]: false };
                 ppFolder.addBinding(ppParams, id, {
@@ -76,7 +105,7 @@ export class UIManager {
             }
         }
 
-        this.pane.addBlade({ view: 'separator' });
+        this.paneRight.addBlade({ view: 'separator' });
     }
 
 
@@ -90,7 +119,7 @@ export class UIManager {
             this.dynamicFolder.dispose();
         }
 
-        this.dynamicFolder = this.pane.addFolder({ title: config.title });
+        this.dynamicFolder = this.paneRight.addFolder({ title: config.title });
 
         config.parameters.forEach((param: UIParameter) => {
 
@@ -124,7 +153,7 @@ export class UIManager {
 
         if (uniforms.length === 0) return;
 
-        this.shaderFolder = this.pane.addFolder({ title });
+        this.shaderFolder = this.paneRight.addFolder({ title });
 
         uniforms.forEach((u: ShaderUniform) => {
             if (targetProxy[u.uniform] === undefined) {
@@ -163,6 +192,7 @@ export class UIManager {
 
 
     public dispose() {
-        this.pane.dispose();
+        this.paneRight.dispose();
+        this.paneLeft.dispose();
     }
 }

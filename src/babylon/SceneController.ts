@@ -5,12 +5,15 @@ import { CameraManager } from './managers/CameraManager';
 import { UIManager } from './managers/UIManager';
 import { ModelManager } from './managers/ModelManager';
 import { ShaderManager } from './managers/ShaderManager';
+import { InteractionManager } from './managers/InteractionManager';
 
 import { ModelConfigs, type ModelConfig, type ModelId } from '../configs/ModelConfigs';
 import { EnvironmentConfigs } from '../configs/EnviromentConfigs';
 import { PhysicsConfigs } from '../configs/PhysicsConfigs';
 
 import { MaterialShaders, type MaterialShaderId, type PostProcessShaderId } from '../shaders/Registry';
+
+import { FingerInteraction } from './interactions/FingerInteraction';
 
 export class SceneController {
     private engine: B.Engine;
@@ -27,11 +30,17 @@ export class SceneController {
     private shaderManager: ShaderManager;
     private shaderParams: Record<string, unknown> = {};
 
+    private interactionManager: InteractionManager;
+
     private switchGeneration = 0;
 
     // ─── Construtor privado (use SceneController.create) ───
 
-    private constructor(canvas: HTMLCanvasElement, tweakpaneContainer: HTMLElement) {
+    private constructor(
+        canvas: HTMLCanvasElement,
+        tweakpaneRightContainer: HTMLElement,
+        tweakpaneLeftContainer: HTMLElement
+    ) {
         this.engine = new B.Engine(canvas, true, {
             preserveDrawingBuffer: true,
             stencil: true
@@ -40,8 +49,16 @@ export class SceneController {
         this.scene.clearColor = new B.Color4(0.1, 0.1, 0.12, 1);
 
         this.cameraManager = new CameraManager(this.scene, canvas);
-        this.uiManager = new UIManager(tweakpaneContainer);
+        this.uiManager = new UIManager(tweakpaneRightContainer, tweakpaneLeftContainer);
         this.modelManager = new ModelManager(this.scene);
+        this.interactionManager = new InteractionManager(
+            this.scene,
+            this.cameraManager.camera,
+            () => this.modelManager.currentEntity
+        );
+
+        this.interactionManager.register(new FingerInteraction());
+        this.interactionManager.setActive('finger');
 
         this.light = new B.HemisphericLight('light1', EnvironmentConfigs.light.direction, this.scene);
         this.shaderManager = new ShaderManager(this.scene, this.cameraManager.camera, this.light);
@@ -54,6 +71,11 @@ export class SceneController {
             (shaderId) => this.switchMaterialShader(shaderId),
             (shaderId, enabled) => this.togglePostProcess(shaderId, enabled)
         );
+
+        this.uiManager.setupInteractionControls('finger', (id) => {
+            this.interactionManager.setActive(id);
+        });
+
 
         // Render loop (roda mesmo antes da física estar pronta)
         const startTime = performance.now();
@@ -70,9 +92,10 @@ export class SceneController {
 
     public static async create(
         canvas: HTMLCanvasElement,
-        tweakpaneContainer: HTMLElement
+        tweakpaneRightContainer: HTMLElement,
+        tweakpaneLeftContainer: HTMLElement
     ): Promise<SceneController> {
-        const controller = new SceneController(canvas, tweakpaneContainer);
+        const controller = new SceneController(canvas, tweakpaneRightContainer, tweakpaneLeftContainer);
 
         await controller.initPhysics();
         await controller.switchModel('sphere');
@@ -86,7 +109,6 @@ export class SceneController {
         this.scene.enablePhysics(B.Vector3.Zero(), havokPlugin);
 
         this.createBoundariesWalls();
-        this.setupInteraction();
     }
 
     // ─── Paredes invisíveis ───
@@ -109,29 +131,6 @@ export class SceneController {
                 restitution: 0.5
             }, this.scene);
         }
-    }
-
-    // ─── Interação "Dedo" ───
-
-    private setupInteraction(): void {
-        this.scene.onPointerObservable.add((pointerInfo) => {
-            if (pointerInfo.type !== B.PointerEventTypes.POINTERDOWN) return;
-
-            const pickInfo = pointerInfo.pickInfo;
-            if (!pickInfo?.hit || !pickInfo.pickedPoint || !pickInfo.pickedMesh) return;
-
-            const entity = this.modelManager.currentEntity;
-            if (!entity || !entity.containsMesh(pickInfo.pickedMesh)) return;
-
-            const direction = pickInfo.pickedPoint
-                .subtract(this.cameraManager.camera.position)
-                .normalize();
-
-            entity.applyImpulse(
-                direction.scale(PhysicsConfigs.interaction.impulseForce),
-                pickInfo.pickedPoint
-            );
-        });
     }
 
     // ─── Troca de modelo ───
@@ -191,28 +190,24 @@ export class SceneController {
 
         // Centraliza o modelo na origem
         entity.mesh.position = B.Vector3.Zero();
-        // const boundingInfo = entity.mesh.getHierarchyBoundingVectors();
-        // const center = boundingInfo.max.add(boundingInfo.min).scale(0.5);
-        // entity.mesh.position.subtractInPlace(center);
+
 
         if (prevPosition) {
             entity.mesh.position.addInPlace(prevPosition);
         }
 
-        // 3. CALCULA E APLICA A ROTAÇÃO (Herança + Offset do Modelo)
         let finalRotation = B.Quaternion.Identity();
 
-        // 3a. Se o modelo pede uma correção inicial (como a Suzanne)
         if (config.initialRotation) {
             const offsetQuat = B.Quaternion.FromEulerVector(config.initialRotation);
             finalRotation.multiplyInPlace(offsetQuat);
         }
-        // 3b. Se existe uma rotação herdada do modelo antigo, multiplicamos as duas
+
         if (prevRotationQuat) {
             // A ordem aqui importa: aplicamos a correção local primeiro, depois a rotação do mundo
             finalRotation = prevRotationQuat.multiply(finalRotation);
         }
-        // 3c. Aplica na malha (o Havok lida perfeitamente com Quaternions)
+
         entity.mesh.rotationQuaternion = finalRotation;
 
 
@@ -273,6 +268,7 @@ export class SceneController {
         this.uiManager.dispose();
         this.modelManager.dispose();
         this.shaderManager.dispose();
+        this.interactionManager.dispose();
 
         window.removeEventListener('resize', this.onResize);
 

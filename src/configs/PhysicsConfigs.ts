@@ -1,7 +1,4 @@
 export const PhysicsConfigs = {
-    interaction: {
-        impulseForce: 1.5,
-    },
     model: {
         defaultMass: 1.0,
         restitution: 0.5,

@@ -5,23 +5,22 @@ import styles from './Canvas3D.module.css';
 
 export function Canvas3D() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const tweakpaneRef = useRef<HTMLDivElement>(null);
+    const tweakpaneRightRef = useRef<HTMLDivElement>(null);
+    const tweakpaneLeftRef = useRef<HTMLDivElement>(null);
     const controllerRef = useRef<SceneController | null>(null);
 
     useEffect(() => {
-        if (!canvasRef.current || !tweakpaneRef.current) return;
-
-        // Guard contra StrictMode: se o cleanup rodar antes do create resolver,
-        // descartamos o controller logo que ele ficar pronto.
+        // Agora verificamos os 3 refs
+        if (!canvasRef.current || !tweakpaneRightRef.current || !tweakpaneLeftRef.current) return;
         let disposed = false;
 
-        SceneController.create(canvasRef.current, tweakpaneRef.current)
+        // Passamos os dois containers para o SceneController
+        SceneController.create(canvasRef.current, tweakpaneRightRef.current, tweakpaneLeftRef.current)
             .then((controller) => {
                 if (disposed) {
                     controller.dispose();
                     return;
                 }
-
                 controllerRef.current = controller;
             });
 
@@ -32,18 +31,18 @@ export function Canvas3D() {
                 controllerRef.current = null;
             }
         };
+
     }, []);
+
 
     return (
         <div className={styles.container}>
-            <canvas
-                ref={canvasRef}
+            <canvas ref={canvasRef}
                 className={styles.canvas}
-            />
-            <div
-                ref={tweakpaneRef}
-                className={styles.tweakpaneContainer}
-            ></div>
+                id="renderCanvas" />
+            <div ref={tweakpaneLeftRef} className={styles.tweakpaneContainerLeft} />
+            <div ref={tweakpaneRightRef} className={styles.tweakpaneContainerRight} />
         </div>
     );
+
 }
