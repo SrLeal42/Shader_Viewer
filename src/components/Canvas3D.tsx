@@ -11,14 +11,22 @@ export function Canvas3D() {
     useEffect(() => {
         if (!canvasRef.current || !tweakpaneRef.current) return;
 
-        // Instancia o Babylon apontando para o Canvas e o container do Tweakpane
-        controllerRef.current = new SceneController(
-            canvasRef.current,
-            tweakpaneRef.current
-        );
+        // Guard contra StrictMode: se o cleanup rodar antes do create resolver,
+        // descartamos o controller logo que ele ficar pronto.
+        let disposed = false;
 
-        // Cleanup: Proteção essencial para o React.StrictMode e para troca de rotas
+        SceneController.create(canvasRef.current, tweakpaneRef.current)
+            .then((controller) => {
+                if (disposed) {
+                    controller.dispose();
+                    return;
+                }
+
+                controllerRef.current = controller;
+            });
+
         return () => {
+            disposed = true;
             if (controllerRef.current) {
                 controllerRef.current.dispose();
                 controllerRef.current = null;

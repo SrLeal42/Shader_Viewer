@@ -1,39 +1,34 @@
 import * as B from '@babylonjs/core';
-import '@babylonjs/loaders'; // Essencial para o Babylon entender .gltf e .glb futuramente
+import '@babylonjs/loaders';
 import { ModelConfigs, type ModelId } from '../../configs/ModelConfigs';
+import { ModelEntity } from '../entities/ModelEntity';
 
 export class ModelManager {
     private scene: B.Scene;
+    private cache = new Map<ModelId, ModelEntity>();
 
-    private cache = new Map<ModelId, {
-        mesh: B.AbstractMesh;
-        originalMaterials: Map<B.AbstractMesh, B.Material | null>;
-    }>();
-
-    public currentMesh: B.AbstractMesh | null = null;
-
+    public currentEntity: ModelEntity | null = null;
     public currentModelId: ModelId | null = null;
 
     constructor(scene: B.Scene) {
         this.scene = scene;
     }
 
-    public async loadModel(modelId: ModelId): Promise<B.AbstractMesh> {
-        // 1. Esconde o atual (não destrói)
-        if (this.currentMesh) {
-            this.currentMesh.setEnabled(false);
+    public async loadModel(modelId: ModelId): Promise<ModelEntity> {
+        // 1. Desativa a entity atual (dispõe physics, mantém no cache)
+        if (this.currentEntity) {
+            this.currentEntity.disposePhysics();
+            this.currentEntity.setEnabled(false);
         }
 
         // 2. Cache hit → reativa
         if (this.cache.has(modelId)) {
-            const cached = this.cache.get(modelId)!;
+            const entity = this.cache.get(modelId)!;
+            entity.setEnabled(true);
 
-            cached.mesh.setEnabled(true);
-
-            this.currentMesh = cached.mesh;
+            this.currentEntity = entity;
             this.currentModelId = modelId;
-
-            return cached.mesh;
+            return entity;
         }
 
         // 3. Cache miss → cria via config.loader
@@ -45,37 +40,42 @@ export class ModelManager {
             mesh.material = new B.StandardMaterial(`${modelId}_mat`, this.scene);
         }
 
-        // 4. Snapshot dos materiais originais
+        // Snapshot dos materiais originais
         const originalMaterials = new Map<B.AbstractMesh, B.Material | null>();
         originalMaterials.set(mesh, mesh.material);
-
         for (const child of mesh.getChildMeshes()) {
             originalMaterials.set(child, child.material);
         }
 
-        this.cache.set(modelId, { mesh, originalMaterials });
-        this.currentMesh = mesh;
+        const entity = new ModelEntity(
+            mesh,
+            modelId,
+            originalMaterials,
+            config.colliderType,
+            this.scene
+        );
+
+        this.cache.set(modelId, entity);
+        this.currentEntity = entity;
         this.currentModelId = modelId;
 
-        return mesh;
+        return entity;
     }
 
-    /** Restaura os materiais originais de um modelo (desfaz qualquer shader aplicado) */
+    /** Delega para ModelEntity */
     public restoreOriginalMaterials(modelId: ModelId): void {
-        const entry = this.cache.get(modelId);
-        if (!entry) return;
-        for (const [meshNode, originalMat] of entry.originalMaterials) {
-            meshNode.material = originalMat;
-        }
+        this.cache.get(modelId)?.restoreOriginalMaterials();
     }
 
+    public dispose(): void {
 
-    public dispose() {
-        for (const entry of this.cache.values()) {
-            entry.mesh.dispose();
+        for (const entity of this.cache.values()) {
+            entity.dispose();
         }
+
         this.cache.clear();
-        this.currentMesh = null;
+
+        this.currentEntity = null;
     }
 
 }

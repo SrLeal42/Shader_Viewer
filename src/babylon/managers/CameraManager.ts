@@ -12,7 +12,7 @@ export class CameraManager {
         );
 
         this.camera.position = new B.Vector3(0, .5, -4);
-        this.camera.attachControl(canvas, true);
+        // this.camera.attachControl(canvas, true);
         // this.camera.wheelPrecision = 50;
         // this.camera.minZ = 0.1;
 

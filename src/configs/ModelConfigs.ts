@@ -6,12 +6,14 @@ import type { UIConfig } from '../types/UI';
 export interface ModelConfig extends UIConfig {
     label: string; // Label para o seletor de modelo (ex: 'Esfera')
     loader: (scene: B.Scene) => Promise<B.AbstractMesh>;
+    colliderType: number; // PhysicsShapeType (número para compatibilidade com as const)
 }
 
 export const ModelConfigs = {
     sphere: {
         label: 'Esfera',
         title: 'Propriedades da Esfera',
+        colliderType: B.PhysicsShapeType.SPHERE,
         loader: async (scene: B.Scene) =>
             B.MeshBuilder.CreateSphere('sphere', { diameter: 2, segments: 32 }, scene),
         parameters: [
@@ -30,6 +32,7 @@ export const ModelConfigs = {
     box: {
         label: 'Caixa',
         title: 'Propriedades da Caixa',
+        colliderType: B.PhysicsShapeType.BOX,
         loader: async (scene: B.Scene) =>
             B.MeshBuilder.CreateBox('box', { size: 1 }, scene),
         parameters: [
@@ -54,6 +57,7 @@ export const ModelConfigs = {
     suzanne: {
         label: 'Suzanne',
         title: 'Propriedades da Suzanne',
+        colliderType: B.PhysicsShapeType.CONVEX_HULL,
         loader: async (scene: B.Scene) => {
             const result = await B.SceneLoader.ImportMeshAsync(
                 '',           // nome do mesh (vazio = todos)
@@ -84,6 +88,7 @@ export const ModelConfigs = {
     candelabra: {
         label: 'Candelabra',
         title: 'Propriedades do Candelabro',
+        colliderType: B.PhysicsShapeType.CONVEX_HULL,
         loader: async (scene: B.Scene) => {
             const result = await B.SceneLoader.ImportMeshAsync(
                 '',
