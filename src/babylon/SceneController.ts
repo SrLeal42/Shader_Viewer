@@ -7,10 +7,10 @@ import { ModelManager } from './managers/ModelManager';
 import { ShaderManager } from './managers/ShaderManager';
 
 import { ModelConfigs, type ModelId } from '../configs/ModelConfigs';
-import { MaterialShaders, type MaterialShaderId, type PostProcessShaderId } from '../shaders/Registry';
+import { EnvironmentConfigs } from '../configs/EnviromentConfigs';
+import { PhysicsConfigs } from '../configs/PhysicsConfigs';
 
-const IMPULSE_FORCE = 1.5;
-const VELOCITY_TRANSFER_FACTOR = 0.2;
+import { MaterialShaders, type MaterialShaderId, type PostProcessShaderId } from '../shaders/Registry';
 
 export class SceneController {
     private engine: B.Engine;
@@ -43,7 +43,7 @@ export class SceneController {
         this.uiManager = new UIManager(tweakpaneContainer);
         this.modelManager = new ModelManager(this.scene);
 
-        this.light = new B.HemisphericLight('light1', new B.Vector3(0, 1, -0.8), this.scene);
+        this.light = new B.HemisphericLight('light1', EnvironmentConfigs.light.direction, this.scene);
         this.shaderManager = new ShaderManager(this.scene, this.cameraManager.camera, this.light);
 
         this.uiManager.setupGlobalControls((id) => {
@@ -85,23 +85,15 @@ export class SceneController {
         const havokPlugin = new B.HavokPlugin(true, havokInstance);
         this.scene.enablePhysics(B.Vector3.Zero(), havokPlugin);
 
-        this.createWalls();
+        this.createBoundariesWalls();
         this.setupInteraction();
     }
 
     // ─── Paredes invisíveis ───
 
-    private createWalls(): void {
-        const walls = [
-            { name: 'floor', size: { w: 20, h: 0.1, d: 20 }, pos: new B.Vector3(0, -1.5, 0) },
-            { name: 'ceiling', size: { w: 20, h: 0.1, d: 20 }, pos: new B.Vector3(0, 3, 0) },
-            { name: 'left', size: { w: 0.1, h: 20, d: 20 }, pos: new B.Vector3(-3.5, 0, 0) },
-            { name: 'right', size: { w: 0.1, h: 20, d: 20 }, pos: new B.Vector3(3.5, 0, 0) },
-            { name: 'front', size: { w: 20, h: 20, d: 0.1 }, pos: new B.Vector3(0, 0, -2.5) },
-            { name: 'back', size: { w: 20, h: 20, d: 0.1 }, pos: new B.Vector3(0, 0, 6) },
-        ];
+    private createBoundariesWalls(): void {
 
-        for (const wall of walls) {
+        for (const wall of EnvironmentConfigs.boundaries) {
             const mesh = B.MeshBuilder.CreateBox(wall.name, {
                 width: wall.size.w,
                 height: wall.size.h,
@@ -136,7 +128,7 @@ export class SceneController {
                 .normalize();
 
             entity.applyImpulse(
-                direction.scale(IMPULSE_FORCE),
+                direction.scale(PhysicsConfigs.interaction.impulseForce),
                 pickInfo.pickedPoint
             );
         });
@@ -152,10 +144,20 @@ export class SceneController {
         // Captura velocidades do modelo atual
         let prevLinVel = B.Vector3.Zero();
         let prevAngVel = B.Vector3.Zero();
+        let prevPosition: B.Vector3 | null = null;
+        let prevRotationQuat: B.Quaternion | null = null;
 
         if (this.modelManager.currentEntity) {
+
+            const currentMesh = this.modelManager.currentEntity.mesh;
+
             prevLinVel = this.modelManager.currentEntity.getLinearVelocity();
             prevAngVel = this.modelManager.currentEntity.getAngularVelocity();
+            prevPosition = currentMesh.position.clone();
+            if (currentMesh.rotationQuaternion) {
+                prevRotationQuat = currentMesh.rotationQuaternion.clone();
+            }
+
             this.modelManager.currentEntity.restoreOriginalMaterials();
         }
 
@@ -191,12 +193,20 @@ export class SceneController {
         const center = boundingInfo.max.add(boundingInfo.min).scale(0.5);
         entity.mesh.position.subtractInPlace(center);
 
+        if (prevPosition) {
+            entity.mesh.position.addInPlace(prevPosition);
+        }
+
+        if (prevRotationQuat) {
+            entity.mesh.rotationQuaternion = prevRotationQuat;
+        }
+
         // Habilita física (após posicionamento)
         entity.enablePhysics();
 
         // Transfere velocidade reduzida do modelo anterior
-        entity.setLinearVelocity(prevLinVel.scale(VELOCITY_TRANSFER_FACTOR));
-        entity.setAngularVelocity(prevAngVel.scale(VELOCITY_TRANSFER_FACTOR));
+        entity.setLinearVelocity(prevLinVel.scale(PhysicsConfigs.model.velocityTransferFactor));
+        entity.setAngularVelocity(prevAngVel.scale(PhysicsConfigs.model.velocityTransferFactor));
 
         // Re-aplica o shader ativo
         if (this.shaderManager.activeMaterialId) {

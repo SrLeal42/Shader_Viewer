@@ -1,17 +1,19 @@
 import * as B from '@babylonjs/core';
 
+import { EnvironmentConfigs } from '../../configs/EnviromentConfigs';
+
 export class CameraManager {
     public camera: B.ArcRotateCamera;
 
     constructor(scene: B.Scene, canvas: HTMLCanvasElement) {
 
-        const target = new B.Vector3(0, .5, 0);
+        const target = EnvironmentConfigs.camera.targetPosition;
 
         this.camera = new B.ArcRotateCamera(
             'camera', Math.PI / 2, Math.PI / 3, 5, target, scene
         );
 
-        this.camera.position = new B.Vector3(0, .5, -4);
+        this.camera.position = EnvironmentConfigs.camera.initialPosition;
         // this.camera.attachControl(canvas, true);
         // this.camera.wheelPrecision = 50;
         // this.camera.minZ = 0.1;

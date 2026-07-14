@@ -1,5 +1,7 @@
 import * as B from '@babylonjs/core';
+
 import type { ModelId } from '../../configs/ModelConfigs';
+import { PhysicsConfigs } from '../../configs/PhysicsConfigs';
 
 export class ModelEntity {
     public readonly mesh: B.AbstractMesh;
@@ -8,11 +10,12 @@ export class ModelEntity {
     private originalMaterials: Map<B.AbstractMesh, B.Material | null>;
     private physicsAggregate: B.PhysicsAggregate | null = null;
     private colliderType: number;
-    private mass: number;
+    private mass: number = PhysicsConfigs.model.defaultMass;
+
     private scene: B.Scene;
 
-    private linearDamping = 0.4;
-    private angularDamping = 0.4;
+    private linearDamping = PhysicsConfigs.model.linearDamping;
+    private angularDamping = PhysicsConfigs.model.angularDamping;
 
     constructor(
         mesh: B.AbstractMesh,
