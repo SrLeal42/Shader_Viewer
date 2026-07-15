@@ -5,6 +5,7 @@ import type { ShaderUniform } from '../../shaders/Types';
 
 import { ModelConfigs, type ModelId } from '../../configs/ModelConfigs';
 import { InteractionConfigs, type InteractionId } from '../../configs/InteractionConfigs';
+import { EnvironmentConfigs } from '../../configs/EnviromentConfigs';
 
 
 import {
@@ -49,6 +50,62 @@ export class UIManager {
         });
 
         folder.addBlade({ view: 'separator' });
+    }
+
+
+    public setupTransformControls(
+        state: { pos: { x: number, y: number, z: number }, rot: { x: number, y: number, z: number }, physics: boolean },
+        onPhysicsChange: (enabled: boolean) => void,
+        onTransformChange: () => void
+    ) {
+        const folder = this.paneRight.addFolder({ title: 'Transformação', index: 1 });
+
+        // 1. Calcula o espaço interno baseado nas paredes dinamicamente!
+        const bounds = EnvironmentConfigs.boundaries;
+        const getBound = (name: string) => bounds.find(b => b.name === name)!;
+
+        const minX = getBound('left').pos.x + (getBound('left').size.w / 2);
+        const maxX = getBound('right').pos.x - (getBound('right').size.w / 2);
+
+        const minY = getBound('floor').pos.y + (getBound('floor').size.h / 2);
+        const maxY = getBound('ceiling').pos.y - (getBound('ceiling').size.h / 2);
+
+        const minZ = getBound('front').pos.z + (getBound('front').size.d / 2);
+        const maxZ = getBound('back').pos.z - (getBound('back').size.d / 2);
+
+        // 2. Cria os controles visuais
+        folder.addBinding(state, 'physics', { label: 'Física Ativada' })
+            .on('change', (ev) => {
+                onPhysicsChange(ev.value);
+                posBinding.disabled = ev.value;
+                rotBinding.disabled = ev.value;
+            });
+
+        const posBinding = folder.addBinding(state, 'pos', {
+            label: 'Posição',
+            disabled: state.physics,
+            x: { min: minX, max: maxX }, // Aplicando os limites calculados!
+            y: { min: minY, max: maxY },
+            z: { min: minZ, max: maxZ },
+        }).on('change', () => {
+            if (!state.physics) onTransformChange();
+        });
+
+        const rotBinding = folder.addBinding(state, 'rot', {
+            label: 'Rotação',
+            disabled: state.physics,
+        }).on('change', () => {
+            if (!state.physics) onTransformChange();
+        });
+
+        folder.addBlade({ view: 'separator' });
+
+        return {
+            refresh: () => {
+                posBinding.refresh();
+                rotBinding.refresh();
+            }
+        };
     }
 
     public setupInteractionControls(

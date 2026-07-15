@@ -32,6 +32,13 @@ export class SceneController {
 
     private interactionManager: InteractionManager;
 
+    private transformState = {
+        pos: { x: 0, y: 0, z: 0 },
+        rot: { x: 0, y: 0, z: 0 },
+        physics: true
+    };
+    private transformUI: ReturnType<UIManager['setupTransformControls']> | null = null;
+
     private switchGeneration = 0;
 
     // ─── Construtor privado (use SceneController.create) ───
@@ -76,12 +83,20 @@ export class SceneController {
             this.interactionManager.setActive(id);
         });
 
+        this.transformUI = this.uiManager.setupTransformControls(
+            this.transformState,
+            this.handlePhysicsChange,
+            this.handleTransformChange
+        );
 
         // Render loop (roda mesmo antes da física estar pronta)
         const startTime = performance.now();
         this.engine.runRenderLoop(() => {
             const elapsed = (performance.now() - startTime) / 1000;
             this.shaderManager.updateTime(elapsed);
+
+            this.updateTransformUI();
+
             this.scene.render();
         });
 
@@ -110,6 +125,43 @@ export class SceneController {
 
         this.createBoundariesWalls();
     }
+
+    private handlePhysicsChange = (enabled: boolean) => {
+        const entity = this.modelManager.currentEntity;
+        if (!entity) return;
+        if (enabled) {
+            entity.enablePhysics();
+        } else {
+            entity.disposePhysics();
+        }
+    };
+
+    private handleTransformChange = () => {
+        const entity = this.modelManager.currentEntity;
+        if (!entity || this.transformState.physics) return;
+        entity.mesh.position.set(this.transformState.pos.x, this.transformState.pos.y, this.transformState.pos.z);
+        entity.mesh.rotationQuaternion = B.Quaternion.FromEulerAngles(
+            this.transformState.rot.x,
+            this.transformState.rot.y,
+            this.transformState.rot.z
+        );
+    };
+
+    private updateTransformUI = () => {
+        if (!this.transformState.physics || !this.modelManager.currentEntity) return;
+        const mesh = this.modelManager.currentEntity.mesh;
+        this.transformState.pos.x = mesh.position.x;
+        this.transformState.pos.y = mesh.position.y;
+        this.transformState.pos.z = mesh.position.z;
+        if (mesh.rotationQuaternion) {
+            const euler = mesh.rotationQuaternion.toEulerAngles();
+            this.transformState.rot.x = euler.x;
+            this.transformState.rot.y = euler.y;
+            this.transformState.rot.z = euler.z;
+        }
+        if (this.transformUI) this.transformUI.refresh();
+    };
+
 
     // ─── Paredes invisíveis ───
 
@@ -211,8 +263,15 @@ export class SceneController {
         entity.mesh.rotationQuaternion = finalRotation;
 
 
-        // Habilita física (após posicionamento)
-        entity.enablePhysics();
+        if (this.transformState.physics) {
+            entity.enablePhysics();
+        } else {
+            // Garante que o modelo utilize Quaternions mesmo sem física,
+            // para o Tweakpane não dar erro ao editar a rotação.
+            if (!entity.mesh.rotationQuaternion) {
+                entity.mesh.rotationQuaternion = B.Quaternion.FromEulerVector(entity.mesh.rotation);
+            }
+        }
 
         // Transfere velocidade reduzida do modelo anterior
         entity.setLinearVelocity(prevLinVel.scale(PhysicsConfigs.model.velocityTransferFactor));

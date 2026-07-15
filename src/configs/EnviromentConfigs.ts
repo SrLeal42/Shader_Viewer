@@ -11,11 +11,13 @@ export const EnvironmentConfigs = {
     },
     // Fronteiras do mundo
     boundaries: [
-        { name: 'floor', size: { w: 10, h: 0.1, d: 12 }, pos: new B.Vector3(0, -1.5, 0) },
-        { name: 'ceiling', size: { w: 10, h: 0.1, d: 12 }, pos: new B.Vector3(0, 3, 0) },
-        { name: 'left', size: { w: 0.1, h: 10, d: 12 }, pos: new B.Vector3(-3.5, 0, 0) },
-        { name: 'right', size: { w: 0.1, h: 10, d: 12 }, pos: new B.Vector3(3.5, 0, 0) },
-        { name: 'front', size: { w: 10, h: 10, d: 0.1 }, pos: new B.Vector3(0, 0, -2.5) },
-        { name: 'back', size: { w: 10, h: 10, d: 0.1 }, pos: new B.Vector3(0, 0, 6) },
+        { name: 'floor', size: { w: 10, h: 2.0, d: 12 }, pos: new B.Vector3(0, -3.5, 0) },
+        { name: 'ceiling', size: { w: 10, h: 2.0, d: 12 }, pos: new B.Vector3(0, 5.0, 0) },
+
+        { name: 'left', size: { w: 2.0, h: 10, d: 12 }, pos: new B.Vector3(-5.5, 0, 0) },
+        { name: 'right', size: { w: 2.0, h: 10, d: 12 }, pos: new B.Vector3(5.5, 0, 0) },
+
+        { name: 'front', size: { w: 10, h: 10, d: 2.0 }, pos: new B.Vector3(0, 0, -2.5) },
+        { name: 'back', size: { w: 10, h: 10, d: 2.0 }, pos: new B.Vector3(0, 0, 7.5) },
     ]
 };
