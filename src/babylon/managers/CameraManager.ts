@@ -1,11 +1,18 @@
 import * as B from '@babylonjs/core';
 
+import type { FrustumLimits } from '../../types/Camera';
+
 import { EnvironmentConfigs } from '../../configs/EnviromentConfigs';
 
 export class CameraManager {
+
+    private canvas: HTMLCanvasElement;
+
     public camera: B.ArcRotateCamera;
 
     constructor(scene: B.Scene, canvas: HTMLCanvasElement) {
+
+        this.canvas = canvas;
 
         const target = EnvironmentConfigs.camera.targetPosition;
 
@@ -31,4 +38,25 @@ export class CameraManager {
         const radius = bounds.boundingSphere.radiusWorld * 2.5;
         this.camera.radius = Math.max(radius, this.camera.lowerRadiusLimit ?? 1);
     }
+
+    public calculateFrustumLimits(): FrustumLimits | null {
+        if (!(this.camera instanceof B.ArcRotateCamera)) return null;
+
+        const distance = this.camera.radius;
+        const aspect = this.canvas.width / this.canvas.height;
+
+        const screenHeight = 2 * distance * Math.tan(this.camera.fov / 2);
+        const screenWidth = screenHeight * aspect;
+
+        const boxW = screenWidth * EnvironmentConfigs.physicsSpring.failsafeMargin;
+        const boxH = screenHeight * EnvironmentConfigs.physicsSpring.failsafeMargin;
+
+        return {
+            minX: -boxW / 2, maxX: boxW / 2,
+            minY: -boxH / 2, maxY: boxH / 2,
+            minZ: -(distance * 1.5), maxZ: distance - 2.5
+        };
+
+    }
+
 }

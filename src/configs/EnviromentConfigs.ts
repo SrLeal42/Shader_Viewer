@@ -2,22 +2,23 @@ import * as B from '@babylonjs/core';
 
 export const EnvironmentConfigs = {
     camera: {
-        initialPosition: new B.Vector3(0, 0.5, -4),
+        initialPosition: new B.Vector3(0, 0.5, 5),
         targetPosition: new B.Vector3(0, 0.5, 0),
     },
     light: {
-        direction: new B.Vector3(0, 1, -0.8),
-        intensity: 1.0, // Caso queira usar futuramente
+        direction: new B.Vector3(0, 1, 0),
+        intensity: 0.8
     },
-    // Fronteiras do mundo
-    boundaries: [
-        { name: 'floor', size: { w: 10, h: 2.0, d: 12 }, pos: new B.Vector3(0, -3.5, 0) },
-        { name: 'ceiling', size: { w: 10, h: 2.0, d: 12 }, pos: new B.Vector3(0, 5.0, 0) },
-
-        { name: 'left', size: { w: 2.0, h: 10, d: 12 }, pos: new B.Vector3(-5.5, 0, 0) },
-        { name: 'right', size: { w: 2.0, h: 10, d: 12 }, pos: new B.Vector3(5.5, 0, 0) },
-
-        { name: 'front', size: { w: 10, h: 10, d: 2.0 }, pos: new B.Vector3(0, 0, -2.5) },
-        { name: 'back', size: { w: 10, h: 10, d: 2.0 }, pos: new B.Vector3(0, 0, 7.5) },
-    ]
+    background: {
+        color: new B.Color4(0.1, 0.1, 0.12, 1)
+    },
+    physicsSpring: {
+        enabled: true,
+        stiffness: 0.003,
+        damping: 0.99,
+        activationDistance: 2.5,   // Distância livre antes da mola agir
+        activationDelayMs: 5000,   // Delay em milissegundos (1 segundo) antes da mola puxar
+        failsafeMargin: 1.2,
+        thickness: 2.0
+    }
 };

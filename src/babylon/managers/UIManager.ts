@@ -2,10 +2,11 @@ import { Pane, FolderApi } from 'tweakpane';
 
 import type { UIConfig, UIParameter } from '../../types/UI';
 import type { ShaderUniform } from '../../shaders/Types';
+import type { FrustumLimits } from '../../types/Camera';
 
 import { ModelConfigs, type ModelId } from '../../configs/ModelConfigs';
 import { InteractionConfigs, type InteractionId } from '../../configs/InteractionConfigs';
-import { EnvironmentConfigs } from '../../configs/EnviromentConfigs';
+// import { EnvironmentConfigs } from '../../configs/EnviromentConfigs';
 
 
 import {
@@ -15,12 +16,14 @@ import {
 
 
 
+
 export class UIManager {
     private paneRight: Pane;
     private paneLeft: Pane;
 
     private dynamicFolder: FolderApi | null = null;
     private shaderFolder: FolderApi | null = null;
+    private transformFolder: FolderApi | null = null;
 
     constructor(tweakpaneRightContainer: HTMLElement, tweakpaneLeftContainer: HTMLElement) {
         // O painel Direita
@@ -56,24 +59,18 @@ export class UIManager {
     public setupTransformControls(
         state: { pos: { x: number, y: number, z: number }, rot: { x: number, y: number, z: number }, physics: boolean },
         onPhysicsChange: (enabled: boolean) => void,
-        onTransformChange: () => void
+        onTransformChange: () => void,
+        limits: FrustumLimits
     ) {
-        const folder = this.paneRight.addFolder({ title: 'Transformação', index: 1 });
 
-        // 1. Calcula o espaço interno baseado nas paredes dinamicamente!
-        const bounds = EnvironmentConfigs.boundaries;
-        const getBound = (name: string) => bounds.find(b => b.name === name)!;
+        if (this.transformFolder) {
+            this.transformFolder.dispose();
+        }
 
-        const minX = getBound('left').pos.x + (getBound('left').size.w / 2);
-        const maxX = getBound('right').pos.x - (getBound('right').size.w / 2);
+        this.transformFolder = this.paneRight.addFolder({ title: 'Transformação', index: 1 });
+        const folder = this.transformFolder;
 
-        const minY = getBound('floor').pos.y + (getBound('floor').size.h / 2);
-        const maxY = getBound('ceiling').pos.y - (getBound('ceiling').size.h / 2);
-
-        const minZ = getBound('front').pos.z + (getBound('front').size.d / 2);
-        const maxZ = getBound('back').pos.z - (getBound('back').size.d / 2);
-
-        // 2. Cria os controles visuais
+        // Cria os controles visuais
         folder.addBinding(state, 'physics', { label: 'Física Ativada' })
             .on('change', (ev) => {
                 onPhysicsChange(ev.value);
@@ -84,16 +81,20 @@ export class UIManager {
         const posBinding = folder.addBinding(state, 'pos', {
             label: 'Posição',
             disabled: state.physics,
-            x: { min: minX, max: maxX }, // Aplicando os limites calculados!
-            y: { min: minY, max: maxY },
-            z: { min: minZ, max: maxZ },
+            x: { min: limits.minX, max: limits.maxX, step: 0.01 },
+            y: { min: limits.minY, max: limits.maxY, step: 0.01 },
+            z: { min: limits.minZ, max: limits.maxZ, step: 0.01 },
         }).on('change', () => {
             if (!state.physics) onTransformChange();
         });
 
+
         const rotBinding = folder.addBinding(state, 'rot', {
             label: 'Rotação',
             disabled: state.physics,
+            x: { step: 1 },
+            y: { step: 1 },
+            z: { step: 1 }
         }).on('change', () => {
             if (!state.physics) onTransformChange();
         });

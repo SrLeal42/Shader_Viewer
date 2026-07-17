@@ -5,6 +5,7 @@ import { CameraManager } from './managers/CameraManager';
 import { UIManager } from './managers/UIManager';
 import { ModelManager } from './managers/ModelManager';
 import { ShaderManager } from './managers/ShaderManager';
+import { EnvironmentManager } from './managers/EnvironmentManager';
 import { InteractionManager } from './managers/InteractionManager';
 
 import { ModelConfigs, type ModelConfig, type ModelId } from '../configs/ModelConfigs';
@@ -15,14 +16,15 @@ import { MaterialShaders, type MaterialShaderId, type PostProcessShaderId } from
 
 import { FingerInteraction } from './interactions/FingerInteraction';
 
+
 export class SceneController {
     private engine: B.Engine;
     public scene: B.Scene;
 
-    private light: B.HemisphericLight;
-
-    private cameraManager: CameraManager;
+    public cameraManager: CameraManager;
     private uiManager: UIManager;
+
+    private environmentManager: EnvironmentManager;
 
     private modelManager: ModelManager;
     private currentParams: Record<string, unknown> = {};
@@ -41,6 +43,8 @@ export class SceneController {
 
     private switchGeneration = 0;
 
+    private outOfBoundsStartTime: number | null = null;
+
     // ─── Construtor privado (use SceneController.create) ───
 
     private constructor(
@@ -56,8 +60,11 @@ export class SceneController {
         this.scene.clearColor = new B.Color4(0.1, 0.1, 0.12, 1);
 
         this.cameraManager = new CameraManager(this.scene, canvas);
+        const limits = this.cameraManager.calculateFrustumLimits();
         this.uiManager = new UIManager(tweakpaneRightContainer, tweakpaneLeftContainer);
         this.modelManager = new ModelManager(this.scene);
+        this.environmentManager = new EnvironmentManager(this.scene);
+        this.shaderManager = new ShaderManager(this.scene, this.cameraManager.camera, this.environmentManager.light);
         this.interactionManager = new InteractionManager(
             this.scene,
             this.cameraManager.camera,
@@ -66,9 +73,6 @@ export class SceneController {
 
         this.interactionManager.register(new FingerInteraction());
         this.interactionManager.setActive('finger');
-
-        this.light = new B.HemisphericLight('light1', EnvironmentConfigs.light.direction, this.scene);
-        this.shaderManager = new ShaderManager(this.scene, this.cameraManager.camera, this.light);
 
         this.uiManager.setupGlobalControls((id) => {
             this.switchModel(id);
@@ -86,7 +90,8 @@ export class SceneController {
         this.transformUI = this.uiManager.setupTransformControls(
             this.transformState,
             this.handlePhysicsChange,
-            this.handleTransformChange
+            this.handleTransformChange,
+            limits
         );
 
         // Render loop (roda mesmo antes da física estar pronta)
@@ -95,7 +100,14 @@ export class SceneController {
             const elapsed = (performance.now() - startTime) / 1000;
             this.shaderManager.updateTime(elapsed);
 
-            this.updateTransformUI();
+            if (this.transformState.physics && this.modelManager.currentEntity) {
+
+                this.applySpringPhysics(this.modelManager.currentEntity.mesh);
+
+                this.updateTransformUI();
+            }
+
+            // this.updateTransformUI();
 
             this.scene.render();
         });
@@ -113,6 +125,8 @@ export class SceneController {
         const controller = new SceneController(canvas, tweakpaneRightContainer, tweakpaneLeftContainer);
 
         await controller.initPhysics();
+        const limits = controller.cameraManager.calculateFrustumLimits();
+        controller.environmentManager.resizeBoundaries(limits);
         await controller.switchModel('sphere');
 
         return controller;
@@ -122,8 +136,6 @@ export class SceneController {
         const havokInstance = await HavokPhysics();
         const havokPlugin = new B.HavokPlugin(true, havokInstance);
         this.scene.enablePhysics(B.Vector3.Zero(), havokPlugin);
-
-        this.createBoundariesWalls();
     }
 
     private handlePhysicsChange = (enabled: boolean) => {
@@ -141,11 +153,48 @@ export class SceneController {
         if (!entity || this.transformState.physics) return;
         entity.mesh.position.set(this.transformState.pos.x, this.transformState.pos.y, this.transformState.pos.z);
         entity.mesh.rotationQuaternion = B.Quaternion.FromEulerAngles(
-            this.transformState.rot.x,
-            this.transformState.rot.y,
-            this.transformState.rot.z
+            B.Tools.ToRadians(this.transformState.rot.x),
+            B.Tools.ToRadians(this.transformState.rot.y),
+            B.Tools.ToRadians(this.transformState.rot.z)
         );
     };
+
+
+    private applySpringPhysics(mesh: B.AbstractMesh) {
+
+        if (!EnvironmentConfigs.physicsSpring.enabled) return;
+
+        const config = EnvironmentConfigs.physicsSpring;
+
+        const direction = B.Vector3.Zero().subtract(mesh.position);
+        const distance = direction.length();
+
+        const body = mesh.physicsBody;
+        if (!body) return;
+
+        if (distance > config.activationDistance) {
+
+            if (this.outOfBoundsStartTime === null) {
+                this.outOfBoundsStartTime = performance.now();
+            }
+            const timeElapsed = performance.now() - this.outOfBoundsStartTime;
+
+            // Depois do delay, começa a puxar de volta
+            if (timeElapsed >= config.activationDelayMs) {
+                const distanceOutside = distance - config.activationDistance;
+                const extraVelocity = direction.normalize().scale(distanceOutside * config.stiffness);
+
+                const currentVelocity = body.getLinearVelocity();
+                body.setLinearVelocity(currentVelocity.add(extraVelocity));
+            }
+        } else {
+
+            this.outOfBoundsStartTime = null;
+
+            const currentVelocity = body.getLinearVelocity();
+            body.setLinearVelocity(currentVelocity.scale(config.damping));
+        }
+    }
 
     private updateTransformUI = () => {
         if (!this.transformState.physics || !this.modelManager.currentEntity) return;
@@ -155,35 +204,15 @@ export class SceneController {
         this.transformState.pos.z = mesh.position.z;
         if (mesh.rotationQuaternion) {
             const euler = mesh.rotationQuaternion.toEulerAngles();
-            this.transformState.rot.x = euler.x;
-            this.transformState.rot.y = euler.y;
-            this.transformState.rot.z = euler.z;
+
+            this.transformState.rot.x = B.Tools.ToDegrees(euler.x);
+            this.transformState.rot.y = B.Tools.ToDegrees(euler.y);
+            this.transformState.rot.z = B.Tools.ToDegrees(euler.z);
+
         }
         if (this.transformUI) this.transformUI.refresh();
     };
 
-
-    // ─── Paredes invisíveis ───
-
-    private createBoundariesWalls(): void {
-
-        for (const wall of EnvironmentConfigs.boundaries) {
-            const mesh = B.MeshBuilder.CreateBox(wall.name, {
-                width: wall.size.w,
-                height: wall.size.h,
-                depth: wall.size.d
-            }, this.scene);
-            mesh.position = wall.pos;
-            mesh.visibility = 0;
-            mesh.isPickable = false;
-
-
-            new B.PhysicsAggregate(mesh, B.PhysicsShapeType.BOX, {
-                mass: 0,
-                restitution: 0.5
-            }, this.scene);
-        }
-    }
 
     // ─── Troca de modelo ───
 
@@ -321,12 +350,26 @@ export class SceneController {
 
     // ─── Lifecycle ───
 
-    private onResize = () => { this.engine.resize(); };
+    private onResize = () => {
+        this.engine.resize();
+
+        const limits = this.cameraManager.calculateFrustumLimits();
+
+        this.environmentManager.resizeBoundaries(limits);
+
+        this.transformUI = this.uiManager.setupTransformControls(
+            this.transformState,
+            this.handlePhysicsChange,
+            this.handleTransformChange,
+            limits
+        );
+    };
 
     public dispose() {
         this.uiManager.dispose();
         this.modelManager.dispose();
         this.shaderManager.dispose();
+        this.environmentManager.dispose();
         this.interactionManager.dispose();
 
         window.removeEventListener('resize', this.onResize);

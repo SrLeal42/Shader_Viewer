@@ -23,7 +23,7 @@ export const ModelConfigs = {
                 label: 'Escala Global',
                 type: 'float' as const,
                 defaultValue: 0.5,
-                min: 0.1, max: 3, step: 0.1,
+                min: 0.1, max: 2, step: 0.1,
                 onApply: (mesh: B.AbstractMesh, value: number) => {
                     mesh.scaling.setAll(value);
                 }
