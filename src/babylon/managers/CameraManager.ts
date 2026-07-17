@@ -54,7 +54,7 @@ export class CameraManager {
         return {
             minX: -boxW / 2, maxX: boxW / 2,
             minY: -boxH / 2, maxY: boxH / 2,
-            minZ: -(distance * 1.5), maxZ: distance - 2.5
+            minZ: -(distance * 1.5), maxZ: distance - 2.0
         };
 
     }

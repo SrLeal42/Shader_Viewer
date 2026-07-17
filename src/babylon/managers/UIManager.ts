@@ -81,9 +81,10 @@ export class UIManager {
         const posBinding = folder.addBinding(state, 'pos', {
             label: 'Posição',
             disabled: state.physics,
-            x: { min: limits.minX, max: limits.maxX, step: 0.01 },
-            y: { min: limits.minY, max: limits.maxY, step: 0.01 },
-            z: { min: limits.minZ, max: limits.maxZ, step: 0.01 },
+            x: { min: limits.minX, max: limits.maxX },
+            y: { min: limits.minY, max: limits.maxY },
+            z: { min: limits.minZ, max: limits.maxZ },
+            format: (v) => v.toFixed(3),
         }).on('change', () => {
             if (!state.physics) onTransformChange();
         });
