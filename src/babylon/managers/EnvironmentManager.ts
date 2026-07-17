@@ -54,7 +54,7 @@ export class EnvironmentManager {
             const mesh = B.MeshBuilder.CreateBox(w.name, { width: w.w, height: w.h, depth: w.d }, this.scene);
 
             mesh.position = new B.Vector3(w.x, w.y, w.z);
-            mesh.visibility = 1;
+            mesh.visibility = 0;
             mesh.isPickable = false;
 
             new B.PhysicsAggregate(mesh, B.PhysicsShapeType.BOX, { mass: 0, restitution: 0.5 }, this.scene);
