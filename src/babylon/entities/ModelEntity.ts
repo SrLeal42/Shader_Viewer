@@ -8,6 +8,7 @@ export class ModelEntity {
     public readonly modelId: ModelId;
 
     private originalMaterials: Map<B.AbstractMesh, B.Material | null>;
+    private childMeshSet: Set<B.AbstractMesh>;
     private physicsBody: B.PhysicsBody | null = null;
     private physicsShape: B.PhysicsShape | null = null;
     private colliderType: number;
@@ -26,12 +27,16 @@ export class ModelEntity {
         scene: B.Scene,
         mass: number = 1.0
     ) {
+        this.scene = scene;
+
         this.mesh = mesh;
         this.modelId = modelId;
         this.originalMaterials = originalMaterials;
         this.colliderType = colliderType;
-        this.scene = scene;
+
         this.mass = mass;
+
+        this.childMeshSet = new Set(mesh.getChildMeshes());
     }
 
     // ─── Física ───
@@ -184,7 +189,7 @@ export class ModelEntity {
 
     /** Verifica se um mesh pertence a esta entity (root ou filhos) */
     public containsMesh(mesh: B.AbstractMesh): boolean {
-        return mesh === this.mesh || this.mesh.getChildMeshes().includes(mesh);
+        return mesh === this.mesh || this.childMeshSet.has(mesh);
     }
 
     // ─── Materiais ───
@@ -205,6 +210,20 @@ export class ModelEntity {
 
     public dispose(): void {
         this.disposePhysics();
-        this.mesh.dispose();
+
+        // Descarta os materiais originais (que pertencem a este modelo)
+        // NÃO descarta ShaderMaterials do cache do ShaderManager
+        for (const [, material] of this.originalMaterials) {
+            if (material) {
+                material.dispose(true, true); // forceDisposeEffect, forceDisposeTextures
+            }
+        }
+        this.originalMaterials.clear();
+
+        // Descarta o mesh e todos os filhos recursivamente
+        // false = não pula filhos (dispõe recursivamente)
+        // false = não descarta materiais (já fizemos acima, seletivamente)
+        this.mesh.dispose(false, false);
     }
+
 }

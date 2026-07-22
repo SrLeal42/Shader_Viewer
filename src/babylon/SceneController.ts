@@ -1,20 +1,22 @@
 import * as B from '@babylonjs/core';
-import HavokPhysics from '@babylonjs/havok';
 
 import { CameraManager } from './managers/CameraManager';
 import { UIManager } from './managers/UIManager';
+import { PhysicsManager } from './managers/PhysicsManager';
 import { ModelManager } from './managers/ModelManager';
 import { ShaderManager } from './managers/ShaderManager';
 import { EnvironmentManager } from './managers/EnvironmentManager';
 import { InteractionManager } from './managers/InteractionManager';
 
 import { ModelConfigs, type ModelConfig, type ModelId } from '../configs/ModelConfigs';
-import { EnvironmentConfigs } from '../configs/EnviromentConfigs';
 import { PhysicsConfigs } from '../configs/PhysicsConfigs';
+
+import type { ModelEntity } from './entities/ModelEntity';
 
 import { MaterialShaders, type MaterialShaderId, type PostProcessShaderId } from '../shaders/Registry';
 
 import { FingerInteraction } from './interactions/FingerInteraction';
+
 
 
 export class SceneController {
@@ -23,6 +25,8 @@ export class SceneController {
 
     public cameraManager: CameraManager;
     private uiManager: UIManager;
+
+    private physicsManager: PhysicsManager;
 
     private environmentManager: EnvironmentManager;
 
@@ -43,7 +47,7 @@ export class SceneController {
 
     private switchGeneration = 0;
 
-    private outOfBoundsStartTime: number | null = null;
+    private resizeTimeout: ReturnType<typeof setTimeout> | null = null;
 
     // ─── Construtor privado (use SceneController.create) ───
 
@@ -57,11 +61,12 @@ export class SceneController {
             stencil: true
         });
         this.scene = new B.Scene(this.engine);
-        this.scene.clearColor = new B.Color4(0.1, 0.1, 0.12, 1);
+
 
         this.cameraManager = new CameraManager(this.scene, canvas);
         const limits = this.cameraManager.calculateFrustumLimits();
         this.uiManager = new UIManager(tweakpaneRightContainer, tweakpaneLeftContainer);
+        this.physicsManager = new PhysicsManager(this.scene);
         this.modelManager = new ModelManager(this.scene);
         this.environmentManager = new EnvironmentManager(this.scene);
         this.shaderManager = new ShaderManager(this.scene, this.cameraManager.camera, this.environmentManager.light);
@@ -101,8 +106,7 @@ export class SceneController {
             this.shaderManager.updateTime(elapsed);
 
             if (this.transformState.physics && this.modelManager.currentEntity) {
-
-                this.applySpringPhysics(this.modelManager.currentEntity.mesh);
+                this.physicsManager.applySpring(this.modelManager.currentEntity.mesh);
 
                 this.updateTransformUI();
             }
@@ -120,22 +124,32 @@ export class SceneController {
     public static async create(
         canvas: HTMLCanvasElement,
         tweakpaneRightContainer: HTMLElement,
-        tweakpaneLeftContainer: HTMLElement
+        tweakpaneLeftContainer: HTMLElement,
+        signal?: AbortSignal
     ): Promise<SceneController> {
         const controller = new SceneController(canvas, tweakpaneRightContainer, tweakpaneLeftContainer);
 
-        await controller.initPhysics();
+        await controller.physicsManager.init();
+
+        // Se o React já desmontou enquanto o Havok carregava, aborta
+        if (signal?.aborted) {
+            controller.dispose();
+            throw new DOMException('Inicialização abortada', 'AbortError');
+        }
+
         const limits = controller.cameraManager.calculateFrustumLimits();
+
         controller.environmentManager.resizeBoundaries(limits);
+
         await controller.switchModel('sphere');
 
-        return controller;
-    }
+        // Check novamente após o load do modelo
+        if (signal?.aborted) {
+            controller.dispose();
+            throw new DOMException('Inicialização abortada', 'AbortError');
+        }
 
-    private async initPhysics(): Promise<void> {
-        const havokInstance = await HavokPhysics();
-        const havokPlugin = new B.HavokPlugin(true, havokInstance);
-        this.scene.enablePhysics(B.Vector3.Zero(), havokPlugin);
+        return controller;
     }
 
     private handlePhysicsChange = (enabled: boolean) => {
@@ -160,48 +174,15 @@ export class SceneController {
     };
 
 
-    private applySpringPhysics(mesh: B.AbstractMesh) {
-
-        if (!EnvironmentConfigs.physicsSpring.enabled) return;
-
-        const config = EnvironmentConfigs.physicsSpring;
-
-        const direction = B.Vector3.Zero().subtract(mesh.position);
-        const distance = direction.length();
-
-        const body = mesh.physicsBody;
-        if (!body) return;
-
-        if (distance > config.activationDistance) {
-
-            if (this.outOfBoundsStartTime === null) {
-                this.outOfBoundsStartTime = performance.now();
-            }
-            const timeElapsed = performance.now() - this.outOfBoundsStartTime;
-
-            // Depois do delay, começa a puxar de volta
-            if (timeElapsed >= config.activationDelayMs) {
-                const distanceOutside = distance - config.activationDistance;
-                const extraVelocity = direction.normalize().scale(distanceOutside * config.stiffness);
-
-                const currentVelocity = body.getLinearVelocity();
-                body.setLinearVelocity(currentVelocity.add(extraVelocity));
-            }
-        } else {
-
-            this.outOfBoundsStartTime = null;
-
-            const currentVelocity = body.getLinearVelocity();
-            body.setLinearVelocity(currentVelocity.scale(config.damping));
-        }
-    }
-
     private updateTransformUI = () => {
         if (!this.transformState.physics || !this.modelManager.currentEntity) return;
+
         const mesh = this.modelManager.currentEntity.mesh;
+
         this.transformState.pos.x = mesh.position.x;
         this.transformState.pos.y = mesh.position.y;
         this.transformState.pos.z = mesh.position.z;
+
         if (mesh.rotationQuaternion) {
             const euler = mesh.rotationQuaternion.toEulerAngles();
 
@@ -210,6 +191,7 @@ export class SceneController {
             this.transformState.rot.z = B.Tools.ToDegrees(euler.z);
 
         }
+
         if (this.transformUI) this.transformUI.refresh();
     };
 
@@ -255,7 +237,23 @@ export class SceneController {
             }
         });
 
-        const entity = await this.modelManager.loadModel(modelId);
+        let entity: ModelEntity;
+
+        try {
+            entity = await this.modelManager.loadModel(modelId);
+        } catch (err) {
+            console.error(`[SceneController] Falha ao carregar modelo '${modelId}':`, err);
+
+            // Reverte: re-ativa o modelo anterior se possível
+            if (this.modelManager.currentEntity) {
+                this.modelManager.currentEntity.setEnabled(true);
+                if (this.transformState.physics) {
+                    this.modelManager.currentEntity.enablePhysics();
+                }
+            }
+
+            return;
+        }
 
         if (gen !== this.switchGeneration) {
             entity.setEnabled(false);
@@ -351,31 +349,43 @@ export class SceneController {
     // ─── Lifecycle ───
 
     private onResize = () => {
+        // engine.resize() precisa ser imediato para o canvas não distorcer
         this.engine.resize();
 
-        const limits = this.cameraManager.calculateFrustumLimits();
+        // Debounce para as operações pesadas (boundaries + UI)
+        if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
 
-        this.environmentManager.resizeBoundaries(limits);
+        this.resizeTimeout = setTimeout(() => {
+            const limits = this.cameraManager.calculateFrustumLimits();
 
-        this.transformUI = this.uiManager.setupTransformControls(
-            this.transformState,
-            this.handlePhysicsChange,
-            this.handleTransformChange,
-            limits
-        );
+            this.environmentManager.resizeBoundaries(limits);
+
+            this.transformUI = this.uiManager.setupTransformControls(
+                this.transformState,
+                this.handlePhysicsChange,
+                this.handleTransformChange,
+                limits
+            );
+
+            this.resizeTimeout = null;
+
+        }, 150);
+
     };
 
     public dispose() {
+        if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
+
         this.uiManager.dispose();
         this.modelManager.dispose();
         this.shaderManager.dispose();
         this.environmentManager.dispose();
         this.interactionManager.dispose();
+        this.physicsManager.dispose();
 
         window.removeEventListener('resize', this.onResize);
 
         this.scene.dispose();
         this.engine.dispose();
     }
-
 }

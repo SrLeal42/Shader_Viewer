@@ -1,6 +1,6 @@
 import * as B from '@babylonjs/core';
 
-import { EnvironmentConfigs } from '../../configs/EnviromentConfigs';
+import { EnvironmentConfigs } from '../../configs/EnvironmentConfigs';
 
 import type { FrustumLimits } from '../../types/Camera';
 
@@ -10,12 +10,8 @@ export class EnvironmentManager {
 
     public light: B.HemisphericLight;
 
-    private boundaries: B.Mesh[] = [];
+    private boundaries: { mesh: B.Mesh; aggregate: B.PhysicsAggregate }[] = [];
 
-    // Guardamos essas medidas dinâmicas para o UIManager ler
-    public frustumLimits = {
-        minX: -1, maxX: 1, minY: -1, maxY: 1, minZ: -1, maxZ: 1
-    };
 
     constructor(scene: B.Scene) {
         this.scene = scene;
@@ -28,19 +24,22 @@ export class EnvironmentManager {
 
     public resizeBoundaries(limits: FrustumLimits) {
 
-        this.boundaries.forEach(b => {
-            b.physicsBody?.dispose();
-            b.dispose();
+        this.boundaries.forEach(({ mesh, aggregate }) => {
+            aggregate.dispose();
+            mesh.dispose();
         });
+
         this.boundaries = [];
 
         const boxW = limits.maxX - limits.minX;
         const boxH = limits.maxY - limits.minY;
+
         const maxZ = limits.maxZ;
         const minZ = limits.minZ;
 
         const thickness = EnvironmentConfigs.physicsSpring.thickness;
         const halfT = thickness / 2;
+
         const walls = [
             { name: 'floor', w: boxW, h: thickness, d: maxZ - minZ, x: 0, y: -boxH / 2 - halfT, z: (maxZ + minZ) / 2 },
             { name: 'ceil', w: boxW, h: thickness, d: maxZ - minZ, x: 0, y: boxH / 2 + halfT, z: (maxZ + minZ) / 2 },
@@ -57,18 +56,21 @@ export class EnvironmentManager {
             mesh.visibility = 0;
             mesh.isPickable = false;
 
-            new B.PhysicsAggregate(mesh, B.PhysicsShapeType.BOX, { mass: 0, restitution: 0.5 }, this.scene);
+            const aggregate = new B.PhysicsAggregate(mesh, B.PhysicsShapeType.BOX, { mass: 0, restitution: 0.5 }, this.scene);
 
-            this.boundaries.push(mesh);
+            this.boundaries.push({ mesh, aggregate });
         }
     }
 
     public dispose() {
         this.light.dispose();
-        this.boundaries.forEach(b => {
-            b.physicsBody?.dispose();
-            b.dispose();
+
+        this.boundaries.forEach(({ mesh, aggregate }) => {
+            aggregate.dispose();
+            mesh.dispose();
         });
+
+        this.boundaries = [];
     }
 
 }

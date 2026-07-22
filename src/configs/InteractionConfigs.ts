@@ -1,10 +1,9 @@
-// Usar um type garante que não vamos digitar IDs errados em nenhum lugar do projeto
-export type InteractionId = 'finger' | 'blackhole' | 'confetti';
+export type InteractionId = 'finger';
 
 export interface InteractionConfig {
     id: InteractionId;
     label: string;
-    impulseForce?: number; // Específico do dedo
+    impulseForce?: number;
 }
 
 export const InteractionConfigs: Record<InteractionId, InteractionConfig> = {
@@ -13,12 +12,4 @@ export const InteractionConfigs: Record<InteractionId, InteractionConfig> = {
         label: 'Dedo',
         impulseForce: 1.5
     },
-    blackhole: {
-        id: 'blackhole',
-        label: 'Buraco Negro'
-    },
-    confetti: {
-        id: 'confetti',
-        label: 'Canhão de Confetes'
-    }
 };

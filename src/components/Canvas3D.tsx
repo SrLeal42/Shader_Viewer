@@ -10,26 +10,37 @@ export function Canvas3D() {
     const controllerRef = useRef<SceneController | null>(null);
 
     useEffect(() => {
-        // Agora verificamos os 3 refs
         if (!canvasRef.current || !tweakpaneRightRef.current || !tweakpaneLeftRef.current) return;
-        let disposed = false;
 
-        // Passamos os dois containers para o SceneController
-        SceneController.create(canvasRef.current, tweakpaneRightRef.current, tweakpaneLeftRef.current)
-            .then((controller) => {
-                if (disposed) {
-                    controller.dispose();
-                    return;
-                }
-                controllerRef.current = controller;
-            });
+        const abortController = new AbortController();
+
+        SceneController.create(
+            canvasRef.current,
+            tweakpaneRightRef.current,
+            tweakpaneLeftRef.current,
+            abortController.signal
+        ).then((controller) => {
+
+            if (abortController.signal.aborted) {
+                controller.dispose();
+                return;
+            }
+
+            controllerRef.current = controller;
+
+        }).catch((err) => {
+            if (abortController.signal.aborted) return; // Cancelamento esperado
+            console.error('[Canvas3D] Falha ao inicializar:', err);
+        });
 
         return () => {
-            disposed = true;
+            abortController.abort();
+
             if (controllerRef.current) {
                 controllerRef.current.dispose();
                 controllerRef.current = null;
             }
+
         };
 
     }, []);
