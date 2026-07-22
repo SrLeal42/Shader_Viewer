@@ -6,6 +6,9 @@ export class FingerInteraction implements IInteraction {
     public readonly id = 'finger';
     public readonly name = InteractionConfigs.finger.label;
 
+    /** Força do impulso aplicada no clique */
+    private readonly impulseForce = 1.5;
+
     public onPointerEvent(pointerInfo: B.PointerInfo, context: InteractionContext): void {
         if (pointerInfo.type !== B.PointerEventTypes.POINTERDOWN) return;
 
@@ -19,11 +22,8 @@ export class FingerInteraction implements IInteraction {
             .subtract(context.camera.position)
             .normalize();
 
-        // Lendo do novo config!
-        const force = InteractionConfigs.finger.impulseForce || 1.5;
-
         entity.applyImpulse(
-            direction.scale(force),
+            direction.scale(this.impulseForce),
             pickInfo.pickedPoint
         );
     }

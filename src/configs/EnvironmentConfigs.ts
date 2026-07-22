@@ -14,8 +14,9 @@ export const EnvironmentConfigs = {
     },
     physicsSpring: {
         enabled: true,
-        stiffness: 0.003,
-        damping: 0.99,
+        anchorPoint: new B.Vector3(0, 0, -3),
+        stiffness: 0.001,
+        damping: 0.98,
         activationDistance: 2.5,   // Distância livre antes da mola agir
         activationDelayMs: 5000,   // Delay em milissegundos (1 segundo) antes da mola puxar
         failsafeMargin: 1.2,

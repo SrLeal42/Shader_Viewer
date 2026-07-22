@@ -35,7 +35,7 @@ export class PhysicsManager {
 
         const config = EnvironmentConfigs.physicsSpring;
 
-        const direction = B.Vector3.Zero().subtract(mesh.position);
+        const direction = config.anchorPoint.subtract(mesh.position);
         const distance = direction.length();
 
         const body = mesh.physicsBody;
