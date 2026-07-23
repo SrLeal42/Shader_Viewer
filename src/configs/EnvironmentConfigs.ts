@@ -4,6 +4,7 @@ export const EnvironmentConfigs = {
     camera: {
         initialPosition: new B.Vector3(0, 0.5, 5),
         targetPosition: new B.Vector3(0, 0.5, 0),
+        fov: 1.5,
     },
     light: {
         direction: new B.Vector3(0, 1, 0),
@@ -14,10 +15,10 @@ export const EnvironmentConfigs = {
     },
     physicsSpring: {
         enabled: true,
-        anchorPoint: new B.Vector3(0, 0, -3),
+        anchorPoint: new B.Vector3(0, 0, -3.5),
         stiffness: 0.001,
-        damping: 0.98,
-        activationDistance: 2.5,   // Distância livre antes da mola agir
+        damping: 0.993,
+        activationDistance: 2.7,   // Distância livre antes da mola agir
         activationDelayMs: 5000,   // Delay em milissegundos (1 segundo) antes da mola puxar
         failsafeMargin: 1.2,
         thickness: 2.0

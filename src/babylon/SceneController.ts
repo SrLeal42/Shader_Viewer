@@ -10,6 +10,7 @@ import { InteractionManager } from './managers/InteractionManager';
 
 import { ModelConfigs, type ModelConfig, type ModelId } from '../configs/ModelConfigs';
 import { PhysicsConfigs } from '../configs/PhysicsConfigs';
+import type { SkyboxId } from '../configs/SkyboxConfigs';
 
 import type { ModelEntity } from './entities/ModelEntity';
 
@@ -92,6 +93,13 @@ export class SceneController {
             this.interactionManager.setActive(id);
         });
 
+        this.uiManager.setupSkyboxControls(
+            (id) => this.switchSkybox(id),
+            (color) => this.environmentManager.setBackgroundColor(
+                new B.Color3(color.r, color.g, color.b)
+            )
+        );
+
         this.transformUI = this.uiManager.setupTransformControls(
             this.transformState,
             this.handlePhysicsChange,
@@ -101,6 +109,7 @@ export class SceneController {
 
         // Render loop (roda mesmo antes da física estar pronta)
         const startTime = performance.now();
+
         this.engine.runRenderLoop(() => {
             const elapsed = (performance.now() - startTime) / 1000;
             this.shaderManager.updateTime(elapsed);
@@ -110,8 +119,6 @@ export class SceneController {
 
                 this.updateTransformUI();
             }
-
-            // this.updateTransformUI();
 
             this.scene.render();
         });
@@ -345,6 +352,31 @@ export class SceneController {
             this.shaderManager.disablePostProcess(shaderId);
         }
     }
+
+
+    // ─── Skybox ───
+
+    private async switchSkybox(id: SkyboxId | 'color'): Promise<void> {
+
+        if (id === 'color') {
+
+            const clearColor = this.scene.clearColor;
+
+            this.environmentManager.setBackgroundColor(
+                new B.Color3(clearColor.r, clearColor.g, clearColor.b)
+            );
+
+            return;
+        }
+
+        try {
+            await this.environmentManager.setSkybox(id);
+        } catch (err) {
+            console.error(`[SceneController] Falha ao carregar skybox '${id}':`, err);
+        }
+
+    }
+
 
     // ─── Lifecycle ───
 

@@ -6,7 +6,9 @@ import type { FrustumLimits } from '../../types/Camera';
 
 import { ModelConfigs, type ModelId } from '../../configs/ModelConfigs';
 import { InteractionConfigs, type InteractionId } from '../../configs/InteractionConfigs';
-// import { EnvironmentConfigs } from '../../configs/EnviromentConfigs';
+import { SkyboxConfigs, type SkyboxId } from '../../configs/SkyboxConfigs';
+import { EnvironmentConfigs } from '../../configs/EnvironmentConfigs';
+
 
 
 import {
@@ -24,6 +26,7 @@ export class UIManager {
     private dynamicFolder: FolderApi | null = null;
     private shaderFolder: FolderApi | null = null;
     private transformFolder: FolderApi | null = null;
+    private skyboxColorFolder: FolderApi | null = null;
 
     constructor(tweakpaneRightContainer: HTMLElement, tweakpaneLeftContainer: HTMLElement) {
         // O painel Direita
@@ -129,6 +132,56 @@ export class UIManager {
             onChange(ev.value as InteractionId);
         });
     }
+
+
+    public setupSkyboxControls(
+        onSkyboxChange: (id: SkyboxId | 'color') => void,
+        onColorChange: (color: { r: number; g: number; b: number }) => void
+    ): void {
+
+        const folder = this.paneLeft.addFolder({ title: 'Ambiente' });
+
+        // Constrói as options dinamicamente: { 'Cor': 'color', 'Estúdio': 'studio', ... }
+        const options: Record<string, string> = { 'Cor': 'color' };
+        for (const [id, config] of Object.entries(SkyboxConfigs)) {
+            options[config.label] = id;
+        }
+
+        const params = { skybox: 'color' as string };
+
+        folder.addBinding(params, 'skybox', {
+            options,
+            label: 'Fundo'
+        }).on('change', (ev) => {
+
+            const id = ev.value as SkyboxId | 'color';
+
+            onSkyboxChange(id);
+
+            // Mostra/esconde o color picker
+            if (this.skyboxColorFolder) {
+                this.skyboxColorFolder.hidden = id !== 'color';
+            }
+
+        });
+
+        // Sub-folder com color picker (visível apenas quando "Cor" está selecionado)
+        const clearColor = EnvironmentConfigs.background.color;
+        const colorState = {
+            bg: { r: clearColor.r, g: clearColor.g, b: clearColor.b }
+        };
+
+        this.skyboxColorFolder = folder.addFolder({ title: 'Cor de Fundo' });
+
+        this.skyboxColorFolder.addBinding(colorState, 'bg', {
+            label: 'Cor',
+            color: { type: 'float' },
+        }).on('change', (ev) => {
+            onColorChange(ev.value as { r: number; g: number; b: number });
+        });
+
+    }
+
 
 
     public setupShaderControls(
@@ -251,7 +304,9 @@ export class UIManager {
 
 
     public dispose() {
+        this.skyboxColorFolder = null;
         this.paneRight.dispose();
         this.paneLeft.dispose();
     }
+
 }

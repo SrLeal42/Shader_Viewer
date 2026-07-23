@@ -21,6 +21,7 @@ export class CameraManager {
         );
 
         this.camera.position = EnvironmentConfigs.camera.initialPosition;
+        this.camera.fov = EnvironmentConfigs.camera.fov;
         // this.camera.attachControl(canvas, true);
         // this.camera.wheelPrecision = 50;
         // this.camera.minZ = 0.1;
