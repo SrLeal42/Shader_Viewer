@@ -12,11 +12,17 @@ export const SkyboxConfigs = {
         intensity: 1.0,
         rotationY: 0,
     },
-    sunset: {
+    sky: {
         label: 'Céu',
-        path: '/skyboxes/sunset.env',
+        path: '/skyboxes/sky.env',
         intensity: 0.8,
-        rotationY: 0,
+        rotationY: Math.PI,
+    },
+    frutiger: {
+        label: 'Frutiger Aero',
+        path: '/skyboxes/frutiger_aero.env',
+        intensity: 0.8,
+        rotationY: Math.PI,
     },
     // Para adicionar um novo skybox:
     // 1. Converter o .hdr para .env via Babylon Sandbox (https://www.babylonjs.com/tools/ibl/)
