@@ -3,6 +3,8 @@ import * as B from '@babylonjs/core';
 import { EnvironmentConfigs } from '../../configs/EnvironmentConfigs';
 import { SkyboxConfigs, type SkyboxConfig, type SkyboxId } from '../../configs/SkyboxConfigs';
 
+import { createSkyboxFadeMaterial } from '../../shaders/skybox/SkyboxFadeMaterial';
+
 import type { FrustumLimits } from '../../types/Camera';
 
 export class EnvironmentManager {
@@ -16,9 +18,17 @@ export class EnvironmentManager {
     // ─── Skybox ───
 
     private skyboxMesh: B.Mesh;
-    private skyboxMaterial: B.StandardMaterial;
+    private skyboxMaterial: B.ShaderMaterial;
     private currentSkyboxId: SkyboxId | 'color' = 'color';
     private textureCache = new Map<SkyboxId, B.CubeTexture>();
+
+    private currentVisualTexture: B.CubeTexture | null = null;
+    private nextVisualTexture: B.CubeTexture | null = null;
+
+    private mixObserver: B.Observer<B.Scene> | null = null;
+    private visibilityObserver: B.Observer<B.Scene> | null = null;
+    private currentVisibility: number = 0;
+
 
     constructor(scene: B.Scene) {
         this.scene = scene;
@@ -40,21 +50,19 @@ export class EnvironmentManager {
 
 
     private initSkybox(): void {
-
-        // Skybox mesh (criado uma vez, reutilizado para todos os skyboxes)
         this.skyboxMesh = B.MeshBuilder.CreateBox('skybox', { size: 1000 }, this.scene);
 
-        this.skyboxMaterial = new B.StandardMaterial('skyboxMat', this.scene);
-        this.skyboxMaterial.backFaceCulling = false;
-        this.skyboxMaterial.disableLighting = true;
-        this.skyboxMaterial.diffuseColor = B.Color3.Black();
-        this.skyboxMaterial.specularColor = B.Color3.Black();
-
+        // Usamos nosso shader customizado agora
+        this.skyboxMaterial = createSkyboxFadeMaterial('skyboxFadeMat', this.scene);
         this.skyboxMesh.material = this.skyboxMaterial;
         this.skyboxMesh.infiniteDistance = true;
         this.skyboxMesh.isPickable = false;
 
-        this.skyboxMesh.visibility = 0; // Começa invisível (modo "Cor" por padrão)
+        const initVisbility = 0; // Começa invisível (modo "Cor" por padrão)
+
+        this.skyboxMesh.visibility = initVisbility;
+        this.skyboxMaterial.setColor3("u_bgColor", EnvironmentConfigs.background.color);
+        this.currentVisibility = initVisbility;
 
     }
 
@@ -65,81 +73,176 @@ export class EnvironmentManager {
      * Carrega a textura (com cache) e faz fade-in.
      */
     public async setSkybox(id: SkyboxId): Promise<void> {
+
         const config: SkyboxConfig = SkyboxConfigs[id];
+
         if (!config) return;
 
-        // Carrega ou busca do cache
         let envTexture = this.textureCache.get(id);
 
         if (!envTexture) {
             envTexture = B.CubeTexture.CreateFromPrefilteredData(config.path, this.scene);
 
-            // Espera a textura carregar antes de exibir
             await new Promise<void>((resolve, reject) => {
                 envTexture!.onLoadObservable.addOnce(() => resolve());
-                // Timeout de segurança para não travar se o arquivo não existir
                 setTimeout(() => reject(new Error(`Timeout ao carregar skybox: ${config.path}`)), 10000);
             });
 
             this.textureCache.set(id, envTexture);
         }
 
-        // Seta como environment texture para reflexões PBR
+        // Troca de iluminação PBR (instantânea por performance)
         this.scene.environmentTexture = envTexture;
         this.scene.environmentIntensity = config.intensity ?? 1.0;
-
-        // Aplica rotação se configurada
         envTexture.rotationY = config.rotationY ?? 0;
 
-        // Cria textura de skybox visual (clone com SKYBOX_MODE)
-        // Dispose da reflection texture anterior se existir
-        if (this.skyboxMaterial.reflectionTexture) {
-            this.skyboxMaterial.reflectionTexture.dispose();
+        // --- Início da lógica de transição visual em GLSL ---
+        // A textura "nova" da chamada passada agora é a nossa "antiga" (Textura 1)
+        if (this.nextVisualTexture) {
+            this.currentVisualTexture = this.nextVisualTexture;
+            this.skyboxMaterial.setTexture("texture1", this.currentVisualTexture);
+
+            let oldRotation = 0;
+            if (this.currentSkyboxId !== 'color') {
+                oldRotation = SkyboxConfigs[this.currentSkyboxId]?.rotationY ?? 0;
+            }
+
+            this.skyboxMaterial.setFloat("u_rotation1", oldRotation);
         }
 
+        // Carrega a textura que realmente queremos mostrar (Textura 2)
         const skyTexture = B.CubeTexture.CreateFromPrefilteredData(config.path, this.scene);
         skyTexture.coordinatesMode = B.Texture.SKYBOX_MODE;
-        skyTexture.rotationY = config.rotationY ?? 0;
-        this.skyboxMaterial.reflectionTexture = skyTexture;
+        this.nextVisualTexture = skyTexture;
 
-        // Fade-in do skybox
+        this.skyboxMaterial.setTexture("texture2", this.nextVisualTexture);
+        this.skyboxMaterial.setFloat("u_rotation2", config.rotationY ?? 0);
+
+        // Dispara a animação dependendo do estado atual
+        if (this.currentVisualTexture) {
+
+            // Se já estávamos vendo um skybox, inicia o crossfade em GLSL
+            this.skyboxMaterial.setFloat("u_mix", 0.0);
+
+            this.fadeShaderMix(() => {
+                if (this.currentVisualTexture) {
+                    this.skyboxMaterial.setTexture("texture1", this.nextVisualTexture!);
+
+                    this.currentVisualTexture.dispose();
+                    this.currentVisualTexture = null;
+                }
+            });
+
+            // Previne falhas se o mesh estiver invisível por algum motivo
+            if (this.skyboxMesh.visibility < 1) {
+                this.fadeSkyboxVisibility(1);
+            }
+
+        } else {
+            // Se estávamos no modo de "Cor Sólida" (invisível), não há textura antiga
+            this.skyboxMaterial.setFloat("u_mix", 1.0);
+            this.fadeSkyboxVisibility(1);
+        }
+
         this.currentSkyboxId = id;
-        this.fadeVisibility(1);
     }
+
 
     /**
      * Troca para modo "Cor sólida".
      * Faz fade-out do skybox e aplica a cor de fundo.
      */
     public setBackgroundColor(color: B.Color3): void {
-        this.scene.clearColor = new B.Color4(color.r, color.g, color.b, 1);
-        this.currentSkyboxId = 'color';
 
-        // Limpa environment texture (sem reflexões PBR no modo cor)
+        this.scene.clearColor = new B.Color4(color.r, color.g, color.b, 1);
+
+        this.currentSkyboxId = 'color';
         this.scene.environmentTexture = null;
 
-        // Fade-out do skybox
-        this.fadeVisibility(0);
+        // Avisa nosso ShaderGLSL qual é a cor do fundo para o fade ficar perfeito
+        this.skyboxMaterial.setColor3("u_bgColor", color);
+
+        // Dispara a animação customizada
+        this.fadeSkyboxVisibility(0);
     }
 
     /**
      * Anima a visibilidade do skybox mesh.
      */
-    private fadeVisibility(target: number): void {
-        const fps = 60;
-        const totalFrames = 15; // ~250ms a 60fps
+    private fadeSkyboxVisibility(target: number): void {
 
-        B.Animation.CreateAndStartAnimation(
-            'skyboxFade',
-            this.skyboxMesh,
-            'visibility',
-            fps,
-            totalFrames,
-            this.skyboxMesh.visibility,
-            target,
-            B.Animation.ANIMATIONLOOPMODE_CONSTANT
-        );
+        if (this.visibilityObserver) {
+            this.scene.onBeforeRenderObservable.remove(this.visibilityObserver);
+            this.visibilityObserver = null;
+        }
+
+        // Se vamos exibir o skybox, reativamos o mesh na cena
+        if (target > 0) {
+            this.skyboxMesh.visibility = 1;
+        }
+
+        const durationMs = 250;
+
+        const startTime = performance.now();
+        const startValue = this.currentVisibility;
+
+        this.visibilityObserver = this.scene.onBeforeRenderObservable.add(() => {
+            const elapsed = performance.now() - startTime;
+
+            let progress = Math.min(elapsed / durationMs, 1.0);
+
+            const val = startValue + (target - startValue) * progress;
+
+            this.currentVisibility = val;
+            this.skyboxMaterial.setFloat("u_visibility", val);
+
+            if (progress >= 1.0) {
+                this.scene.onBeforeRenderObservable.remove(this.visibilityObserver!);
+                this.visibilityObserver = null;
+
+                // Se fomos para a cor sólida, ocultamos o mesh para poupar a placa de vídeo
+                if (target === 0) {
+                    this.skyboxMesh.visibility = 0;
+                }
+            }
+
+        });
+
     }
+
+
+    private fadeShaderMix(onEnd?: () => void): void {
+
+        // Se já houver um crossfade acontecendo, nós o interrompemos
+        if (this.mixObserver) {
+            this.scene.onBeforeRenderObservable.remove(this.mixObserver);
+            this.mixObserver = null;
+        }
+
+        const durationMs = 250; // Tempo do crossfade (ms)
+        const startTime = performance.now();
+
+        this.mixObserver = this.scene.onBeforeRenderObservable.add(() => {
+            const elapsed = performance.now() - startTime;
+            let progress = elapsed / durationMs;
+
+            if (progress >= 1.0) {
+                progress = 1.0;
+                this.scene.onBeforeRenderObservable.remove(this.mixObserver!);
+                this.mixObserver = null;
+
+                this.skyboxMaterial.setFloat("u_mix", 1.0);
+                if (onEnd) onEnd();
+            } else {
+                // Curva de Easing (In-Out) para o dissolve ficar agradável ao olho humano
+                const eased = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
+                this.skyboxMaterial.setFloat("u_mix", eased);
+            }
+        });
+
+    }
+
+
 
     // ─── Boundaries ───
 
@@ -188,10 +291,9 @@ export class EnvironmentManager {
     public dispose() {
         this.light.dispose();
 
-        // Skybox
-        if (this.skyboxMaterial.reflectionTexture) {
-            this.skyboxMaterial.reflectionTexture.dispose();
-        }
+        if (this.currentVisualTexture) this.currentVisualTexture.dispose();
+        if (this.nextVisualTexture) this.nextVisualTexture.dispose();
+
         this.skyboxMaterial.dispose();
         this.skyboxMesh.dispose();
 
