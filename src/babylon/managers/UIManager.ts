@@ -258,19 +258,25 @@ export class UIManager {
         targetProxy: Record<string, unknown>,
         onChange: (uniform: ShaderUniform, value: unknown) => void
     ) {
+
         if (this.shaderFolder) {
             this.shaderFolder.dispose();
             this.shaderFolder = null;
         }
 
         if (uniforms.length === 0) return;
-
         this.shaderFolder = this.paneRight.addFolder({ title });
+
+        // Array para rastrear os bindings criados e podermos forçar a UI a atualizar depois
+        const bindings: any[] = [];
 
         uniforms.forEach((u: ShaderUniform) => {
             if (targetProxy[u.uniform] === undefined) {
-                targetProxy[u.uniform] = u.defaultValue;
+                targetProxy[u.uniform] =
+                    typeof u.defaultValue === 'object' ? { ...u.defaultValue } : u.defaultValue;
             }
+
+
 
             const bindingOptions: Record<string, unknown> = {
                 label: u.label,
@@ -284,13 +290,33 @@ export class UIManager {
                 bindingOptions.step = 'step' in u ? u.step : undefined;
             }
 
-
-            this.shaderFolder!.addBinding(targetProxy, u.uniform, bindingOptions)
+            const binding = this.shaderFolder!.addBinding(targetProxy, u.uniform, bindingOptions)
                 .on('change', (ev) => {
                     onChange(u, ev.value);
                 });
 
+            bindings.push(binding);
+
         });
+
+        // Adiciona o botão de Reset no final do folder
+        this.shaderFolder.addButton({ title: 'Restaurar Padrões' })
+            .on('click', () => {
+                uniforms.forEach((u: ShaderUniform) => {
+
+                    const resetValue = typeof u.defaultValue === 'object' ? { ...u.defaultValue } : u.defaultValue;
+
+                    // Volta o proxy de dados para o valor original do Config
+                    targetProxy[u.uniform] = resetValue;
+
+                    // Avisa o SceneController para injetar o valor atualizado no motor 3D
+                    onChange(u, resetValue);
+                });
+
+                // Diz pro Tweakpane redesenhar os sliders visualmente nas posições corretas
+                bindings.forEach(b => b.refresh());
+            });
+
     }
 
 
