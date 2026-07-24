@@ -7,6 +7,8 @@ import { createSkyboxFadeMaterial } from '../../shaders/skybox/SkyboxFadeMateria
 
 import type { FrustumLimits } from '../../types/Camera';
 
+import { easeInOutQuad } from '../../utils/math';
+
 export class EnvironmentManager {
 
     private scene: B.Scene;
@@ -28,6 +30,8 @@ export class EnvironmentManager {
     private mixObserver: B.Observer<B.Scene> | null = null;
     private visibilityObserver: B.Observer<B.Scene> | null = null;
     private currentVisibility: number = 0;
+
+    private pendingMixCleanup: (() => void) | null = null;
 
 
     constructor(scene: B.Scene) {
@@ -104,8 +108,16 @@ export class EnvironmentManager {
 
             let oldRotation = 0;
             if (this.currentSkyboxId !== 'color') {
-                oldRotation = SkyboxConfigs[this.currentSkyboxId]?.rotationY ?? 0;
+                const oldConfig = SkyboxConfigs[this.currentSkyboxId];
+                oldRotation = oldConfig?.rotationY ?? 0;
+
+                this.skyboxMaterial.setFloat("u_blur1", oldConfig?.blur ?? 0.0);
+            } else {
+                this.skyboxMaterial.setFloat("u_blur1", 0.0);
             }
+
+            // Blur da textura que está entrando (texture2) = blur do skybox novo
+            this.skyboxMaterial.setFloat("u_blur2", config.blur ?? 0.0);
 
             this.skyboxMaterial.setFloat("u_rotation1", oldRotation);
         }
@@ -116,7 +128,13 @@ export class EnvironmentManager {
         this.nextVisualTexture = skyTexture;
 
         this.skyboxMaterial.setTexture("texture2", this.nextVisualTexture);
+
         this.skyboxMaterial.setFloat("u_rotation2", config.rotationY ?? 0);
+
+        this.skyboxMaterial.setFloat("u_tonemapStrength", config.tonemapStrength ?? 0.0);
+
+        this.skyboxMaterial.setFloat("u_exposure", config.exposure ?? 1.0);
+        this.skyboxMaterial.setFloat("u_saturation", config.saturation ?? 1.0);
 
         // Dispara a animação dependendo do estado atual
         if (this.currentVisualTexture) {
@@ -181,8 +199,7 @@ export class EnvironmentManager {
             this.skyboxMesh.visibility = 1;
         }
 
-        const durationMs = 250;
-
+        const durationMs = EnvironmentConfigs.background.fadeDurationMs;
         const startTime = performance.now();
         const startValue = this.currentVisibility;
 
@@ -191,7 +208,9 @@ export class EnvironmentManager {
 
             let progress = Math.min(elapsed / durationMs, 1.0);
 
-            const val = startValue + (target - startValue) * progress;
+            // Aplica easing para consistência com o crossfade
+            const eased = easeInOutQuad(progress);
+            const val = startValue + (target - startValue) * eased;
 
             this.currentVisibility = val;
             this.skyboxMaterial.setFloat("u_visibility", val);
@@ -200,7 +219,7 @@ export class EnvironmentManager {
                 this.scene.onBeforeRenderObservable.remove(this.visibilityObserver!);
                 this.visibilityObserver = null;
 
-                // Se fomos para a cor sólida, ocultamos o mesh para poupar a placa de vídeo
+                // Se fomos para a cor sólida, ocultamos o mesh para poupar GPU
                 if (target === 0) {
                     this.skyboxMesh.visibility = 0;
                 }
@@ -213,36 +232,47 @@ export class EnvironmentManager {
 
     private fadeShaderMix(onEnd?: () => void): void {
 
-        // Se já houver um crossfade acontecendo, nós o interrompemos
+        // Se já houver um crossfade acontecendo, executamos o cleanup imediatamente
         if (this.mixObserver) {
             this.scene.onBeforeRenderObservable.remove(this.mixObserver);
             this.mixObserver = null;
+            // Executa o cleanup da transição anterior para não vazar textura
+            if (this.pendingMixCleanup) {
+                this.pendingMixCleanup();
+                this.pendingMixCleanup = null;
+            }
         }
 
-        const durationMs = 250; // Tempo do crossfade (ms)
+        // Guarda o callback de cleanup para caso seja interrompido
+        this.pendingMixCleanup = onEnd ?? null;
+        const durationMs = EnvironmentConfigs.background.fadeDurationMs;
         const startTime = performance.now();
 
         this.mixObserver = this.scene.onBeforeRenderObservable.add(() => {
+
             const elapsed = performance.now() - startTime;
             let progress = elapsed / durationMs;
 
             if (progress >= 1.0) {
+
                 progress = 1.0;
+
                 this.scene.onBeforeRenderObservable.remove(this.mixObserver!);
                 this.mixObserver = null;
-
                 this.skyboxMaterial.setFloat("u_mix", 1.0);
-                if (onEnd) onEnd();
+
+                if (this.pendingMixCleanup) {
+                    this.pendingMixCleanup();
+                    this.pendingMixCleanup = null;
+                }
+
             } else {
-                // Curva de Easing (In-Out) para o dissolve ficar agradável ao olho humano
-                const eased = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
-                this.skyboxMaterial.setFloat("u_mix", eased);
+                this.skyboxMaterial.setFloat("u_mix", easeInOutQuad(progress));
             }
+
         });
 
     }
-
-
 
     // ─── Boundaries ───
 
@@ -289,9 +319,24 @@ export class EnvironmentManager {
     // ─── Cleanup ───
 
     public dispose() {
+
+        // Cancela animações em andamento
+        if (this.mixObserver) {
+            this.scene.onBeforeRenderObservable.remove(this.mixObserver);
+            this.mixObserver = null;
+        }
+
+        if (this.visibilityObserver) {
+            this.scene.onBeforeRenderObservable.remove(this.visibilityObserver);
+            this.visibilityObserver = null;
+        }
+
+        this.pendingMixCleanup = null;
+
         this.light.dispose();
 
         if (this.currentVisualTexture) this.currentVisualTexture.dispose();
+
         if (this.nextVisualTexture) this.nextVisualTexture.dispose();
 
         this.skyboxMaterial.dispose();
@@ -309,5 +354,8 @@ export class EnvironmentManager {
             mesh.dispose();
         });
         this.boundaries = [];
+
     }
+
+
 }

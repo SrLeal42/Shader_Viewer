@@ -11,7 +11,8 @@ export const EnvironmentConfigs = {
         intensity: 0.8
     },
     background: {
-        color: new B.Color4(0.1, 0.1, 0.12, 1)
+        color: new B.Color4(0.1, 0.1, 0.12, 1),
+        fadeDurationMs: 250,
     },
     physicsSpring: {
         enabled: true,
