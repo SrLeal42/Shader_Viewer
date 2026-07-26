@@ -6,10 +6,6 @@ export const EnvironmentConfigs = {
         targetPosition: new B.Vector3(0, 0.5, 0),
         fov: 1.5,
     },
-    light: {
-        direction: new B.Vector3(0, 1, 0),
-        intensity: 0.8
-    },
     background: {
         color: new B.Color4(0.1, 0.1, 0.12, 1),
         fadeDurationMs: 250,

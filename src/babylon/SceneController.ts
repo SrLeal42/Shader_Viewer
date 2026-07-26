@@ -7,6 +7,7 @@ import { ModelManager } from './managers/ModelManager';
 import { ShaderManager } from './managers/ShaderManager';
 import { EnvironmentManager } from './managers/EnvironmentManager';
 import { InteractionManager } from './managers/InteractionManager';
+import { LightManager } from './managers/LightManagers';
 
 import { ModelConfigs, type ModelConfig, type ModelId } from '../configs/ModelConfigs';
 import { PhysicsConfigs } from '../configs/PhysicsConfigs';
@@ -30,6 +31,7 @@ export class SceneController {
     private physicsManager: PhysicsManager;
 
     private environmentManager: EnvironmentManager;
+    private lightManager: LightManager;
 
     private modelManager: ModelManager;
     private currentParams: Record<string, unknown> = {};
@@ -70,7 +72,8 @@ export class SceneController {
         this.physicsManager = new PhysicsManager(this.scene);
         this.modelManager = new ModelManager(this.scene);
         this.environmentManager = new EnvironmentManager(this.scene);
-        this.shaderManager = new ShaderManager(this.scene, this.cameraManager.camera, this.environmentManager.light);
+        this.lightManager = new LightManager(this.scene);
+        this.shaderManager = new ShaderManager(this.scene, this.cameraManager.camera, this.lightManager);
         this.interactionManager = new InteractionManager(
             this.scene,
             this.cameraManager.camera,
@@ -99,6 +102,28 @@ export class SceneController {
                 new B.Color3(color.r, color.g, color.b)
             )
         );
+
+        this.uiManager.setupLightControls(
+            this.lightManager.currentMode,
+            (mode) => {
+                this.lightManager.setMode(mode);
+                this.shaderManager.reinjectLightUniforms();
+            },
+            (dir, color, intensity) => {
+                this.lightManager.updateHemiLight(dir, color, intensity);
+                this.shaderManager.reinjectLightUniforms();
+            },
+            (pos, color, intensity, anim, speed, freq, showHelper) => {
+                this.lightManager.updatePointLight(pos, color, intensity);
+                this.lightManager.animationType = anim;
+                this.lightManager.orbitSpeed = speed;
+                this.lightManager.pulseFrequency = freq;
+                this.lightManager.toggleHelper(showHelper);
+
+                this.shaderManager.reinjectLightUniforms();
+            }
+        );
+
 
         this.transformUI = this.uiManager.setupTransformControls(
             this.transformState,
@@ -414,6 +439,7 @@ export class SceneController {
         this.environmentManager.dispose();
         this.interactionManager.dispose();
         this.physicsManager.dispose();
+        this.lightManager.dispose();
 
         window.removeEventListener('resize', this.onResize);
 

@@ -1,15 +1,20 @@
 import * as B from '@babylonjs/core';
+
 import {
     MaterialShaders, PostProcessShaders,
     type MaterialShaderId, type PostProcessShaderId
 } from '../../shaders/Registry';
+
 import type { ShaderUniform } from '../../shaders/Types';
+
+import type { LightManager } from './LightManagers';
+
 
 export class ShaderManager {
     private scene: B.Scene;
     private camera: B.Camera;
 
-    private light: B.HemisphericLight;
+    private lightManager: LightManager;
 
     // Material: mutuamente exclusivo
     private _activeMaterialId: MaterialShaderId | null = null;
@@ -19,11 +24,12 @@ export class ShaderManager {
     private activePostProcesses = new Map<PostProcessShaderId, B.PostProcess>();
     private ppUniformValues = new Map<PostProcessShaderId, Record<string, unknown>>();
 
-    constructor(scene: B.Scene, camera: B.Camera, light: B.HemisphericLight) {
+
+    constructor(scene: B.Scene, camera: B.Camera, lightManager: LightManager) {
         this.scene = scene;
         this.camera = camera;
 
-        this.light = light;
+        this.lightManager = lightManager;
     }
 
     // ─── Getters ───
@@ -60,14 +66,23 @@ export class ShaderManager {
 
         this._activeMaterialId = shaderId;
 
-        // Seta a direção da luz uma vez (estática, não precisa de update por frame)
-        material.setVector3('u_lightDir', this.light.direction);
+        this.lightManager.injectLightUniforms(material);
     }
 
     /** Remove o shader ativo (a restauração do material original é responsabilidade do ModelManager) */
     public clearActiveMaterial(): void {
         this._activeMaterialId = null;
     }
+
+    /** Chamado pelo SceneController quando o usuário move os sliders de luz na UI */
+    public reinjectLightUniforms(): void {
+        if (!this._activeMaterialId) return;
+        const mat = this.materialCache.get(this._activeMaterialId);
+        if (mat) {
+            this.lightManager.injectLightUniforms(mat);
+        }
+    }
+
 
     // ─── Post-Process Shaders ───
 
@@ -136,14 +151,15 @@ export class ShaderManager {
 
     /** Atualiza u_time apenas nos shaders ativos (chamado no render loop) */
     public updateTime(time: number): void {
-        // Apenas o material ativo
         if (this._activeMaterialId) {
             const mat = this.materialCache.get(this._activeMaterialId);
-            mat?.setFloat('u_time', time);
-        }
+            if (mat) {
+                mat.setFloat('u_time', time);
 
-        // Todos os post-process ativos
-        // (u_time nos PostProcess é setado via onApply, que roda automaticamente)
+                // INJETAMOS AS LUZES AQUI TODO FRAME PARA AS ANIMAÇÕES FUNCIONAREM!
+                this.lightManager.injectLightUniforms(mat);
+            }
+        }
     }
 
     // ─── Helpers internos ───

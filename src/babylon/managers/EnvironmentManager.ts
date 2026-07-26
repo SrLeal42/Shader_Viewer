@@ -13,8 +13,6 @@ export class EnvironmentManager {
 
     private scene: B.Scene;
 
-    public light: B.HemisphericLight;
-
     private boundaries: { mesh: B.Mesh; aggregate: B.PhysicsAggregate }[] = [];
 
     // ─── Skybox ───
@@ -38,9 +36,6 @@ export class EnvironmentManager {
         this.scene = scene;
 
         this.scene.clearColor = EnvironmentConfigs.background.color;
-
-        this.light = new B.HemisphericLight('Hemispheric_Light', EnvironmentConfigs.light.direction, this.scene);
-        this.light.intensity = EnvironmentConfigs.light.intensity;
 
         this.initSkybox();
 
@@ -332,8 +327,6 @@ export class EnvironmentManager {
         }
 
         this.pendingMixCleanup = null;
-
-        this.light.dispose();
 
         if (this.currentVisualTexture) this.currentVisualTexture.dispose();
 
