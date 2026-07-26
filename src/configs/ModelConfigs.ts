@@ -118,6 +118,37 @@ export const ModelConfigs = {
             }
         ]
     },
+    axis: {
+        label: 'Eixos',
+        title: 'Propriedades do Eixos',
+        colliderType: B.PhysicsShapeType.CONVEX_HULL,
+        loader: async (scene: B.Scene) => {
+            const result = await B.SceneLoader.ImportMeshAsync(
+                '',
+                '/models/',
+                'axis.glb',
+                scene
+            );
+
+            const root = result.meshes[0];
+
+            return root;
+        },
+        parameters: [
+            {
+                property: 'scale',
+                label: 'Escala Global',
+                type: 'float' as const,
+                defaultValue: 1,
+                min: 0.1, max: 3, step: 0.1,
+                onApply: (mesh: B.AbstractMesh, value: number) => {
+                    const baseScale = 1;
+
+                    mesh.scaling.setAll(baseScale * value);
+                }
+            }
+        ]
+    },
 
 } as const satisfies Record<string, ModelConfig>;
 
