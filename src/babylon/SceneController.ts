@@ -6,6 +6,7 @@ import { PhysicsManager } from './managers/PhysicsManager';
 import { ModelManager } from './managers/ModelManager';
 import { ShaderManager } from './managers/ShaderManager';
 import { EnvironmentManager } from './managers/EnvironmentManager';
+import { SkyboxEffectManager } from './managers/SkyboxEffectManager';
 import { InteractionManager } from './managers/InteractionManager';
 import { LightManager } from './managers/LightManagers';
 
@@ -31,6 +32,7 @@ export class SceneController {
     private physicsManager: PhysicsManager;
 
     private environmentManager: EnvironmentManager;
+    private skyboxEffectManager: SkyboxEffectManager;
     private lightManager: LightManager;
 
     private modelManager: ModelManager;
@@ -72,6 +74,7 @@ export class SceneController {
         this.physicsManager = new PhysicsManager(this.scene);
         this.modelManager = new ModelManager(this.scene);
         this.environmentManager = new EnvironmentManager(this.scene);
+        this.skyboxEffectManager = new SkyboxEffectManager(this.environmentManager.activeSkyboxMaterial);
         this.lightManager = new LightManager(this.scene);
         this.shaderManager = new ShaderManager(this.scene, this.cameraManager.camera, this.lightManager);
         this.interactionManager = new InteractionManager(
@@ -101,6 +104,11 @@ export class SceneController {
             (color) => this.environmentManager.setBackgroundColor(
                 new B.Color3(color.r, color.g, color.b)
             )
+        );
+
+        this.uiManager.setupSkyboxEffectsControls(
+            (id, enabled) => this.skyboxEffectManager.setEffect(id, enabled),
+            (callback) => { this.skyboxEffectManager.onEffectForcedOff = callback; }
         );
 
         this.uiManager.setupLightControls(
@@ -137,7 +145,9 @@ export class SceneController {
 
         this.engine.runRenderLoop(() => {
             const elapsed = (performance.now() - startTime) / 1000;
+
             this.shaderManager.updateTime(elapsed);
+            this.skyboxEffectManager.updateTime(elapsed);
 
             if (this.transformState.physics && this.modelManager.currentEntity) {
                 this.physicsManager.applySpring(this.modelManager.currentEntity.mesh);

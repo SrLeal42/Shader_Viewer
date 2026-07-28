@@ -47,6 +47,10 @@ export class EnvironmentManager {
         return this.currentSkyboxId;
     }
 
+    public get activeSkyboxMaterial(): B.ShaderMaterial {
+        return this.skyboxMaterial;
+    }
+
 
     private initSkybox(): void {
         this.skyboxMesh = B.MeshBuilder.CreateBox('skybox', { size: 1000 }, this.scene);

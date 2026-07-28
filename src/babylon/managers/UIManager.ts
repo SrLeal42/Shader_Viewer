@@ -7,6 +7,7 @@ import type { FrustumLimits } from '../../types/Camera';
 import { ModelConfigs, type ModelId } from '../../configs/ModelConfigs';
 import { InteractionConfigs, type InteractionId } from '../../configs/InteractionConfigs';
 import { SkyboxConfigs, type SkyboxId } from '../../configs/SkyboxConfigs';
+import { SkyboxEffectsConfigs, type SkyboxEffectId } from '../../configs/SkyboxEffectsConfigs';
 import { EnvironmentConfigs } from '../../configs/EnvironmentConfigs';
 import { LightConfigs, type LightModeId, type PointAnimationType } from '../../configs/LightConfigs';
 
@@ -178,6 +179,36 @@ export class UIManager {
             color: { type: 'float' },
         }).on('change', (ev) => {
             onColorChange(ev.value as { r: number; g: number; b: number });
+        });
+
+    }
+
+
+    public setupSkyboxEffectsControls(
+        onEffectToggle: (id: SkyboxEffectId, enabled: boolean) => void,
+        registerForceOffCallback: (callback: (id: SkyboxEffectId) => void) => void
+    ) {
+        // Criamos uma pasta no painel esquerdo para os efeitos
+        const folder = this.paneLeft.addFolder({ title: 'Efeitos Ambiente' });
+
+        const params: Record<string, boolean> = {};
+        const bindings: Record<string, any> = {};
+
+        // Varre o arquivo de Configs que criamos e cria um switch para cada efeito
+        for (const [id, config] of Object.entries(SkyboxEffectsConfigs)) {
+            params[id] = false;
+            bindings[id] = folder.addBinding(params, id, { label: config.title })
+                .on('change', (ev) => {
+                    onEffectToggle(id as SkyboxEffectId, ev.value as boolean);
+                });
+        }
+
+        // Escuta o "aviso" do Manager caso ele desligue um efeito antigo (Limitação da fila FIFO)
+        registerForceOffCallback((effectId) => {
+            params[effectId] = false;
+            if (bindings[effectId]) {
+                bindings[effectId].refresh(); // Faz o Tweakpane desmarcar a caixinha visualmente
+            }
         });
 
     }
