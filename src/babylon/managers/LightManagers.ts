@@ -21,6 +21,10 @@ export class LightManager {
     public orbitSpeed = LightConfigs.point.orbitSpeed;
     public pulseFrequency = LightConfigs.point.pulseFrequency;
 
+    private orbitPhase = 0;
+    private pulsePhase = 0;
+    private lastTime = performance.now() / 1000;
+
     // Posição base do PointLight para a órbita matemática não bagunçar tudo
     private pointBasePosition = new B.Vector3(LightConfigs.point.position.x, LightConfigs.point.position.y, LightConfigs.point.position.z);
 
@@ -36,7 +40,7 @@ export class LightManager {
     constructor(scene: B.Scene) {
         this.scene = scene;
 
-        // 1. Cria as luzes permanentemente na cena (Performance)
+        // Cria as luzes permanentemente na cena (Performance)
         const hConfig = LightConfigs.hemi;
         this.hemiLight = new B.HemisphericLight('HemiLight', new B.Vector3(hConfig.direction.x, hConfig.direction.y, hConfig.direction.z), this.scene);
         this.hemiLight.diffuse = new B.Color3(hConfig.color.r, hConfig.color.g, hConfig.color.b);
@@ -82,10 +86,6 @@ export class LightManager {
         this.pointLight.diffuse.set(color.r, color.g, color.b);
         this.pointTrueIntensity = intensity;
 
-        if (this.helperSphereMat) {
-            this.helperSphereMat.emissiveColor.set(color.r, color.g, color.b);
-        }
-
         if (this.animationType !== 'pulse') {
             this.setMode(this.currentMode);
         }
@@ -108,37 +108,43 @@ export class LightManager {
 
 
     // ─── Animações ───
-
     private startAnimationLoop() {
 
         this.animObserver = this.scene.onBeforeRenderObservable.add(() => {
-            // Se a luz de ponto estiver desativada, poupa processamento e não faz conta
             if (this.currentMode === 'hemi') return;
 
+            // ─── CÁLCULO DO DELTA TIME ───
             const time = performance.now() / 1000;
+            const deltaTime = time - this.lastTime;
+            this.lastTime = time;
 
             if (this.animationType === 'orbit') {
-                // Orbita no eixo XZ mantendo a altura Y configurada na UI
+                this.orbitPhase += deltaTime * this.orbitSpeed;
+
                 const radius = Math.sqrt(this.pointBasePosition.x ** 2 + this.pointBasePosition.z ** 2) || 5;
-                this.pointLight.position.x = Math.cos(time * this.orbitSpeed) * radius;
-                this.pointLight.position.z = Math.sin(time * this.orbitSpeed) * radius;
+                this.pointLight.position.x = Math.cos(this.orbitPhase) * radius;
+                this.pointLight.position.z = Math.sin(this.orbitPhase) * radius;
                 this.pointLight.position.y = this.pointBasePosition.y;
             }
 
             if (this.animationType === 'pulse') {
-                // Oscila a luz entre 20% e 100% da sua intensidade "verdadeira"
-                const sine = (Math.sin(time * this.pulseFrequency) + 1) / 2; // de 0 a 1
+                this.pulsePhase += deltaTime * this.pulseFrequency;
+
+                const sine = (Math.sin(this.pulsePhase) + 1) / 2; // normaliza de 0 a 1
                 const factor = 0.2 + (sine * 0.8);
                 this.pointLight.intensity = this.pointTrueIntensity * factor;
+
             } else if (this.currentMode === 'point' || this.currentMode === 'both') {
-                // Se a animação for desligada abruptamente, garante que a luz volta à força total
                 this.pointLight.intensity = this.pointTrueIntensity;
+            }
+
+            if (this.helperSphereMat) {
+                this.pointLight.diffuse.scaleToRef(this.pointLight.intensity, this.helperSphereMat.emissiveColor);
             }
 
         });
 
     }
-
 
     // ─── HELPER ───
 
@@ -175,7 +181,7 @@ export class LightManager {
                     // A Esfera Central continua com o material dinâmico que muda de cor
                     this.helperSphereMat = new B.StandardMaterial('sphereHelperMat', this.scene);
                     this.helperSphereMat.disableLighting = true;
-                    this.helperSphereMat.emissiveColor = this.pointLight.diffuse;
+                    this.helperSphereMat.emissiveColor = new B.Color3();
                     mesh.material = this.helperSphereMat;
 
                 } else if (mesh.name !== '__root__') {

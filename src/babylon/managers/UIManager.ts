@@ -267,8 +267,8 @@ export class UIManager {
 
         // ─── Sub-pasta Dinâmica de Animação ───
         const animFolder = pointFolder.addFolder({ title: 'Efeito de Animação' });
-        const speedBinding = animFolder.addBinding(pointParams, 'orbitSpeed', { label: 'Vel. Órbita', min: 0.1, max: 10 }).on('change', triggerPoint);
-        const freqBinding = animFolder.addBinding(pointParams, 'pulseFrequency', { label: 'Freq. Pulso', min: 0.1, max: 20 }).on('change', triggerPoint);
+        const speedBinding = animFolder.addBinding(pointParams, 'orbitSpeed', { label: 'Vel. Órbita', min: 0.1, max: 10, step: 0.1 }).on('change', triggerPoint);
+        const freqBinding = animFolder.addBinding(pointParams, 'pulseFrequency', { label: 'Freq. Pulso', min: 0.1, max: 15, step: 0.1 }).on('change', triggerPoint);
 
         const updateAnimVisibility = (type: string) => {
             speedBinding.hidden = type !== 'orbit';
