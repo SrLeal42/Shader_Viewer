@@ -54,19 +54,25 @@ export class EnvironmentManager {
 
     private initSkybox(): void {
         this.skyboxMesh = B.MeshBuilder.CreateBox('skybox', { size: 1000 }, this.scene);
-
-        // Usamos nosso shader customizado agora
         this.skyboxMaterial = createSkyboxFadeMaterial('skyboxFadeMat', this.scene);
         this.skyboxMesh.material = this.skyboxMaterial;
         this.skyboxMesh.infiniteDistance = true;
         this.skyboxMesh.isPickable = false;
 
-        const initVisbility = 0; // Começa invisível (modo "Cor" por padrão)
+        // Cria uma CubeTexture 1×1 preta com dados REAIS para satisfazer os samplers.
+        // Diferente de null, isso faz upload de pixels para a GPU → textura "completa".
+        const black = new Uint8Array([0, 0, 0, 255]);
+        const fallback = new B.RawCubeTexture(
+            this.scene,
+            [black, black, black, black, black, black],
+            1
+        );
 
-        this.skyboxMesh.visibility = initVisbility;
+        this.skyboxMaterial.setTexture("texture1", fallback);
+        this.skyboxMaterial.setTexture("texture2", fallback);
+        this.skyboxMesh.visibility = 1;
         this.skyboxMaterial.setColor3("u_bgColor", EnvironmentConfigs.background.color);
-        this.currentVisibility = initVisbility;
-
+        this.currentVisibility = 0;
     }
 
 
@@ -137,7 +143,7 @@ export class EnvironmentManager {
 
         // Dispara a animação dependendo do estado atual
         if (this.currentVisualTexture) {
-
+            // this.skyboxMesh.setEnabled(true);
             // Se já estávamos vendo um skybox, inicia o crossfade em GLSL
             this.skyboxMaterial.setFloat("u_mix", 0.0);
 
@@ -151,13 +157,14 @@ export class EnvironmentManager {
             });
 
             // Previne falhas se o mesh estiver invisível por algum motivo
-            if (this.skyboxMesh.visibility < 1) {
+            if (this.currentVisibility < 1) {
                 this.fadeSkyboxVisibility(1);
             }
 
         } else {
-            // Se estávamos no modo de "Cor Sólida" (invisível), não há textura antiga
+            this.skyboxMaterial.setTexture("texture1", skyTexture);
             this.skyboxMaterial.setFloat("u_mix", 1.0);
+            // this.skyboxMesh.setEnabled(true);  // Agora é seguro renderizar
             this.fadeSkyboxVisibility(1);
         }
 
@@ -170,16 +177,21 @@ export class EnvironmentManager {
      * Faz fade-out do skybox e aplica a cor de fundo.
      */
     public setBackgroundColor(color: B.Color3): void {
-
         this.scene.clearColor = new B.Color4(color.r, color.g, color.b, 1);
-
         this.currentSkyboxId = 'color';
         this.scene.environmentTexture = null;
+
+        // Aplica os parâmetros base para quando estivermos no modo Cor
+        const config = SkyboxConfigs.color;
+        if (config) {
+            this.skyboxMaterial.setFloat("u_tonemapStrength", config.tonemapStrength ?? 0.0);
+            this.skyboxMaterial.setFloat("u_exposure", config.exposure ?? 1.0);
+            this.skyboxMaterial.setFloat("u_saturation", config.saturation ?? 1.0);
+        }
 
         // Avisa nosso ShaderGLSL qual é a cor do fundo para o fade ficar perfeito
         this.skyboxMaterial.setColor3("u_bgColor", color);
 
-        // Dispara a animação customizada
         this.fadeSkyboxVisibility(0);
     }
 
@@ -191,11 +203,6 @@ export class EnvironmentManager {
         if (this.visibilityObserver) {
             this.scene.onBeforeRenderObservable.remove(this.visibilityObserver);
             this.visibilityObserver = null;
-        }
-
-        // Se vamos exibir o skybox, reativamos o mesh na cena
-        if (target > 0) {
-            this.skyboxMesh.visibility = 1;
         }
 
         const durationMs = EnvironmentConfigs.background.fadeDurationMs;
@@ -217,11 +224,6 @@ export class EnvironmentManager {
             if (progress >= 1.0) {
                 this.scene.onBeforeRenderObservable.remove(this.visibilityObserver!);
                 this.visibilityObserver = null;
-
-                // Se fomos para a cor sólida, ocultamos o mesh para poupar GPU
-                if (target === 0) {
-                    this.skyboxMesh.visibility = 0;
-                }
             }
 
         });

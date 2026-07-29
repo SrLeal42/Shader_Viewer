@@ -1,6 +1,6 @@
 export interface SkyboxConfig {
     label: string;
-    path: string;
+    path?: string;
     intensity?: number;
     rotationY?: number;
     tonemapStrength?: number;// 0.0 (sem tonemapping) a 1.0 (Reinhard completo). Default: 0.3
@@ -10,6 +10,14 @@ export interface SkyboxConfig {
 }
 
 export const SkyboxConfigs = {
+    color: {
+        label: 'Cor Sólida',
+        path: '',
+        tonemapStrength: 0.0, // Mantemos em 0 para não lavar a cor sólida por padrão
+        blur: 0.0,
+        exposure: 1.0,
+        saturation: 1.0,
+    },
     studio: {
         label: 'Estúdio',
         path: '/skyboxes/studio.env',

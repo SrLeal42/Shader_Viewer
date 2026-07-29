@@ -143,7 +143,7 @@ export class UIManager {
         const folder = this.paneLeft.addFolder({ title: 'Ambiente' });
 
         // Constrói as options dinamicamente: { 'Cor': 'color', 'Estúdio': 'studio', ... }
-        const options: Record<string, string> = { 'Cor': 'color' };
+        const options: Record<string, string> = {};
         for (const [id, config] of Object.entries(SkyboxConfigs)) {
             options[config.label] = id;
         }

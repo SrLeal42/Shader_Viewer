@@ -140,25 +140,6 @@ export class SceneController {
             limits
         );
 
-        // Render loop (roda mesmo antes da física estar pronta)
-        const startTime = performance.now();
-
-        this.engine.runRenderLoop(() => {
-            const elapsed = (performance.now() - startTime) / 1000;
-
-            this.shaderManager.updateTime(elapsed);
-            this.skyboxEffectManager.updateTime(elapsed);
-
-            if (this.transformState.physics && this.modelManager.currentEntity) {
-                this.physicsManager.applySpring(this.modelManager.currentEntity.mesh);
-
-                this.updateTransformUI();
-            }
-
-            this.scene.render();
-        });
-
-        window.addEventListener('resize', this.onResize);
     }
 
     // ─── Factory assíncrona ───
@@ -191,8 +172,35 @@ export class SceneController {
             throw new DOMException('Inicialização abortada', 'AbortError');
         }
 
+        controller.startRenderLoop();
+
         return controller;
     }
+
+
+
+    private startRenderLoop(): void {
+        const startTime = performance.now();
+
+        this.engine.runRenderLoop(() => {
+            const elapsed = (performance.now() - startTime) / 1000;
+
+            this.shaderManager.updateTime(elapsed);
+            this.skyboxEffectManager.updateTime(elapsed);
+
+            if (this.transformState.physics && this.modelManager.currentEntity) {
+                this.physicsManager.applySpring(this.modelManager.currentEntity.mesh);
+                this.updateTransformUI();
+            }
+
+            this.scene.render();
+        });
+
+        window.addEventListener('resize', this.onResize);
+    }
+
+
+
 
     private handlePhysicsChange = (enabled: boolean) => {
         const entity = this.modelManager.currentEntity;

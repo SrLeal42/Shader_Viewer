@@ -43,10 +43,21 @@ export function createSkyboxFadeMaterial(name: string, scene: B.Scene): B.Shader
     material.setFloat("u_exposure", 1.0);
     material.setFloat("u_saturation", 1.0);
     material.setFloat("u_time", 0.0);
+
+    // Efeitos visuais (flags on/off)
     material.setFloat("u_enableWarp", 0.0);
     material.setFloat("u_enableMeteors", 0.0);
     material.setFloat("u_enableAurora", 0.0);
 
+    // Efeitos visuais (parâmetros iniciais seguros)
+    material.setFloat("u_warpSpeed", 0.15);
+    material.setFloat("u_warpIntensity", 0.2);
+    material.setFloat("u_meteorSpeedBase", 0.3);
+    material.setFloat("u_meteorDensity", 10.0);
+    material.setFloat("u_meteorAngle", 0.5);
+    material.setFloat("u_auroraSpeed", 0.1);
+    material.setFloat("u_auroraIntensity", 1.5);
+    material.setColor3("u_auroraColor", new B.Color3(0.1, 1.0, 0.5));
 
     return material;
 }

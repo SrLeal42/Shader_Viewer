@@ -113,7 +113,6 @@ vec3 applyAurora(vec3 dir, float time) {
 }
 
 
-
 void main() {
     vec3 dir = normalize(vPosition);
  
@@ -122,30 +121,40 @@ void main() {
         dir = applyWarp(dir, u_time);
     }
  
-    vec3 dir1 = rotateY(dir, u_rotation1);
-    vec3 dir2 = rotateY(dir, u_rotation2);
-    vec4 color1 = textureLod(texture1, dir1, u_blur1 * MAX_LOD);
-    vec4 color2 = textureLod(texture2, dir2, u_blur2 * MAX_LOD);
-    vec3 skyColor = mix(color1.rgb, color2.rgb, u_mix);
- 
-    // EFEITOS 2 e 3 (Adicionam luzes por cima do céu lido)
+    // Só amostra as texturas quando a visibilidade > 0.
+    // No modo "Cor Sólida" (u_visibility = 0), pula o sampling e usa u_bgColor direto.
+    vec3 finalBackground;
+    
+    if (u_visibility > 0.0) {
+        vec3 dir1 = rotateY(dir, u_rotation1);
+        vec3 dir2 = rotateY(dir, u_rotation2);
+        vec4 color1 = textureLod(texture1, dir1, u_blur1 * MAX_LOD);
+        vec4 color2 = textureLod(texture2, dir2, u_blur2 * MAX_LOD);
+        vec3 skyColor = mix(color1.rgb, color2.rgb, u_mix);
+        finalBackground = mix(u_bgColor, skyColor, u_visibility);
+    } else {
+        finalBackground = u_bgColor;
+    }
+
+    // Adicionamos os efeitos visuais de luz por cima do fundo
     if (u_enableMeteors > 0.5) {
-        skyColor += applyMeteors(dir, u_time);
+        finalBackground += applyMeteors(dir, u_time);
     }
     
     if (u_enableAurora > 0.5) {
-        skyColor += applyAurora(dir, u_time);
+        finalBackground += applyAurora(dir, u_time);
     }
  
     // Exposição
-    skyColor *= u_exposure;
+    finalBackground *= u_exposure;
     
-    // Tonemapping Reinhard (previne branco estourado)
-    vec3 tonemapped = skyColor / (1.0 + skyColor);
-    skyColor = mix(skyColor, tonemapped, u_tonemapStrength);
+    // Tonemapping
+    vec3 tonemapped = finalBackground / (1.0 + finalBackground);
+    finalBackground = mix(finalBackground, tonemapped, u_tonemapStrength);
+    
     // Dessaturação
-    float luma = dot(skyColor, vec3(0.2126, 0.7152, 0.0722));
-    skyColor = mix(vec3(luma), skyColor, u_saturation);
-    // Fade com cor de fundo
-    gl_FragColor = vec4(mix(u_bgColor, skyColor, u_visibility), 1.0);
+    float luma = dot(finalBackground, vec3(0.2126, 0.7152, 0.0722));
+    finalBackground = mix(vec3(luma), finalBackground, u_saturation);
+    
+    gl_FragColor = vec4(finalBackground, 1.0);
 }
