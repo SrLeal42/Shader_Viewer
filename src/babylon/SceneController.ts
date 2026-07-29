@@ -447,6 +447,7 @@ export class SceneController {
         this.modelManager.dispose();
         this.shaderManager.dispose();
         this.environmentManager.dispose();
+        this.skyboxEffectManager.dispose();
         this.interactionManager.dispose();
         this.physicsManager.dispose();
         this.lightManager.dispose();
@@ -456,4 +457,5 @@ export class SceneController {
         this.scene.dispose();
         this.engine.dispose();
     }
+
 }

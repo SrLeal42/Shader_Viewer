@@ -71,4 +71,11 @@ export class SkyboxEffectManager {
         }
     }
 
+    public dispose() {
+        // Limpamos a fila e desconectamos os callbacks de UI
+        this.activeQueue = [];
+        this.onEffectForcedOff = undefined;
+
+    }
+
 }
