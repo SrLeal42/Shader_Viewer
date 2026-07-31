@@ -5,6 +5,7 @@ import type * as B from '@babylonjs/core';
 interface BaseUniform {
     uniform: string;   // Nome do uniform no GLSL (ex: 'u_levels')
     label: string;     // Nome exibido no Tweakpane
+    description?: string;
 }
 
 interface FloatUniform extends BaseUniform {
@@ -32,6 +33,7 @@ export type ShaderUniform = FloatUniform | ColorUniform | BooleanUniform;
 interface BaseShaderConfig {
     label: string;      // Label para o seletor (ex: 'Toon Shading')
     title: string;      // Título do folder no Tweakpane (ex: 'Parâmetros do Toon')
+    description?: string;
     uniforms: ShaderUniform[];
 }
 

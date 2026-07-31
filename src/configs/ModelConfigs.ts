@@ -7,6 +7,7 @@ export interface ModelConfig extends UIConfig {
     label: string; // Label para o seletor de modelo (ex: 'Esfera')
     loader: (scene: B.Scene) => Promise<B.AbstractMesh>;
     colliderType: number; // PhysicsShapeType (número para compatibilidade com as const)
+    description?: string;
     initialRotation?: B.Vector3; // Em radianos/Euler
 }
 
@@ -15,6 +16,7 @@ export const ModelConfigs = {
         label: 'Esfera',
         title: 'Propriedades da Esfera',
         colliderType: B.PhysicsShapeType.SPHERE,
+        description: 'Esfera',
         loader: async (scene: B.Scene) =>
             B.MeshBuilder.CreateSphere('sphere', { diameter: 2, segments: 32 }, scene),
         parameters: [
@@ -34,6 +36,7 @@ export const ModelConfigs = {
         label: 'Caixa',
         title: 'Propriedades da Caixa',
         colliderType: B.PhysicsShapeType.BOX,
+        description: 'Caixa',
         loader: async (scene: B.Scene) =>
             B.MeshBuilder.CreateBox('box', { size: 1 }, scene),
         parameters: [
@@ -60,6 +63,7 @@ export const ModelConfigs = {
         title: 'Propriedades da Suzanne',
         colliderType: B.PhysicsShapeType.CONVEX_HULL,
         initialRotation: new B.Vector3(0, Math.PI, 0),
+        description: 'Suzanner',
         loader: async (scene: B.Scene) => {
             const result = await B.SceneLoader.ImportMeshAsync(
                 '',           // nome do mesh (vazio = todos)
@@ -88,9 +92,10 @@ export const ModelConfigs = {
         ]
     },
     candelabra: {
-        label: 'Candelabra',
+        label: 'Candelabro',
         title: 'Propriedades do Candelabro',
         colliderType: B.PhysicsShapeType.CONVEX_HULL,
+        description: 'Candelabro',
         loader: async (scene: B.Scene) => {
             const result = await B.SceneLoader.ImportMeshAsync(
                 '',
@@ -122,6 +127,7 @@ export const ModelConfigs = {
         label: 'Eixos',
         title: 'Propriedades do Eixos',
         colliderType: B.PhysicsShapeType.CONVEX_HULL,
+        description: 'Eixos',
         loader: async (scene: B.Scene) => {
             const result = await B.SceneLoader.ImportMeshAsync(
                 '',

@@ -24,12 +24,21 @@ export class ModelSection {
             options[config.label] = id;
         }
 
-        folder.addBinding(params, 'model', {
+        const modelBinding = folder.addBinding(params, 'model', {
             options,
             label: 'Modelo 3D'
         }).on('change', (ev) => {
             onModelSelect(ev.value as ModelId);
+
+            const cfg = ModelConfigs[ev.value as ModelId];
+            if (cfg && cfg.description) {
+                modelBinding.element.title = cfg.description;
+            }
+
         });
+        // Define a dica inicial com o primeiro modelo
+        const initialCfg = ModelConfigs[params.model];
+        modelBinding.element.title = initialCfg?.description || "Selecione o modelo 3D para visualizar.";
 
         folder.addBlade({ view: 'separator' });
     }
@@ -54,7 +63,7 @@ export class ModelSection {
                 targetProxy[param.property] = param.defaultValue;
             }
 
-            this.dynamicFolder!.addBinding(targetProxy, param.property, {
+            const paramBinding = this.dynamicFolder!.addBinding(targetProxy, param.property, {
                 label: param.label,
                 min: 'min' in param ? param.min : undefined,
                 max: 'max' in param ? param.max : undefined,
@@ -62,6 +71,10 @@ export class ModelSection {
             }).on('change', (ev) => {
                 onChange(param, ev.value);
             });
+
+            if ('description' in param && param.description) {
+                paramBinding.element.title = param.description as string;
+            }
 
         });
 

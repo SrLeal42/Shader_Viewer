@@ -26,12 +26,13 @@ export class TransformSection {
         const folder = this.transformFolder;
 
         // Cria os controles visuais
-        folder.addBinding(state, 'physics', { label: 'Física Ativada' })
+        const physicsBinding = folder.addBinding(state, 'physics', { label: 'Física Ativada' })
             .on('change', (ev) => {
                 onPhysicsChange(ev.value);
                 posBinding.disabled = ev.value;
                 rotBinding.disabled = ev.value;
             });
+        physicsBinding.element.title = "Ativa a gravidade e colisões. Desativa o movimento manual do objeto.";
 
         const posBinding = folder.addBinding(state, 'pos', {
             label: 'Posição',
@@ -43,7 +44,7 @@ export class TransformSection {
         }).on('change', () => {
             if (!state.physics) onTransformChange();
         });
-
+        posBinding.element.title = "Move o objeto no espaço 3D.";
 
         const rotBinding = folder.addBinding(state, 'rot', {
             label: 'Rotação',
@@ -54,6 +55,7 @@ export class TransformSection {
         }).on('change', () => {
             if (!state.physics) onTransformChange();
         });
+        rotBinding.element.title = "Gira o objeto nos eixos X, Y e Z (em graus).";
 
         folder.addBlade({ view: 'separator' });
 

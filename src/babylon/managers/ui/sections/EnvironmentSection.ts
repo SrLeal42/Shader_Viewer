@@ -28,7 +28,7 @@ export class EnvironmentSection {
 
         const params = { skybox: 'color' as string };
 
-        folder.addBinding(params, 'skybox', {
+        const skyboxBinding = folder.addBinding(params, 'skybox', {
             options,
             label: 'Fundo'
         }).on('change', (ev) => {
@@ -43,6 +43,7 @@ export class EnvironmentSection {
             }
 
         });
+        skyboxBinding.element.title = "Altera o plano de fundo.";
 
         // Sub-folder com color picker (visível apenas quando "Cor" está selecionado)
         const clearColor = EnvironmentConfigs.background.color;
@@ -52,12 +53,13 @@ export class EnvironmentSection {
 
         this.skyboxColorFolder = folder.addFolder({ title: 'Cor de Fundo' });
 
-        this.skyboxColorFolder.addBinding(colorState, 'bg', {
+        const colorBinding = this.skyboxColorFolder.addBinding(colorState, 'bg', {
             label: 'Cor',
             color: { type: 'float' },
         }).on('change', (ev) => {
             onColorChange(ev.value as { r: number; g: number; b: number });
         });
+        colorBinding.element.title = "Cor sólida para o fundo.";
 
     }
 
@@ -75,10 +77,16 @@ export class EnvironmentSection {
         // Varre o arquivo de Configs que criamos e cria um switch para cada efeito
         for (const [id, config] of Object.entries(SkyboxEffectsConfigs)) {
             params[id] = false;
+
             bindings[id] = folder.addBinding(params, id, { label: config.title })
                 .on('change', (ev) => {
                     onEffectToggle(id as SkyboxEffectId, ev.value as boolean);
                 });
+
+            if (config.description) {
+                bindings[id].element.title = config.description;
+            }
+
         }
 
         // Escuta o "aviso" do Manager caso ele desligue um efeito antigo (Limitação da fila FIFO)

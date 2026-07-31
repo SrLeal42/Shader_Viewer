@@ -7,6 +7,7 @@ import fragmentSource from './toon.fragment.glsl?raw';
 export const ToonConfig: MaterialShaderConfig = {
     label: 'Toon Shading',
     title: 'Parâmetros do Toon',
+    description: "Material estilo desenho animado",
     category: 'material',
 
     create: (scene: B.Scene) => {
@@ -28,6 +29,7 @@ export const ToonConfig: MaterialShaderConfig = {
         {
             uniform: 'u_levels',
             label: 'Níveis de Sombra',
+            description: 'Controla a quantidade de degraus de luz.',
             type: 'float',
             defaultValue: 7,
             min: 2, max: 15, step: 1,
@@ -35,6 +37,7 @@ export const ToonConfig: MaterialShaderConfig = {
         {
             uniform: 'u_color',
             label: 'Cor Base',
+            description: 'A cor intrínseca principal do objeto.',
             type: 'color',
             defaultValue: { r: 0.8, g: 0.2, b: 0.3 },
         }

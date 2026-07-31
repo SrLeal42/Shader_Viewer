@@ -3,6 +3,7 @@ export type SkyboxEffectId = 'warp' | 'meteors' | 'aurora';
 export interface SkyboxEffectConfig {
     id: SkyboxEffectId;
     title: string;
+    description?: string;
     uniforms?: Record<string, number | number[]>; // <--- Novo campo para guardar os valores
 }
 
@@ -12,6 +13,7 @@ export const SkyboxEffectsConfigs: Record<SkyboxEffectId, SkyboxEffectConfig> = 
     warp: {
         id: 'warp',
         title: 'Distorção (Warp)',
+        description: 'Cria um efeito de distorção no espaço.',
         uniforms: {
             "u_warpSpeed": 0.1,
             "u_warpIntensity": 0.2
@@ -20,6 +22,7 @@ export const SkyboxEffectsConfigs: Record<SkyboxEffectId, SkyboxEffectConfig> = 
     meteors: {
         id: 'meteors',
         title: 'Chuva de Meteoros',
+        description: 'Adiciona estrelas cadentes brilhantes cruzando o céu de forma aleatória.',
         uniforms: {
             "u_meteorSpeedBase": 0.3,
             "u_meteorDensity": 10.0,
@@ -29,6 +32,7 @@ export const SkyboxEffectsConfigs: Record<SkyboxEffectId, SkyboxEffectConfig> = 
     aurora: {
         id: 'aurora',
         title: 'Aurora Boreal',
+        description: 'Gera ondas luminosas dinâmicas no fundo, criando um efeito de aurora.',
         uniforms: {
             "u_auroraSpeed": 0.1,
             "u_auroraIntensity": 1.5,

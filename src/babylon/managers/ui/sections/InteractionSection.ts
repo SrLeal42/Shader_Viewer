@@ -22,12 +22,20 @@ export class InteractionSection {
             Object.values(InteractionConfigs).map(cfg => [cfg.label, cfg.id])
         );
 
-        folder.addBinding(params, 'tool', {
+        const interactionBind = folder.addBinding(params, 'tool', {
             options: options,
             label: 'Interação'
         }).on('change', (ev) => {
             onChange(ev.value as InteractionId);
+
+            const cfg = InteractionConfigs[ev.value as InteractionId];
+            if (cfg && cfg.description) {
+                interactionBind.element.title = cfg.description;
+            }
+
         });
+        const initialCfg = InteractionConfigs[initialInteraction];
+        interactionBind.element.title = initialCfg?.description || "Selecione a ferramenta de interação com o modelo.";
     }
 
     public dispose(): void {

@@ -27,12 +27,25 @@ export class ShaderSection {
         }
 
         const shaderParams = { material: 'none' };
-        this.pane.addBinding(shaderParams, 'material', {
+        const materialBinding = this.pane.addBinding(shaderParams, 'material', {
             options: materialOptions,
             label: 'Material Shader'
         }).on('change', (ev) => {
             onMaterialSelect(ev.value as MaterialShaderId | 'none');
+
+            // Atualiza a dica quando troca de Material!
+            if (ev.value !== 'none') {
+                const cfg = MaterialShaders[ev.value as MaterialShaderId];
+                if (cfg && cfg.description) {
+                    materialBinding.element.title = cfg.description;
+                }
+            } else {
+                materialBinding.element.title = "Nenhum material customizado aplicado.";
+            }
         });
+
+        // Define o Tooltip Inicial
+        materialBinding.element.title = "Selecione um Material Customizado para o modelo.";
 
         // --- Checkboxes de Post-Process (quando houver) ---
         if (Object.keys(PostProcessShaders).length > 0) {
@@ -41,11 +54,15 @@ export class ShaderSection {
             const ppFolder = this.pane.addFolder({ title: 'Pós-Processamento' });
             for (const [id, config] of Object.entries(PostProcessShaders)) {
                 const ppParams = { [id]: false };
-                ppFolder.addBinding(ppParams, id, {
+                const ppBinding = ppFolder.addBinding(ppParams, id, {
                     label: config.label,
                 }).on('change', (ev) => {
                     onPostProcessToggle(id as PostProcessShaderId, ev.value as boolean);
                 });
+
+                if (config.description) {
+                    ppBinding.element.title = config.description;
+                }
             }
         }
 
@@ -93,6 +110,10 @@ export class ShaderSection {
                 .on('change', (ev) => {
                     onChange(u, ev.value);
                 });
+
+            if (u.description) {
+                binding.element.title = u.description;
+            }
 
             bindings.push(binding);
 
