@@ -1,7 +1,7 @@
 import * as B from '@babylonjs/core';
 
 import { CameraManager } from './managers/CameraManager';
-import { UIManager } from './managers/UIManager';
+import { UIManager } from './managers/ui/UIManager';
 import { PhysicsManager } from './managers/PhysicsManager';
 import { ModelManager } from './managers/ModelManager';
 import { ShaderManager } from './managers/ShaderManager';
