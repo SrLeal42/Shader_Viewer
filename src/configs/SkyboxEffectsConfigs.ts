@@ -1,4 +1,4 @@
-export type SkyboxEffectId = 'warp' | 'meteors' | 'aurora';
+export type SkyboxEffectId = 'warp' | 'meteors' | 'aurora' | 'blackhole';
 
 export interface SkyboxEffectConfig {
     id: SkyboxEffectId;
@@ -37,6 +37,15 @@ export const SkyboxEffectsConfigs: Record<SkyboxEffectId, SkyboxEffectConfig> = 
             "u_auroraSpeed": 0.1,
             "u_auroraIntensity": 1.5,
             "u_auroraColor": [0.1, 1.0, 0.5] // Verde Neon.
+        }
+    },
+    blackhole: {
+        id: 'blackhole',
+        title: 'Buraco Negro',
+        description: 'Lente gravitacional simulando a dobra do espaço-tempo ao redor de uma singularidade.',
+        uniforms: {
+            "u_bhMass": 2.7,
+            "u_bhRadius": 0.12
         }
     }
 };

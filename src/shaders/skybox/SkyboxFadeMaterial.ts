@@ -21,7 +21,8 @@ export function createSkyboxFadeMaterial(name: string, scene: B.Scene): B.Shader
                 "u_blur1", "u_blur2", "u_exposure", "u_saturation",
                 "u_time", "u_enableWarp", "u_enableMeteors", "u_enableAurora",
                 "u_warpSpeed", "u_warpIntensity", "u_meteorSpeedBase", "u_meteorDensity",
-                "u_meteorAngle", "u_auroraSpeed", "u_auroraIntensity", "u_auroraColor"
+                "u_meteorAngle", "u_auroraSpeed", "u_auroraIntensity", "u_auroraColor",
+                "u_enableBlackhole", "u_bhMass", "u_bhRadius"
             ],
             samplers: ["texture1", "texture2"]
         }
@@ -48,6 +49,7 @@ export function createSkyboxFadeMaterial(name: string, scene: B.Scene): B.Shader
     material.setFloat("u_enableWarp", 0.0);
     material.setFloat("u_enableMeteors", 0.0);
     material.setFloat("u_enableAurora", 0.0);
+    material.setFloat("u_enableBlackhole", 0.0);
 
     // Efeitos visuais (parâmetros iniciais seguros)
     material.setFloat("u_warpSpeed", 0.15);
@@ -58,6 +60,8 @@ export function createSkyboxFadeMaterial(name: string, scene: B.Scene): B.Shader
     material.setFloat("u_auroraSpeed", 0.1);
     material.setFloat("u_auroraIntensity", 1.5);
     material.setColor3("u_auroraColor", new B.Color3(0.1, 1.0, 0.5));
+    material.setFloat("u_bhMass", 0.5);
+    material.setFloat("u_bhRadius", 0.05);
 
     return material;
 }
