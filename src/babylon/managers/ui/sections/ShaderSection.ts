@@ -3,14 +3,18 @@ import type { Pane, FolderApi } from 'tweakpane';
 import type { ShaderUniform } from '../../../../shaders/Types';
 
 import {
-    MaterialShaders, PostProcessShaders,
+    MaterialShaders, MAX_POST_PROCESSES, PostProcessShaders,
     type MaterialShaderId, type PostProcessShaderId
 } from '../../../../shaders/Registry';
 
 
 export class ShaderSection {
     private pane: Pane;
+
     private shaderFolder: FolderApi | null = null;
+
+    private ppFolders = new Map<string, FolderApi>();
+    private ppBindings = new Map<string, { params: any, binding: any }>();
 
     constructor(pane: Pane) {
         this.pane = pane;
@@ -51,7 +55,7 @@ export class ShaderSection {
         if (Object.keys(PostProcessShaders).length > 0) {
             this.pane.addBlade({ view: 'separator' });
 
-            const ppFolder = this.pane.addFolder({ title: 'Pós-Processamento' });
+            const ppFolder = this.pane.addFolder({ title: `Pós-Processamento MAX(${MAX_POST_PROCESSES})` });
             for (const [id, config] of Object.entries(PostProcessShaders)) {
                 const ppParams = { [id]: false };
                 const ppBinding = ppFolder.addBinding(ppParams, id, {
@@ -63,6 +67,8 @@ export class ShaderSection {
                 if (config.description) {
                     ppBinding.element.title = config.description;
                 }
+
+                this.ppBindings.set(id, { params: ppParams, binding: ppBinding });
             }
         }
 
@@ -139,6 +145,85 @@ export class ShaderSection {
 
     }
 
+    // ─── Post-Process ───
+
+    public buildPostProcessPanel(
+        id: string,
+        title: string,
+        uniforms: ShaderUniform[],
+        targetProxy: Record<string, unknown>,
+        onChange: (uniform: ShaderUniform, value: unknown) => void
+    ): void {
+
+        this.clearPostProcessPanel(id);
+
+        if (uniforms.length === 0) return;
+
+        const folder = this.pane.addFolder({ title });
+
+        this.ppFolders.set(id, folder);
+
+        const bindings: any[] = [];
+        uniforms.forEach((u: ShaderUniform) => {
+
+            if (targetProxy[u.uniform] === undefined) {
+                targetProxy[u.uniform] =
+                    typeof u.defaultValue === 'object' ? { ...u.defaultValue } : u.defaultValue;
+            }
+
+            const bindingOptions: Record<string, unknown> = {
+                label: u.label,
+            };
+
+            if (u.type === 'color') {
+                bindingOptions.color = { type: 'float' };
+            } else {
+                bindingOptions.min = 'min' in u ? u.min : undefined;
+                bindingOptions.max = 'max' in u ? u.max : undefined;
+                bindingOptions.step = 'step' in u ? u.step : undefined;
+            }
+
+            const binding = folder.addBinding(targetProxy, u.uniform, bindingOptions)
+                .on('change', (ev) => {
+                    onChange(u, ev.value);
+                });
+
+            if (u.description) {
+                binding.element.title = u.description;
+            }
+
+            bindings.push(binding);
+
+        });
+
+        folder.addButton({ title: 'Restaurar Padrões' })
+            .on('click', () => {
+                uniforms.forEach((u: ShaderUniform) => {
+                    const resetValue = typeof u.defaultValue === 'object' ? { ...u.defaultValue } : u.defaultValue;
+                    targetProxy[u.uniform] = resetValue;
+                    onChange(u, resetValue);
+                });
+                bindings.forEach(b => b.refresh());
+            });
+    }
+
+    public forceUncheckPostProcess(id: string): void {
+        const item = this.ppBindings.get(id);
+        if (item) {
+            item.params[id] = false;
+            item.binding.refresh();
+        }
+    }
+
+
+    public clearPostProcessPanel(id: string): void {
+        const folder = this.ppFolders.get(id);
+        if (folder) {
+            folder.dispose();
+            this.ppFolders.delete(id);
+        }
+    }
+
 
     /** Remove o folder de uniforms do shader */
     public clearPanel(): void {
@@ -151,5 +236,10 @@ export class ShaderSection {
 
     public dispose(): void {
         this.clearPanel();
+
+        for (const id of this.ppFolders.keys()) {
+            this.clearPostProcessPanel(id);
+        }
+
     }
 }

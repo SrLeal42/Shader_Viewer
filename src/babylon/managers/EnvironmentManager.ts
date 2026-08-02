@@ -293,6 +293,7 @@ export class EnvironmentManager {
         const thickness = EnvironmentConfigs.physicsSpring.thickness;
         const halfT = thickness / 2;
 
+        // Se alterar o nome das paredes vai afetar o EdgeDetector;
         const walls = [
             { name: 'floor', w: boxW, h: thickness, d: maxZ - minZ, x: 0, y: -boxH / 2 - halfT, z: (maxZ + minZ) / 2 },
             { name: 'ceil', w: boxW, h: thickness, d: maxZ - minZ, x: 0, y: boxH / 2 + halfT, z: (maxZ + minZ) / 2 },

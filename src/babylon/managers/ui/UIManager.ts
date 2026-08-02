@@ -60,9 +60,13 @@ export class UIManager {
 
     public setupShaderControls(
         onMaterialSelect: (id: MaterialShaderId | 'none') => void,
-        onPostProcessToggle: (id: PostProcessShaderId, enabled: boolean) => void
+        onPostProcessToggle: (id: PostProcessShaderId, enabled: boolean) => void // ← Volta pra void
     ): void {
         this.shaderSection.setup(onMaterialSelect, onPostProcessToggle);
+    }
+
+    public forceUncheckPostProcess(id: string): void {
+        this.shaderSection.forceUncheckPostProcess(id);
     }
 
     public buildDynamicPanel(
@@ -80,6 +84,20 @@ export class UIManager {
         onChange: (uniform: ShaderUniform, value: unknown) => void
     ): void {
         this.shaderSection.buildPanel(title, uniforms, targetProxy, onChange);
+    }
+
+    public buildPostProcessPanel(
+        id: string,
+        title: string,
+        uniforms: ShaderUniform[],
+        targetProxy: Record<string, unknown>,
+        onChange: (uniform: ShaderUniform, value: unknown) => void
+    ): void {
+        this.shaderSection.buildPostProcessPanel(id, title, uniforms, targetProxy, onChange);
+    }
+
+    public clearPostProcessPanel(id: string): void {
+        this.shaderSection.clearPostProcessPanel(id);
     }
 
     public clearShaderPanel(): void {

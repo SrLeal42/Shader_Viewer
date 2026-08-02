@@ -1,7 +1,7 @@
 import type { Pane, FolderApi } from 'tweakpane';
 
 import { SkyboxConfigs, type SkyboxId } from '../../../../configs/SkyboxConfigs';
-import { SkyboxEffectsConfigs, type SkyboxEffectId } from '../../../../configs/SkyboxEffectsConfigs';
+import { SkyboxEffectsConfigs, MAX_ACTIVE_EFFECTS, type SkyboxEffectId } from '../../../../configs/SkyboxEffectsConfigs';
 import { EnvironmentConfigs } from '../../../../configs/EnvironmentConfigs';
 
 
@@ -69,7 +69,7 @@ export class EnvironmentSection {
         registerForceOffCallback: (callback: (id: SkyboxEffectId) => void) => void
     ): void {
         // Criamos uma pasta no painel esquerdo para os efeitos
-        const folder = this.pane.addFolder({ title: 'Efeitos Ambiente' });
+        const folder = this.pane.addFolder({ title: `Efeitos Ambiente MAX(${MAX_ACTIVE_EFFECTS})` });
 
         const params: Record<string, boolean> = {};
         const bindings: Record<string, any> = {};

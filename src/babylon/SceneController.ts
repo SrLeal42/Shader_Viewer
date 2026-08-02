@@ -16,7 +16,7 @@ import type { SkyboxId } from '../configs/SkyboxConfigs';
 
 import type { ModelEntity } from './entities/ModelEntity';
 
-import { MaterialShaders, type MaterialShaderId, type PostProcessShaderId } from '../shaders/Registry';
+import { MaterialShaders, PostProcessShaders, type MaterialShaderId, type PostProcessShaderId, MAX_POST_PROCESSES } from '../shaders/Registry';
 
 import { FingerInteraction } from './interactions/FingerInteraction';
 
@@ -40,6 +40,8 @@ export class SceneController {
 
     private shaderManager: ShaderManager;
     private shaderParams: Record<string, unknown> = {};
+    private ppParams = new Map<PostProcessShaderId, Record<string, unknown>>();
+    private activePostProcesses: PostProcessShaderId[] = [];
 
     private interactionManager: InteractionManager;
 
@@ -388,12 +390,47 @@ export class SceneController {
         );
     }
 
-    private togglePostProcess(shaderId: PostProcessShaderId, enabled: boolean) {
+    private togglePostProcess(shaderId: PostProcessShaderId, enabled: boolean): void {
+
         if (enabled) {
+
+            // Lógica FIFO: Se atingiu o limite, desativa o mais antigo
+            if (this.activePostProcesses.length >= MAX_POST_PROCESSES) {
+                const oldest = this.activePostProcesses.shift(); // Remove e pega o 1º da fila
+                if (oldest) {
+                    this.togglePostProcess(oldest, false); // Desliga no motor
+                    this.uiManager.forceUncheckPostProcess(oldest); // Desmarca na UI
+                }
+            }
+
+            this.activePostProcesses.push(shaderId); // Entra no fim da fila
+
+
             this.shaderManager.enablePostProcess(shaderId);
+
+            const config = PostProcessShaders[shaderId];
+            const proxy: Record<string, unknown> = {};
+            this.ppParams.set(shaderId, proxy);
+            this.uiManager.buildPostProcessPanel(
+                shaderId,
+                config.title,
+                config.uniforms,
+                proxy,
+                (uniform, value) => {
+                    this.shaderManager.setPostProcessUniform(shaderId, uniform, value);
+                }
+            );
+
         } else {
+
+            this.activePostProcesses = this.activePostProcesses.filter(id => id !== shaderId);
+
             this.shaderManager.disablePostProcess(shaderId);
+            this.uiManager.clearPostProcessPanel(shaderId);
+            this.ppParams.delete(shaderId);
+
         }
+
     }
 
 
