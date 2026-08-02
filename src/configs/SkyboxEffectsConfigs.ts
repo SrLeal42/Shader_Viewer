@@ -44,7 +44,7 @@ export const SkyboxEffectsConfigs: Record<SkyboxEffectId, SkyboxEffectConfig> = 
         title: 'Buraco Negro',
         description: 'Lente gravitacional simulando a dobra do espaço-tempo ao redor de uma singularidade.',
         uniforms: {
-            "u_bhMass": 2.7,
+            "u_bhMass": 2.0,
             "u_bhRadius": 0.12
         }
     }

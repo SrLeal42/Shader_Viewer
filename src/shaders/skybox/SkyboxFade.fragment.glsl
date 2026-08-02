@@ -115,39 +115,50 @@ vec3 applyAurora(vec3 dir, float time) {
     return u_auroraColor * intensity * u_auroraIntensity; 
 }
 
+vec4 applyBlackhole(vec3 dir, float time) {
+    // Adiciona um movimento orbital (círculo) suave baseado no tempo
+    // O '0.5' controla a velocidade e o '0.3' controla a distância do balanço
+    float offsetX = sin(time * 0.8) * 0.02; 
+    float offsetY = cos(time * 0.8) * 0.02; 
+    
+    // Calcula o novo centro flutuante. Usamos 'normalize' para garantir 
+    // que o centro continue colado na "parede" da esfera do céu 3D.
+    vec3 bhCenter = normalize(vec3(offsetX, offsetY, -1.0));
+    
+    float dist = distance(dir, bhCenter);
+    
+    // Se caiu no horizonte de eventos, retornamos um SINAL negativo no W
+    if (dist < u_bhRadius) {
+        return vec4(0.0, 0.0, 0.0, -1.0); 
+    } 
+    
+    // Se sobreviveu, curvamos a direção e retornamos W positivo
+    float distortion = (u_bhMass * u_bhRadius) / dist;
+    vec3 bentDir = normalize(mix(dir, bhCenter, distortion));
+    
+    return vec4(bentDir, 1.0); 
+}
+
 
 void main() {
     vec3 dir = normalize(vPosition);
  
 
-    // EFEITO ZERO: Buraco Negro (Distorção do Tecido Espacial)
+    // Buraco Negro (Distorção do Tecido Espacial)
     if (u_enableBlackhole > 0.5) {
+        vec4 bhResult = applyBlackhole(dir, u_time); 
         
-        // Posição fixa: Eixo Z profundo.
-        vec3 bhCenter = vec3(0.0, 0.0, -1.0);
-        
-        // O quão perto esse pixel da tela está da Singularidade?
-        float dist = distance(dir, bhCenter);
-        
-        // Se a luz bater dentro do horizonte de eventos, ela não escapa!
-        if (dist < u_bhRadius) {
-            gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); // O vazio absoluto
-            return; 
-        } 
-        
-        // Se passou raspando, sofre a lente gravitacional
-        else {
-            // A atração cai suavemente de acordo com a distância
-            float distortion = (u_bhMass * u_bhRadius) / dist;
-            
-            // Puxa ("mistura") o nosso raio original em direção ao buraco negro.
-            dir = normalize(mix(dir, bhCenter, distortion));
+        if (bhResult.w < 0.0) {
+            gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+            return; // A luz não escapou. Termina o pixel.
         }
+        
+        dir = bhResult.xyz; 
     }
 
 
 
-    // EFEITO 1 (Altera a distorção da projeção antes de ler a textura)
+    // Warp (Altera a distorção da projeção antes de ler a textura)
     if (u_enableWarp > 0.5) {
         dir = applyWarp(dir, u_time);
     }
@@ -168,10 +179,11 @@ void main() {
     }
 
     // Adicionamos os efeitos visuais de luz por cima do fundo
+    // Meteoro 
     if (u_enableMeteors > 0.5) {
         finalBackground += applyMeteors(dir, u_time);
     }
-    
+    // Aurora Boreal
     if (u_enableAurora > 0.5) {
         finalBackground += applyAurora(dir, u_time);
     }

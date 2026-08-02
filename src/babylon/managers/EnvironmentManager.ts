@@ -107,25 +107,23 @@ export class EnvironmentManager {
 
         // --- Início da lógica de transição visual em GLSL ---
         // A textura "nova" da chamada passada agora é a nossa "antiga" (Textura 1)
-        if (this.nextVisualTexture) {
-            this.currentVisualTexture = this.nextVisualTexture;
-            this.skyboxMaterial.setTexture("texture1", this.currentVisualTexture);
+        this.currentVisualTexture = this.nextVisualTexture;
+        this.skyboxMaterial.setTexture("texture1", this.currentVisualTexture);
 
-            let oldRotation = 0;
-            if (this.currentSkyboxId !== 'color') {
-                const oldConfig = SkyboxConfigs[this.currentSkyboxId];
-                oldRotation = oldConfig?.rotationY ?? 0;
+        let oldRotation = 0;
+        if (this.currentSkyboxId !== 'color') {
+            const oldConfig = SkyboxConfigs[this.currentSkyboxId];
+            oldRotation = oldConfig?.rotationY ?? 0;
 
-                this.skyboxMaterial.setFloat("u_blur1", oldConfig?.blur ?? 0.0);
-            } else {
-                this.skyboxMaterial.setFloat("u_blur1", 0.0);
-            }
-
-            // Blur da textura que está entrando (texture2) = blur do skybox novo
-            this.skyboxMaterial.setFloat("u_blur2", config.blur ?? 0.0);
-
-            this.skyboxMaterial.setFloat("u_rotation1", oldRotation);
+            this.skyboxMaterial.setFloat("u_blur1", oldConfig?.blur ?? 0.0);
+        } else {
+            this.skyboxMaterial.setFloat("u_blur1", 0.0);
         }
+
+        // Blur da textura que está entrando (texture2) = blur do skybox novo
+        this.skyboxMaterial.setFloat("u_blur2", config.blur ?? 0.0);
+
+        this.skyboxMaterial.setFloat("u_rotation1", oldRotation);
 
         // Carrega a textura que realmente queremos mostrar (Textura 2)
         const skyTexture = B.CubeTexture.CreateFromPrefilteredData(config.path, this.scene);
