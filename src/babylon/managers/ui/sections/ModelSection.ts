@@ -1,61 +1,50 @@
-import type { Pane, FolderApi } from 'tweakpane';
+import type { FolderApi } from 'tweakpane';
 
 import type { UIConfig, UIParameter } from '../../../../types/UI';
 import { ModelConfigs, type ModelId } from '../../../../configs/ModelConfigs';
 
 
 export class ModelSection {
-    private pane: Pane;
+    private folder: FolderApi;
     private dynamicFolder: FolderApi | null = null;
 
-    constructor(pane: Pane) {
-        this.pane = pane;
+    constructor(folder: FolderApi) {
+        this.folder = folder;
     }
 
-    // 1. Controle Fixo: Trocar de Modelo (data-driven a partir dos ModelConfigs)
+    // Trocar de Modelo (data-driven a partir dos ModelConfigs)
     public setup(onModelSelect: (id: ModelId) => void): void {
-        const folder = this.pane.addFolder({ title: 'Opções dos Modelos' });
-
         const params = { model: Object.keys(ModelConfigs)[0] as ModelId };
 
-        // Constrói as options dinamicamente: { 'Esfera': 'sphere', 'Caixa': 'box', ... }
         const options: Record<string, string> = {};
         for (const [id, config] of Object.entries(ModelConfigs)) {
             options[config.label] = id;
         }
 
-        const modelBinding = folder.addBinding(params, 'model', {
+        // Adiciona o Dropdown direto na raiz do Modelo
+        const modelBinding = this.folder.addBinding(params, 'model', {
             options,
             label: 'Modelo 3D'
         }).on('change', (ev) => {
             onModelSelect(ev.value as ModelId);
-
             const cfg = ModelConfigs[ev.value as ModelId];
-            if (cfg && cfg.description) {
-                modelBinding.element.title = cfg.description;
-            }
-
+            if (cfg && cfg.description) modelBinding.element.title = cfg.description;
         });
-        // Define a dica inicial com o primeiro modelo
+
         const initialCfg = ModelConfigs[params.model];
         modelBinding.element.title = initialCfg?.description || "Selecione o modelo 3D para visualizar.";
 
-        folder.addBlade({ view: 'separator' });
     }
 
-
-    // 2. Controle Dinâmico: Lê a UIConfig e gera os sliders
+    // Lê a UIConfig e gera os sliders
     public buildDynamicPanel(
         config: UIConfig,
         targetProxy: Record<string, unknown>,
         onChange: (param: UIParameter, value: unknown) => void
     ): void {
+        if (this.dynamicFolder) this.dynamicFolder.dispose();
 
-        if (this.dynamicFolder) {
-            this.dynamicFolder.dispose();
-        }
-
-        this.dynamicFolder = this.pane.addFolder({ title: config.title });
+        this.dynamicFolder = this.folder.addFolder({ title: config.title });
 
         config.parameters.forEach((param: UIParameter) => {
 

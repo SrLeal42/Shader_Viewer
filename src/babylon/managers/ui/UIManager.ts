@@ -18,6 +18,7 @@ import { EnvironmentSection } from './sections/EnvironmentSection';
 import { LightSection } from './sections/LightSection';
 import { InteractionSection } from './sections/InteractionSection';
 
+import { MAX_POST_PROCESSES } from '../../../shaders/Registry';
 
 export class UIManager {
     private paneRight: Pane;
@@ -34,9 +35,15 @@ export class UIManager {
         this.paneRight = new Pane({ container: tweakpaneRightContainer });
         this.paneLeft = new Pane({ container: tweakpaneLeftContainer });
 
-        this.modelSection = new ModelSection(this.paneRight);
-        this.transformSection = new TransformSection(this.paneRight);
-        this.shaderSection = new ShaderSection(this.paneRight);
+        // ─── Criação das Pastas Raízes (Layout Fixo) ───
+        const rootModel = this.paneRight.addFolder({ title: 'Modelo 3D' });
+        const rootTransform = this.paneRight.addFolder({ title: 'Transformação' });
+        const rootShader = this.paneRight.addFolder({ title: 'Materias' });
+        const rootPP = this.paneRight.addFolder({ title: `Pós-Processamentos MAX(${MAX_POST_PROCESSES})` });
+
+        this.modelSection = new ModelSection(rootModel);
+        this.transformSection = new TransformSection(rootTransform);
+        this.shaderSection = new ShaderSection(rootShader, rootPP);
         this.environmentSection = new EnvironmentSection(this.paneLeft);
         this.lightSection = new LightSection(this.paneLeft);
         this.interactionSection = new InteractionSection(this.paneLeft);
@@ -60,7 +67,7 @@ export class UIManager {
 
     public setupShaderControls(
         onMaterialSelect: (id: MaterialShaderId | 'none') => void,
-        onPostProcessToggle: (id: PostProcessShaderId, enabled: boolean) => void // ← Volta pra void
+        onPostProcessToggle: (id: PostProcessShaderId, enabled: boolean) => void
     ): void {
         this.shaderSection.setup(onMaterialSelect, onPostProcessToggle);
     }

@@ -1,24 +1,27 @@
-import type { Pane, FolderApi } from 'tweakpane';
+import type { FolderApi } from 'tweakpane';
 
 import type { ShaderUniform } from '../../../../shaders/Types';
 
 import {
-    MaterialShaders, MAX_POST_PROCESSES, PostProcessShaders,
+    MaterialShaders, PostProcessShaders,
     type MaterialShaderId, type PostProcessShaderId
 } from '../../../../shaders/Registry';
 
 
 export class ShaderSection {
-    private pane: Pane;
+    private rootMaterialFolder: FolderApi;
+    private rootPPFolder: FolderApi;
 
     private shaderFolder: FolderApi | null = null;
 
     private ppFolders = new Map<string, FolderApi>();
     private ppBindings = new Map<string, { params: any, binding: any }>();
 
-    constructor(pane: Pane) {
-        this.pane = pane;
+    constructor(rootMaterial: FolderApi, rootPP: FolderApi) {
+        this.rootMaterialFolder = rootMaterial;
+        this.rootPPFolder = rootPP;
     }
+
 
     public setup(
         onMaterialSelect: (id: MaterialShaderId | 'none') => void,
@@ -31,7 +34,7 @@ export class ShaderSection {
         }
 
         const shaderParams = { material: 'none' };
-        const materialBinding = this.pane.addBinding(shaderParams, 'material', {
+        const materialBinding = this.rootMaterialFolder.addBinding(shaderParams, 'material', {
             options: materialOptions,
             label: 'Material Shader'
         }).on('change', (ev) => {
@@ -53,12 +56,9 @@ export class ShaderSection {
 
         // --- Checkboxes de Post-Process (quando houver) ---
         if (Object.keys(PostProcessShaders).length > 0) {
-            this.pane.addBlade({ view: 'separator' });
-
-            const ppFolder = this.pane.addFolder({ title: `Pós-Processamento MAX(${MAX_POST_PROCESSES})` });
             for (const [id, config] of Object.entries(PostProcessShaders)) {
                 const ppParams = { [id]: false };
-                const ppBinding = ppFolder.addBinding(ppParams, id, {
+                const ppBinding = this.rootPPFolder.addBinding(ppParams, id, {
                     label: config.label,
                 }).on('change', (ev) => {
                     onPostProcessToggle(id as PostProcessShaderId, ev.value as boolean);
@@ -72,7 +72,6 @@ export class ShaderSection {
             }
         }
 
-        this.pane.addBlade({ view: 'separator' });
     }
 
 
@@ -83,13 +82,10 @@ export class ShaderSection {
         onChange: (uniform: ShaderUniform, value: unknown) => void
     ): void {
 
-        if (this.shaderFolder) {
-            this.shaderFolder.dispose();
-            this.shaderFolder = null;
-        }
-
+        this.clearPanel();
         if (uniforms.length === 0) return;
-        this.shaderFolder = this.pane.addFolder({ title });
+
+        this.shaderFolder = this.rootMaterialFolder.addFolder({ title });
 
         // Array para rastrear os bindings criados e podermos forçar a UI a atualizar depois
         const bindings: any[] = [];
@@ -159,7 +155,7 @@ export class ShaderSection {
 
         if (uniforms.length === 0) return;
 
-        const folder = this.pane.addFolder({ title });
+        const folder = this.rootPPFolder.addFolder({ title });
 
         this.ppFolders.set(id, folder);
 

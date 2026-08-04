@@ -1,14 +1,14 @@
-import type { Pane, FolderApi } from 'tweakpane';
+import type { FolderApi } from 'tweakpane';
 
 import type { FrustumLimits } from '../../../../types/Camera';
 
 
 export class TransformSection {
-    private pane: Pane;
-    private transformFolder: FolderApi | null = null;
+    private folder: FolderApi;
+    private transformFolder: FolderApi;
 
-    constructor(pane: Pane) {
-        this.pane = pane;
+    constructor(folder: FolderApi) {
+        this.folder = folder;
     }
 
     public setup(
@@ -18,12 +18,13 @@ export class TransformSection {
         limits: FrustumLimits
     ) {
 
-        if (this.transformFolder) {
-            this.transformFolder.dispose();
+        // Remove todos os controles antigos de dentro da pasta raiz para não duplicar no resize
+        const children = [...this.folder.children];
+        for (const child of children) {
+            child.dispose();
         }
 
-        this.transformFolder = this.pane.addFolder({ title: 'Transformação', index: 1 });
-        const folder = this.transformFolder;
+        const folder = this.folder;
 
         // Cria os controles visuais
         const physicsBinding = folder.addBinding(state, 'physics', { label: 'Física Ativada' })
@@ -37,9 +38,9 @@ export class TransformSection {
         const posBinding = folder.addBinding(state, 'pos', {
             label: 'Posição',
             disabled: state.physics,
-            x: { min: limits.minX, max: limits.maxX },
-            y: { min: limits.minY, max: limits.maxY },
-            z: { min: limits.minZ, max: limits.maxZ },
+            x: { min: limits.minX, max: limits.maxX, step: 0.1 },
+            y: { min: limits.minY, max: limits.maxY, step: 0.1 },
+            z: { min: limits.minZ, max: limits.maxZ, step: 0.1 },
             format: (v) => v.toFixed(3),
         }).on('change', () => {
             if (!state.physics) onTransformChange();
