@@ -1,9 +1,8 @@
 import * as B from '@babylonjs/core';
 import type { PostProcessShaderConfig } from '../../Types';
 
-import bloomFragmentShader from './Bloom.fragment.glsl?raw';
-
-B.Effect.ShadersStore['customBloomFragmentShader'] = bloomFragmentShader;
+import bloomBlurShader from './BloomBlur.fragment.glsl?raw';
+import bloomCompositeShader from './BloomComposite.fragment.glsl?raw';
 
 export const BloomConfig: PostProcessShaderConfig = {
     category: 'postprocess',
@@ -20,7 +19,7 @@ export const BloomConfig: PostProcessShaderConfig = {
             defaultValue: 0.8,
             min: 0.0,
             max: 2.0,
-            step: 0.05
+            step: 0.01
         },
         {
             uniform: 'u_intensity',
@@ -44,24 +43,64 @@ export const BloomConfig: PostProcessShaderConfig = {
         }
     ],
 
-    create: (scene: B.Scene, camera: B.Camera) => {
-        const postProcess = new B.PostProcess(
-            'customBloomPostProcess',
-            'customBloom', // Puxa do ShadersStore criado lá no topo
-            ['u_threshold', 'u_intensity', 'u_radius', 'u_screenSize'], // Uniforms
-            [], // Samplers adicionais
-            1, // 0.5 = Roda na metade da resolução
+    create: (scene: B.Scene, camera: B.Camera, getUniforms: () => Record<string, unknown>) => {
+        B.Effect.ShadersStore['bloomBlurFragmentShader'] = bloomBlurShader;
+        B.Effect.ShadersStore['bloomCompositeFragmentShader'] = bloomCompositeShader;
+
+        // Captura a cena original
+        const origPass = new B.PassPostProcess(
+            'bloomOrigPass',
+            1.0,
+            camera
+        );
+
+        // Extrai brilho e aplica desfoque horizontal
+        const hBlur = new B.PostProcess(
+            'bloomHBlur',
+            'bloomBlur',
+            ['u_threshold', 'u_radius', 'u_screenSize'],
+            [],
+            1.0,
             camera,
             B.Texture.BILINEAR_SAMPLINGMODE,
             scene.getEngine(),
             false
         );
 
-        // Atualiza a dimensão da tela no shader sempre que for renderizar (usado no Aspect Ratio)
-        postProcess.onApplyObservable.add((effect) => {
-            effect.setFloat2('u_screenSize', postProcess.width, postProcess.height);
+        // Aplica desfoque vertical e soma com a cena original
+        const vBlur = new B.PostProcess(
+            'bloomVBlur',
+            'bloomComposite',
+            ['u_intensity', 'u_radius', 'u_screenSize'],
+            ['origSampler'],
+            1.0,
+            camera,
+            B.Texture.BILINEAR_SAMPLINGMODE,
+            scene.getEngine(),
+            false
+        );
+
+        hBlur.onApplyObservable.add((effect) => {
+            const vals = getUniforms();
+            effect.setFloat('u_threshold', vals['u_threshold'] as number);
+            effect.setFloat('u_radius', vals['u_radius'] as number);
+            effect.setFloat2('u_screenSize', hBlur.width, hBlur.height);
         });
 
-        return postProcess;
+        vBlur.onApplyObservable.add((effect) => {
+            const vals = getUniforms();
+            effect.setFloat('u_intensity', vals['u_intensity'] as number);
+            effect.setFloat('u_radius', vals['u_radius'] as number);
+            effect.setFloat2('u_screenSize', vBlur.width, vBlur.height);
+            effect.setTextureFromPostProcess('origSampler', origPass);
+        });
+
+        // Limpa os PP intermediários quando o PP final for destruído
+        vBlur.onDisposeObservable.add(() => {
+            hBlur.dispose();
+            origPass.dispose();
+        });
+
+        return vBlur;
     }
 };

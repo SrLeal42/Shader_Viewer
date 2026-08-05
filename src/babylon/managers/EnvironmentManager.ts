@@ -93,8 +93,18 @@ export class EnvironmentManager {
             envTexture = B.CubeTexture.CreateFromPrefilteredData(config.path, this.scene);
 
             await new Promise<void>((resolve, reject) => {
-                envTexture!.onLoadObservable.addOnce(() => resolve());
-                setTimeout(() => reject(new Error(`Timeout ao carregar skybox: ${config.path}`)), 10000);
+
+                let timeoutId: number;
+                const observer = envTexture!.onLoadObservable.addOnce(() => {
+                    clearTimeout(timeoutId);
+                    resolve();
+                });
+
+                timeoutId = setTimeout(() => {
+                    envTexture!.onLoadObservable.remove(observer);
+                    reject(new Error(`Timeout ao carregar skybox: ${config.path}`));
+                }, 10000);
+
             });
 
             this.textureCache.set(id, envTexture);

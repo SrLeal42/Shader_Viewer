@@ -8,7 +8,7 @@ export const EdgeConfig: PostProcessShaderConfig = {
     title: 'Parâmetros Edge Detection',
     description: 'Detecta bordas baseando-se na profundidade e nas normais, ignorando texturas e luzes.',
     category: 'postprocess',
-    create: (scene: B.Scene, camera: B.Camera) => {
+    create: (scene: B.Scene, camera: B.Camera, getUniforms: () => Record<string, unknown>) => {
         B.Effect.ShadersStore['edgeFragmentShader'] = fragmentSource;
         // Lista de malhas que não devem gerar bordas (Céu e Barreiras Invisíveis da Física)
         const ignoredMeshes = ['skybox', 'floor', 'ceil', 'left', 'right', 'front', 'back'];
@@ -36,17 +36,15 @@ export const EdgeConfig: PostProcessShaderConfig = {
             false
         );
 
-        pp.onSizeChangedObservable.add(() => {
-            pp.onApplyObservable.add((effect) => {
-                effect.setFloat2('u_screenSize', pp.width, pp.height);
+        pp.onApplyObservable.add((effect) => {
+            effect.setFloat2('u_screenSize', pp.width, pp.height);
 
-                // Injeta as texturas de profundidade e normais no shader
-                effect.setTexture('depthSampler', depthRenderer.getDepthMap());
-                if (gBuffer) {
-                    // No GBuffer padrão do Babylon, a textura 1 contém as Normais
-                    effect.setTexture('normalSampler', gBuffer.getGBuffer().textures[1]);
-                }
-            });
+            // Injeta as texturas de profundidade e normais no shader
+            effect.setTexture('depthSampler', depthRenderer.getDepthMap());
+            if (gBuffer) {
+                // No GBuffer padrão do Babylon, a textura 1 contém as Normais
+                effect.setTexture('normalSampler', gBuffer.getGBuffer().textures[1]);
+            }
         });
 
         return pp;

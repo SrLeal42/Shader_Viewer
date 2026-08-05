@@ -91,8 +91,6 @@ export class ShaderManager {
 
         const config = PostProcessShaders[shaderId];
 
-        const pp = config.create(this.scene, this.camera);
-
         // Inicializa os valores com os defaults
         const values: Record<string, unknown> = {};
 
@@ -102,8 +100,10 @@ export class ShaderManager {
 
         this.ppUniformValues.set(shaderId, values);
 
+        const pp = config.create(this.scene, this.camera, () => this.ppUniformValues.get(shaderId)!);
+
         // onApply lê do map de valores atuais
-        pp.onApply = (effect) => {
+        pp.onApplyObservable.add((effect) => {
             const currentValues = this.ppUniformValues.get(shaderId);
 
             if (!currentValues) return;
@@ -111,8 +111,7 @@ export class ShaderManager {
             config.uniforms.forEach(u => {
                 this.setUniformOnEffect(effect, u, currentValues[u.uniform]);
             });
-
-        };
+        });
 
         this.activePostProcesses.set(shaderId, pp);
     }
