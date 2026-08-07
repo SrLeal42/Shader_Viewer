@@ -5,7 +5,6 @@ import type { FrustumLimits } from '../../../../types/Camera';
 
 export class TransformSection {
     private folder: FolderApi;
-    private transformFolder: FolderApi;
 
     constructor(folder: FolderApi) {
         this.folder = folder;
@@ -70,9 +69,8 @@ export class TransformSection {
 
 
     public dispose(): void {
-        if (this.transformFolder) {
-            this.transformFolder.dispose();
-            this.transformFolder = null;
-        }
+        // A pasta raiz (this.folder) é gerenciada pelo UIManager.
+        // Como o TransformSection reaproveita a pasta, não precisamos dar dispose() nela aqui,
+        // apenas removeríamos os filhos se fosse necessário, mas o setup() já faz isso.
     }
 }

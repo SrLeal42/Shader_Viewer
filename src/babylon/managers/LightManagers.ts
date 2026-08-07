@@ -1,5 +1,4 @@
 import * as B from '@babylonjs/core';
-import '@babylonjs/loaders/glTF';
 
 import { LightConfigs, type LightModeId, type PointAnimationType } from '../../configs/LightConfigs';
 
@@ -10,6 +9,7 @@ export class LightManager {
     private pointLight: B.PointLight;
 
     public currentMode: LightModeId = LightConfigs.defaultMode;
+    public isDirty: boolean = true;
 
     // Guarda as intensidades "verdadeiras" para quando a luz for ligada/desligada pela UI
     private hemiTrueIntensity = LightConfigs.hemi.intensity;
@@ -59,6 +59,7 @@ export class LightManager {
 
     public setMode(mode: LightModeId) {
         this.currentMode = mode;
+        this.isDirty = true;
 
         // Truque de performance: Zera a intensidade em vez de dar dispose
         this.hemiLight.intensity = (mode === 'hemi' || mode === 'both') ? this.hemiTrueIntensity : 0;
@@ -71,6 +72,7 @@ export class LightManager {
         this.hemiLight.direction.set(direction.x, direction.y, direction.z);
         this.hemiLight.diffuse.set(color.r, color.g, color.b);
         this.hemiTrueIntensity = intensity;
+        this.isDirty = true;
         this.setMode(this.currentMode); // Atualiza imediatamente a intensidade visível
     }
 
@@ -90,6 +92,7 @@ export class LightManager {
             this.setMode(this.currentMode);
         }
 
+        this.isDirty = true;
     }
 
     // ─── Contrato com os Shaders Customizados ───
@@ -104,6 +107,8 @@ export class LightManager {
         this.pointLight.diffuse.scaleToRef(this.pointLight.intensity, this._tempPointColor);
         material.setVector3('u_pointPos', this.pointLight.position);
         material.setColor3('u_pointColor', this._tempPointColor);
+
+        this.isDirty = false;
     }
 
 
@@ -119,6 +124,7 @@ export class LightManager {
             this.lastTime = time;
 
             if (this.animationType === 'orbit') {
+                this.isDirty = true;
                 this.orbitPhase += deltaTime * this.orbitSpeed;
 
                 const radius = Math.sqrt(this.pointBasePosition.x ** 2 + this.pointBasePosition.z ** 2) || 5;
@@ -128,6 +134,7 @@ export class LightManager {
             }
 
             if (this.animationType === 'pulse') {
+                this.isDirty = true;
                 this.pulsePhase += deltaTime * this.pulseFrequency;
 
                 const sine = (Math.sin(this.pulsePhase) + 1) / 2; // normaliza de 0 a 1

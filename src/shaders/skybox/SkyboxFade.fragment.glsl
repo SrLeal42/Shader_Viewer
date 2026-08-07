@@ -1,6 +1,8 @@
+#version 300 es
 precision highp float;
 
-varying vec3 vPosition;
+in vec3 vPosition;
+out vec4 outColor;
 
 uniform samplerCube texture1;
 uniform samplerCube texture2;
@@ -149,7 +151,7 @@ void main() {
         vec4 bhResult = applyBlackhole(dir, u_time); 
         
         if (bhResult.w < 0.0) {
-            gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+            outColor = vec4(0.0, 0.0, 0.0, 1.0);
             return; // A luz não escapou. Termina o pixel.
         }
         
@@ -199,5 +201,5 @@ void main() {
     float luma = dot(finalBackground, vec3(0.2126, 0.7152, 0.0722));
     finalBackground = mix(vec3(luma), finalBackground, u_saturation);
     
-    gl_FragColor = vec4(finalBackground, 1.0);
+    outColor = vec4(finalBackground, 1.0);
 }

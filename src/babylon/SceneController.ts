@@ -41,7 +41,6 @@ export class SceneController {
     private shaderManager: ShaderManager;
     private shaderParams: Record<string, unknown> = {};
     private ppParams = new Map<PostProcessShaderId, Record<string, unknown>>();
-    private activePostProcesses: PostProcessShaderId[] = [];
 
     private interactionManager: InteractionManager;
 
@@ -252,28 +251,13 @@ export class SceneController {
 
     private async switchModel(modelId: ModelId) {
         const gen = ++this.switchGeneration;
-
         const config: ModelConfig = ModelConfigs[modelId];
 
         if (!config) return;
 
-        // Captura velocidades do modelo atual
-        let prevLinVel = B.Vector3.Zero();
-        let prevAngVel = B.Vector3.Zero();
-        let prevPosition: B.Vector3 | null = null;
-        let prevRotationQuat: B.Quaternion | null = null;
+        const prevState = this.capturePreviousModelState();
 
         if (this.modelManager.currentEntity) {
-
-            const currentMesh = this.modelManager.currentEntity.mesh;
-
-            prevLinVel = this.modelManager.currentEntity.getLinearVelocity();
-            prevAngVel = this.modelManager.currentEntity.getAngularVelocity();
-            prevPosition = currentMesh.position.clone();
-            if (currentMesh.rotationQuaternion) {
-                prevRotationQuat = currentMesh.rotationQuaternion.clone();
-            }
-
             this.modelManager.currentEntity.restoreOriginalMaterials();
         }
 
@@ -319,9 +303,36 @@ export class SceneController {
             }
         });
 
-        // Centraliza o modelo na origem
-        entity.mesh.position = B.Vector3.Zero();
+        this.applyInitialModelTransform(entity, config, prevState.position, prevState.rotationQuat);
+        this.transferPhysicsState(entity, prevState.linVel, prevState.angVel);
 
+        // Re-aplica o shader ativo
+        if (this.shaderManager.activeMaterialId) {
+            this.shaderManager.applyMaterial(this.shaderManager.activeMaterialId, entity.mesh);
+        }
+    }
+
+    private capturePreviousModelState() {
+        let linVel = B.Vector3.Zero();
+        let angVel = B.Vector3.Zero();
+        let position: B.Vector3 | null = null;
+        let rotationQuat: B.Quaternion | null = null;
+
+        if (this.modelManager.currentEntity) {
+            const currentMesh = this.modelManager.currentEntity.mesh;
+            linVel = this.modelManager.currentEntity.getLinearVelocity();
+            angVel = this.modelManager.currentEntity.getAngularVelocity();
+            position = currentMesh.position.clone();
+            if (currentMesh.rotationQuaternion) {
+                rotationQuat = currentMesh.rotationQuaternion.clone();
+            }
+        }
+
+        return { linVel, angVel, position, rotationQuat };
+    }
+
+    private applyInitialModelTransform(entity: ModelEntity, config: ModelConfig, prevPosition: B.Vector3 | null, prevRotationQuat: B.Quaternion | null) {
+        entity.mesh.position = B.Vector3.Zero();
 
         if (prevPosition) {
             entity.mesh.position.addInPlace(prevPosition);
@@ -335,31 +346,23 @@ export class SceneController {
         }
 
         if (prevRotationQuat) {
-            // A ordem aqui importa: aplicamos a correção local primeiro, depois a rotação do mundo
             finalRotation = prevRotationQuat.multiply(finalRotation);
         }
 
         entity.mesh.rotationQuaternion = finalRotation;
+    }
 
-
+    private transferPhysicsState(entity: ModelEntity, prevLinVel: B.Vector3, prevAngVel: B.Vector3) {
         if (this.transformState.physics) {
             entity.enablePhysics();
         } else {
-            // Garante que o modelo utilize Quaternions mesmo sem física,
-            // para o Tweakpane não dar erro ao editar a rotação.
             if (!entity.mesh.rotationQuaternion) {
                 entity.mesh.rotationQuaternion = B.Quaternion.FromEulerVector(entity.mesh.rotation);
             }
         }
 
-        // Transfere velocidade reduzida do modelo anterior
         entity.setLinearVelocity(prevLinVel.scale(PhysicsConfigs.model.velocityTransferFactor));
         entity.setAngularVelocity(prevAngVel.scale(PhysicsConfigs.model.velocityTransferFactor));
-
-        // Re-aplica o shader ativo
-        if (this.shaderManager.activeMaterialId) {
-            this.shaderManager.applyMaterial(this.shaderManager.activeMaterialId, entity.mesh);
-        }
     }
 
     // ─── Shaders ───
@@ -395,16 +398,13 @@ export class SceneController {
         if (enabled) {
 
             // Lógica FIFO: Se atingiu o limite, desativa o mais antigo
-            if (this.activePostProcesses.length >= MAX_POST_PROCESSES) {
-                const oldest = this.activePostProcesses.shift(); // Remove e pega o 1º da fila
+            if (this.shaderManager.activePostProcessCount >= MAX_POST_PROCESSES) {
+                const oldest = this.shaderManager.activePostProcessIds[0];
                 if (oldest) {
                     this.togglePostProcess(oldest, false); // Desliga no motor
                     this.uiManager.forceUncheckPostProcess(oldest); // Desmarca na UI
                 }
             }
-
-            this.activePostProcesses.push(shaderId); // Entra no fim da fila
-
 
             this.shaderManager.enablePostProcess(shaderId);
 
@@ -422,13 +422,9 @@ export class SceneController {
             );
 
         } else {
-
-            this.activePostProcesses = this.activePostProcesses.filter(id => id !== shaderId);
-
             this.shaderManager.disablePostProcess(shaderId);
             this.uiManager.clearPostProcessPanel(shaderId);
             this.ppParams.delete(shaderId);
-
         }
 
     }

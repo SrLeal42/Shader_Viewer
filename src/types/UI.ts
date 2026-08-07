@@ -5,6 +5,7 @@ import type * as B from '@babylonjs/core';
 interface BaseParam {
     property: string;
     label: string;
+    description?: string;
 }
 
 interface FloatParam extends BaseParam {
@@ -36,7 +37,6 @@ interface Vector3Param extends BaseParam {
 
 // --- Union discriminada ---
 export type UIParameter = FloatParam | BooleanParam | ColorParam | Vector3Param;
-export type ControlType = UIParameter['type'];
 
 export interface UIConfig {
     title: string;

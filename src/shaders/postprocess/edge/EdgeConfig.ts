@@ -2,6 +2,7 @@ import * as B from '@babylonjs/core';
 import type { PostProcessShaderConfig } from '../../Types';
 
 import fragmentSource from './Edge.fragment.glsl?raw';
+import { ENVIRONMENT_WALLS } from '../../../configs/Constants';
 
 export const EdgeConfig: PostProcessShaderConfig = {
     label: 'Edge Detection (Geometria)',
@@ -11,7 +12,7 @@ export const EdgeConfig: PostProcessShaderConfig = {
     create: (scene: B.Scene, camera: B.Camera, getUniforms: () => Record<string, unknown>) => {
         B.Effect.ShadersStore['edgeFragmentShader'] = fragmentSource;
         // Lista de malhas que não devem gerar bordas (Céu e Barreiras Invisíveis da Física)
-        const ignoredMeshes = ['skybox', 'floor', 'ceil', 'left', 'right', 'front', 'back'];
+        const ignoredMeshes = ['skybox', ...ENVIRONMENT_WALLS];
         const predicate = (mesh: B.AbstractMesh) => !ignoredMeshes.includes(mesh.name);
 
         // Habilita o DepthRenderer (mais preciso para profundidade)
@@ -24,17 +25,15 @@ export const EdgeConfig: PostProcessShaderConfig = {
             gBuffer.getGBuffer().renderListPredicate = predicate;
         }
 
-        const pp = new B.PostProcess(
-            'edgeDetection',
-            'edge',
-            ['u_screenSize', 'u_depthThreshold', 'u_normalThreshold', 'u_edgeColor', 'u_edgeWidth', 'u_showOnlyEdges'],
-            ['depthSampler', 'normalSampler'],
-            1.0,
-            camera,
-            B.Texture.BILINEAR_SAMPLINGMODE,
-            scene.getEngine(),
-            false
-        );
+        const pp = new B.PostProcess('edgeDetection', 'edge', {
+            uniforms: ['u_screenSize', 'u_depthThreshold', 'u_normalThreshold', 'u_edgeColor', 'u_edgeWidth', 'u_showOnlyEdges'],
+            samplers: ['depthSampler', 'normalSampler'],
+            size: 1.0,
+            camera: camera,
+            samplingMode: B.Texture.BILINEAR_SAMPLINGMODE,
+            engine: scene.getEngine(),
+            reusable: false
+        });
 
         pp.onApplyObservable.add((effect) => {
             effect.setFloat2('u_screenSize', pp.width, pp.height);

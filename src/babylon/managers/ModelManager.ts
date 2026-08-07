@@ -62,10 +62,6 @@ export class ModelManager {
         return entity;
     }
 
-    /** Delega para ModelEntity */
-    public restoreOriginalMaterials(modelId: ModelId): void {
-        this.cache.get(modelId)?.restoreOriginalMaterials();
-    }
 
     public dispose(): void {
 

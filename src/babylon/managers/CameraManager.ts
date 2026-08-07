@@ -22,13 +22,6 @@ export class CameraManager {
 
         this.camera.position = EnvironmentConfigs.camera.initialPosition;
         this.camera.fov = EnvironmentConfigs.camera.fov;
-        // this.camera.attachControl(canvas, true);
-        // this.camera.wheelPrecision = 50;
-        // this.camera.minZ = 0.1;
-
-        // // Limites de zoom para não perder o modelo de vista
-        // this.camera.lowerRadiusLimit = 1;
-        // this.camera.upperRadiusLimit = 20;
     }
 
     /** Enquadra a câmera automaticamente ao redor de um mesh */

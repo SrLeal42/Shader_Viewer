@@ -1,7 +1,9 @@
+#version 300 es
 precision highp float;
 
-varying vec3 vNormal;
-varying vec3 vWorldPosition;
+in vec3 vNormal;
+in vec3 vWorldPosition;
+out vec4 outColor;
 
 uniform vec3 u_color;
 uniform float u_levels;
@@ -40,5 +42,5 @@ void main() {
     totalIntensity = max(totalIntensity, 0.15); // Sombra base mínima
 
     vec3 finalColor = u_color * totalIntensity;
-    gl_FragColor = vec4(finalColor, 1.0);
+    outColor = vec4(finalColor, 1.0);
 }

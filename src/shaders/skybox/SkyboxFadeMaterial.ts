@@ -1,7 +1,8 @@
 import * as B from '@babylonjs/core';
 
 import vertexSource from './SkyboxFade.vertex.glsl?raw';
-import fragmentSource from './SkyboxFade.fragment.glsl?raw'
+import fragmentSource from './SkyboxFade.fragment.glsl?raw';
+import { SKYBOX_UNIFORMS } from '../../configs/Constants';
 
 
 export function createSkyboxFadeMaterial(name: string, scene: B.Scene): B.ShaderMaterial {
@@ -16,13 +17,13 @@ export function createSkyboxFadeMaterial(name: string, scene: B.Scene): B.Shader
             attributes: ["position"],
             uniforms: [
                 "worldViewProjection",
-                "u_mix", "u_rotation1", "u_rotation2",
-                "u_visibility", "u_bgColor", "u_tonemapStrength",
-                "u_blur1", "u_blur2", "u_exposure", "u_saturation",
-                "u_time", "u_enableWarp", "u_enableMeteors", "u_enableAurora",
-                "u_warpSpeed", "u_warpIntensity", "u_meteorSpeedBase", "u_meteorDensity",
-                "u_meteorAngle", "u_auroraSpeed", "u_auroraIntensity", "u_auroraColor",
-                "u_enableBlackhole", "u_bhMass", "u_bhRadius"
+                SKYBOX_UNIFORMS.MIX, SKYBOX_UNIFORMS.ROTATION_1, SKYBOX_UNIFORMS.ROTATION_2,
+                SKYBOX_UNIFORMS.VISIBILITY, SKYBOX_UNIFORMS.BG_COLOR, SKYBOX_UNIFORMS.TONEMAP_STRENGTH,
+                SKYBOX_UNIFORMS.BLUR_1, SKYBOX_UNIFORMS.BLUR_2, SKYBOX_UNIFORMS.EXPOSURE, SKYBOX_UNIFORMS.SATURATION,
+                SKYBOX_UNIFORMS.TIME, SKYBOX_UNIFORMS.ENABLE_WARP, SKYBOX_UNIFORMS.ENABLE_METEORS, SKYBOX_UNIFORMS.ENABLE_AURORA,
+                SKYBOX_UNIFORMS.WARP_SPEED, SKYBOX_UNIFORMS.WARP_INTENSITY, SKYBOX_UNIFORMS.METEOR_SPEED_BASE, SKYBOX_UNIFORMS.METEOR_DENSITY,
+                SKYBOX_UNIFORMS.METEOR_ANGLE, SKYBOX_UNIFORMS.AURORA_SPEED, SKYBOX_UNIFORMS.AURORA_INTENSITY, SKYBOX_UNIFORMS.AURORA_COLOR,
+                SKYBOX_UNIFORMS.ENABLE_BLACKHOLE, SKYBOX_UNIFORMS.BH_MASS, SKYBOX_UNIFORMS.BH_RADIUS
             ],
             samplers: ["texture1", "texture2"]
         }
@@ -31,37 +32,37 @@ export function createSkyboxFadeMaterial(name: string, scene: B.Scene): B.Shader
     material.backFaceCulling = false;
 
     // Valores Iniciais
-    material.setFloat("u_mix", 0.0);
-    material.setFloat("u_rotation1", 0.0);
-    material.setFloat("u_rotation2", 0.0);
-    material.setFloat("u_visibility", 0.0);
-    material.setColor3("u_bgColor", B.Color3.Black());
-    material.setFloat("u_tonemapStrength", 0.3);
+    material.setFloat(SKYBOX_UNIFORMS.MIX, 0.0);
+    material.setFloat(SKYBOX_UNIFORMS.ROTATION_1, 0.0);
+    material.setFloat(SKYBOX_UNIFORMS.ROTATION_2, 0.0);
+    material.setFloat(SKYBOX_UNIFORMS.VISIBILITY, 0.0);
+    material.setColor3(SKYBOX_UNIFORMS.BG_COLOR, B.Color3.Black());
+    material.setFloat(SKYBOX_UNIFORMS.TONEMAP_STRENGTH, 0.3);
 
     // Efeitos visuais (defaults neutros)
-    material.setFloat("u_blur1", 0.0);
-    material.setFloat("u_blur2", 0.0);
-    material.setFloat("u_exposure", 1.0);
-    material.setFloat("u_saturation", 1.0);
-    material.setFloat("u_time", 0.0);
+    material.setFloat(SKYBOX_UNIFORMS.BLUR_1, 0.0);
+    material.setFloat(SKYBOX_UNIFORMS.BLUR_2, 0.0);
+    material.setFloat(SKYBOX_UNIFORMS.EXPOSURE, 1.0);
+    material.setFloat(SKYBOX_UNIFORMS.SATURATION, 1.0);
+    material.setFloat(SKYBOX_UNIFORMS.TIME, 0.0);
 
     // Efeitos visuais (flags on/off)
-    material.setFloat("u_enableWarp", 0.0);
-    material.setFloat("u_enableMeteors", 0.0);
-    material.setFloat("u_enableAurora", 0.0);
-    material.setFloat("u_enableBlackhole", 0.0);
+    material.setFloat(SKYBOX_UNIFORMS.ENABLE_WARP, 0.0);
+    material.setFloat(SKYBOX_UNIFORMS.ENABLE_METEORS, 0.0);
+    material.setFloat(SKYBOX_UNIFORMS.ENABLE_AURORA, 0.0);
+    material.setFloat(SKYBOX_UNIFORMS.ENABLE_BLACKHOLE, 0.0);
 
     // Efeitos visuais (parâmetros iniciais seguros)
-    material.setFloat("u_warpSpeed", 0.15);
-    material.setFloat("u_warpIntensity", 0.2);
-    material.setFloat("u_meteorSpeedBase", 0.3);
-    material.setFloat("u_meteorDensity", 10.0);
-    material.setFloat("u_meteorAngle", 0.5);
-    material.setFloat("u_auroraSpeed", 0.1);
-    material.setFloat("u_auroraIntensity", 1.5);
-    material.setColor3("u_auroraColor", new B.Color3(0.1, 1.0, 0.5));
-    material.setFloat("u_bhMass", 0.5);
-    material.setFloat("u_bhRadius", 0.05);
+    material.setFloat(SKYBOX_UNIFORMS.WARP_SPEED, 0.15);
+    material.setFloat(SKYBOX_UNIFORMS.WARP_INTENSITY, 0.2);
+    material.setFloat(SKYBOX_UNIFORMS.METEOR_SPEED_BASE, 0.3);
+    material.setFloat(SKYBOX_UNIFORMS.METEOR_DENSITY, 10.0);
+    material.setFloat(SKYBOX_UNIFORMS.METEOR_ANGLE, 0.5);
+    material.setFloat(SKYBOX_UNIFORMS.AURORA_SPEED, 0.1);
+    material.setFloat(SKYBOX_UNIFORMS.AURORA_INTENSITY, 1.5);
+    material.setColor3(SKYBOX_UNIFORMS.AURORA_COLOR, new B.Color3(0.1, 1.0, 0.5));
+    material.setFloat(SKYBOX_UNIFORMS.BH_MASS, 0.5);
+    material.setFloat(SKYBOX_UNIFORMS.BH_RADIUS, 0.05);
 
     return material;
 }

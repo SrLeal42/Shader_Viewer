@@ -11,6 +11,23 @@ export interface ModelConfig extends UIConfig {
     initialRotation?: B.Vector3; // Em radianos/Euler
 }
 
+// Helpers para não duplicar código
+const createGLBLoader = (filename: string) => async (scene: B.Scene) => {
+    const result = await B.SceneLoader.ImportMeshAsync('', '/models/', filename, scene);
+    return result.meshes[0];
+};
+
+const createScaleParam = (baseScale: number, maxScale: number = 3) => ({
+    property: 'scale',
+    label: 'Escala Global',
+    type: 'float' as const,
+    defaultValue: 1,
+    min: 0.1, max: maxScale, step: 0.1,
+    onApply: (mesh: B.AbstractMesh, value: number) => {
+        mesh.scaling.setAll(baseScale * value);
+    }
+});
+
 export const ModelConfigs = {
     sphere: {
         label: 'Esfera',
@@ -55,6 +72,14 @@ export const ModelConfigs = {
                 defaultValue: 1,
                 min: 0.1, max: 3, step: 0.1,
                 onApply: (mesh: B.AbstractMesh, value: number) => { mesh.scaling.y = value; }
+            },
+            {
+                property: 'deepth',
+                label: 'Profundide (Z)',
+                type: 'float' as const,
+                defaultValue: 1,
+                min: 0.1, max: 3, step: 0.1,
+                onApply: (mesh: B.AbstractMesh, value: number) => { mesh.scaling.z = value; }
             }
         ]
     },
@@ -64,96 +89,24 @@ export const ModelConfigs = {
         colliderType: B.PhysicsShapeType.CONVEX_HULL,
         initialRotation: new B.Vector3(0, Math.PI, 0),
         description: 'Suzanner',
-        loader: async (scene: B.Scene) => {
-            const result = await B.SceneLoader.ImportMeshAsync(
-                '',           // nome do mesh (vazio = todos)
-                '/models/',   // path da pasta
-                'suzanne.glb', // nome do arquivo
-                scene
-            );
-
-            const root = result.meshes[0];
-
-            return root;
-        },
-        parameters: [
-            {
-                property: 'scale',
-                label: 'Escala Global',
-                type: 'float' as const,
-                defaultValue: 1,
-                min: 0.1, max: 3, step: 0.1,
-                onApply: (mesh: B.AbstractMesh, value: number) => {
-                    const baseScale = 0.6; // O modelo precisa ser reduzido 10x
-
-                    mesh.scaling.setAll(baseScale * value); // Escala absoluta baseada no fator
-                }
-            }
-        ]
+        loader: createGLBLoader('suzanne.glb'),
+        parameters: [createScaleParam(0.6)]
     },
     candelabra: {
         label: 'Candelabro',
         title: 'Propriedades do Candelabro',
         colliderType: B.PhysicsShapeType.CONVEX_HULL,
         description: 'Candelabro',
-        loader: async (scene: B.Scene) => {
-            const result = await B.SceneLoader.ImportMeshAsync(
-                '',
-                '/models/',
-                'candelabra.glb',
-                scene
-            );
-
-            const root = result.meshes[0];
-
-            return root;
-        },
-        parameters: [
-            {
-                property: 'scale',
-                label: 'Escala Global',
-                type: 'float' as const,
-                defaultValue: 1,
-                min: 0.1, max: 5, step: 0.1,
-                onApply: (mesh: B.AbstractMesh, value: number) => {
-                    const baseScale = 0.02;
-
-                    mesh.scaling.setAll(baseScale * value);
-                }
-            }
-        ]
+        loader: createGLBLoader('candelabra.glb'),
+        parameters: [createScaleParam(0.02, 5)]
     },
     axis: {
         label: 'Eixos',
         title: 'Propriedades do Eixos',
         colliderType: B.PhysicsShapeType.CONVEX_HULL,
         description: 'Eixos',
-        loader: async (scene: B.Scene) => {
-            const result = await B.SceneLoader.ImportMeshAsync(
-                '',
-                '/models/',
-                'axis.glb',
-                scene
-            );
-
-            const root = result.meshes[0];
-
-            return root;
-        },
-        parameters: [
-            {
-                property: 'scale',
-                label: 'Escala Global',
-                type: 'float' as const,
-                defaultValue: 1,
-                min: 0.1, max: 3, step: 0.1,
-                onApply: (mesh: B.AbstractMesh, value: number) => {
-                    const baseScale = 1;
-
-                    mesh.scaling.setAll(baseScale * value);
-                }
-            }
-        ]
+        loader: createGLBLoader('axis.glb'),
+        parameters: [createScaleParam(1)]
     },
 
 } as const satisfies Record<string, ModelConfig>;

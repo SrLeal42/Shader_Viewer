@@ -8,6 +8,7 @@ import { createSkyboxFadeMaterial } from '../../shaders/skybox/SkyboxFadeMateria
 import type { FrustumLimits } from '../../types/Camera';
 
 import { easeInOutQuad } from '../../utils/math';
+import { ENVIRONMENT_WALLS, SKYBOX_UNIFORMS } from '../../configs/Constants';
 
 export class EnvironmentManager {
 
@@ -71,7 +72,7 @@ export class EnvironmentManager {
         this.skyboxMaterial.setTexture("texture1", fallback);
         this.skyboxMaterial.setTexture("texture2", fallback);
         this.skyboxMesh.visibility = 1;
-        this.skyboxMaterial.setColor3("u_bgColor", EnvironmentConfigs.background.color);
+        this.skyboxMaterial.setColor3(SKYBOX_UNIFORMS.BG_COLOR, EnvironmentConfigs.background.color);
         this.currentVisibility = 0;
     }
 
@@ -125,15 +126,15 @@ export class EnvironmentManager {
             const oldConfig = SkyboxConfigs[this.currentSkyboxId];
             oldRotation = oldConfig?.rotationY ?? 0;
 
-            this.skyboxMaterial.setFloat("u_blur1", oldConfig?.blur ?? 0.0);
+            this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.BLUR_1, oldConfig?.blur ?? 0.0);
         } else {
-            this.skyboxMaterial.setFloat("u_blur1", 0.0);
+            this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.BLUR_1, 0.0);
         }
 
         // Blur da textura que está entrando (texture2) = blur do skybox novo
-        this.skyboxMaterial.setFloat("u_blur2", config.blur ?? 0.0);
+        this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.BLUR_2, config.blur ?? 0.0);
 
-        this.skyboxMaterial.setFloat("u_rotation1", oldRotation);
+        this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.ROTATION_1, oldRotation);
 
         // Carrega a textura que realmente queremos mostrar (Textura 2)
         const skyTexture = B.CubeTexture.CreateFromPrefilteredData(config.path, this.scene);
@@ -142,18 +143,17 @@ export class EnvironmentManager {
 
         this.skyboxMaterial.setTexture("texture2", this.nextVisualTexture);
 
-        this.skyboxMaterial.setFloat("u_rotation2", config.rotationY ?? 0);
+        this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.ROTATION_2, config.rotationY ?? 0);
 
-        this.skyboxMaterial.setFloat("u_tonemapStrength", config.tonemapStrength ?? 0.0);
+        this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.TONEMAP_STRENGTH, config.tonemapStrength ?? 0.0);
 
-        this.skyboxMaterial.setFloat("u_exposure", config.exposure ?? 1.0);
-        this.skyboxMaterial.setFloat("u_saturation", config.saturation ?? 1.0);
+        this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.EXPOSURE, config.exposure ?? 1.0);
+        this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.SATURATION, config.saturation ?? 1.0);
 
         // Dispara a animação dependendo do estado atual
         if (this.currentVisualTexture) {
-            // this.skyboxMesh.setEnabled(true);
             // Se já estávamos vendo um skybox, inicia o crossfade em GLSL
-            this.skyboxMaterial.setFloat("u_mix", 0.0);
+            this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.MIX, 0.0);
 
             this.fadeShaderMix(() => {
                 if (this.currentVisualTexture) {
@@ -171,8 +171,7 @@ export class EnvironmentManager {
 
         } else {
             this.skyboxMaterial.setTexture("texture1", skyTexture);
-            this.skyboxMaterial.setFloat("u_mix", 1.0);
-            // this.skyboxMesh.setEnabled(true);  // Agora é seguro renderizar
+            this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.MIX, 1.0);
             this.fadeSkyboxVisibility(1);
         }
 
@@ -192,13 +191,13 @@ export class EnvironmentManager {
         // Aplica os parâmetros base para quando estivermos no modo Cor
         const config = SkyboxConfigs.color;
         if (config) {
-            this.skyboxMaterial.setFloat("u_tonemapStrength", config.tonemapStrength ?? 0.0);
-            this.skyboxMaterial.setFloat("u_exposure", config.exposure ?? 1.0);
-            this.skyboxMaterial.setFloat("u_saturation", config.saturation ?? 1.0);
+            this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.TONEMAP_STRENGTH, config.tonemapStrength ?? 0.0);
+            this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.EXPOSURE, config.exposure ?? 1.0);
+            this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.SATURATION, config.saturation ?? 1.0);
         }
 
         // Avisa nosso ShaderGLSL qual é a cor do fundo para o fade ficar perfeito
-        this.skyboxMaterial.setColor3("u_bgColor", color);
+        this.skyboxMaterial.setColor3(SKYBOX_UNIFORMS.BG_COLOR, color);
 
         this.fadeSkyboxVisibility(0);
     }
@@ -227,7 +226,7 @@ export class EnvironmentManager {
             const val = startValue + (target - startValue) * eased;
 
             this.currentVisibility = val;
-            this.skyboxMaterial.setFloat("u_visibility", val);
+            this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.VISIBILITY, val);
 
             if (progress >= 1.0) {
                 this.scene.onBeforeRenderObservable.remove(this.visibilityObserver!);
@@ -268,7 +267,7 @@ export class EnvironmentManager {
 
                 this.scene.onBeforeRenderObservable.remove(this.mixObserver!);
                 this.mixObserver = null;
-                this.skyboxMaterial.setFloat("u_mix", 1.0);
+                this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.MIX, 1.0);
 
                 if (this.pendingMixCleanup) {
                     this.pendingMixCleanup();
@@ -276,7 +275,7 @@ export class EnvironmentManager {
                 }
 
             } else {
-                this.skyboxMaterial.setFloat("u_mix", easeInOutQuad(progress));
+                this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.MIX, easeInOutQuad(progress));
             }
 
         });
@@ -305,12 +304,12 @@ export class EnvironmentManager {
 
         // Se alterar o nome das paredes vai afetar o EdgeDetector;
         const walls = [
-            { name: 'floor', w: boxW, h: thickness, d: maxZ - minZ, x: 0, y: -boxH / 2 - halfT, z: (maxZ + minZ) / 2 },
-            { name: 'ceil', w: boxW, h: thickness, d: maxZ - minZ, x: 0, y: boxH / 2 + halfT, z: (maxZ + minZ) / 2 },
-            { name: 'left', w: thickness, h: boxH, d: maxZ - minZ, x: -boxW / 2 - halfT, y: 0, z: (maxZ + minZ) / 2 },
-            { name: 'right', w: thickness, h: boxH, d: maxZ - minZ, x: boxW / 2 + halfT, y: 0, z: (maxZ + minZ) / 2 },
-            { name: 'front', w: boxW, h: boxH, d: thickness, x: 0, y: 0, z: minZ - halfT },
-            { name: 'back', w: boxW, h: boxH, d: thickness, x: 0, y: 0, z: maxZ + halfT },
+            { name: ENVIRONMENT_WALLS[0], w: boxW, h: thickness, d: maxZ - minZ, x: 0, y: -boxH / 2 - halfT, z: (maxZ + minZ) / 2 },
+            { name: ENVIRONMENT_WALLS[1], w: boxW, h: thickness, d: maxZ - minZ, x: 0, y: boxH / 2 + halfT, z: (maxZ + minZ) / 2 },
+            { name: ENVIRONMENT_WALLS[2], w: thickness, h: boxH, d: maxZ - minZ, x: -boxW / 2 - halfT, y: 0, z: (maxZ + minZ) / 2 },
+            { name: ENVIRONMENT_WALLS[3], w: thickness, h: boxH, d: maxZ - minZ, x: boxW / 2 + halfT, y: 0, z: (maxZ + minZ) / 2 },
+            { name: ENVIRONMENT_WALLS[4], w: boxW, h: boxH, d: thickness, x: 0, y: 0, z: minZ - halfT },
+            { name: ENVIRONMENT_WALLS[5], w: boxW, h: boxH, d: thickness, x: 0, y: 0, z: maxZ + halfT },
         ];
 
         for (const w of walls) {

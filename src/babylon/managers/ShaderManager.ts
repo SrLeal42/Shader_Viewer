@@ -38,6 +38,14 @@ export class ShaderManager {
         return this._activeMaterialId;
     }
 
+    public get activePostProcessIds(): PostProcessShaderId[] {
+        return Array.from(this.activePostProcesses.keys());
+    }
+
+    public get activePostProcessCount(): number {
+        return this.activePostProcesses.size;
+    }
+
     // ─── Material Shaders ───
 
     /** Aplica um material shader ao mesh e todos os seus filhos */
@@ -50,7 +58,7 @@ export class ShaderManager {
 
             // Aplica os defaults dos uniforms
             config.uniforms.forEach(u => {
-                this.setUniformOnMaterial(material, u, u.defaultValue);
+                this.applyUniform(material, u, u.defaultValue);
             });
 
             this.materialCache.set(shaderId, material);
@@ -109,7 +117,7 @@ export class ShaderManager {
             if (!currentValues) return;
 
             config.uniforms.forEach(u => {
-                this.setUniformOnEffect(effect, u, currentValues[u.uniform]);
+                this.applyUniform(effect, u, currentValues[u.uniform]);
             });
         });
 
@@ -135,7 +143,7 @@ export class ShaderManager {
         const mat = this.materialCache.get(this._activeMaterialId);
         if (!mat) return;
 
-        this.setUniformOnMaterial(mat, uniform, value);
+        this.applyUniform(mat, uniform, value);
     }
 
     /** Seta um uniform num post-process ativo */
@@ -155,42 +163,27 @@ export class ShaderManager {
             if (mat) {
                 mat.setFloat('u_time', time);
 
-                // INJETAMOS AS LUZES AQUI TODO FRAME PARA AS ANIMAÇÕES FUNCIONAREM!
-                this.lightManager.injectLightUniforms(mat);
+                if (this.lightManager.isDirty) {
+                    this.lightManager.injectLightUniforms(mat);
+                }
             }
         }
     }
 
     // ─── Helpers internos ───
 
-    private setUniformOnMaterial(mat: B.ShaderMaterial, uniform: ShaderUniform, value: unknown): void {
+    private applyUniform(target: B.ShaderMaterial | B.Effect, uniform: ShaderUniform, value: unknown): void {
         switch (uniform.type) {
             case 'float':
-                mat.setFloat(uniform.uniform, value as number);
+                target.setFloat(uniform.uniform, value as number);
                 break;
             case 'color': {
                 const c = value as { r: number; g: number; b: number };
-                mat.setColor3(uniform.uniform, new B.Color3(c.r, c.g, c.b));
+                target.setColor3(uniform.uniform, new B.Color3(c.r, c.g, c.b));
                 break;
             }
             case 'boolean':
-                mat.setFloat(uniform.uniform, (value as boolean) ? 1.0 : 0.0);
-                break;
-        }
-    }
-
-    private setUniformOnEffect(effect: B.Effect, uniform: ShaderUniform, value: unknown): void {
-        switch (uniform.type) {
-            case 'float':
-                effect.setFloat(uniform.uniform, value as number);
-                break;
-            case 'color': {
-                const c = value as { r: number; g: number; b: number };
-                effect.setColor3(uniform.uniform, new B.Color3(c.r, c.g, c.b));
-                break;
-            }
-            case 'boolean':
-                effect.setFloat(uniform.uniform, (value as boolean) ? 1.0 : 0.0);
+                target.setFloat(uniform.uniform, (value as boolean) ? 1.0 : 0.0);
                 break;
         }
     }

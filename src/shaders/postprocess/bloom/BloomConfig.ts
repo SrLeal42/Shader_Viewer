@@ -55,30 +55,26 @@ export const BloomConfig: PostProcessShaderConfig = {
         );
 
         // Extrai brilho e aplica desfoque horizontal
-        const hBlur = new B.PostProcess(
-            'bloomHBlur',
-            'bloomBlur',
-            ['u_threshold', 'u_radius', 'u_screenSize'],
-            [],
-            1.0,
-            camera,
-            B.Texture.BILINEAR_SAMPLINGMODE,
-            scene.getEngine(),
-            false
-        );
+        const hBlur = new B.PostProcess('bloomHBlur', 'bloomBlur', {
+            uniforms: ['u_threshold', 'u_radius', 'u_screenSize'],
+            samplers: [],
+            size: 1.0,
+            camera: camera,
+            samplingMode: B.Texture.BILINEAR_SAMPLINGMODE,
+            engine: scene.getEngine(),
+            reusable: false
+        });
 
         // Aplica desfoque vertical e soma com a cena original
-        const vBlur = new B.PostProcess(
-            'bloomVBlur',
-            'bloomComposite',
-            ['u_intensity', 'u_radius', 'u_screenSize'],
-            ['origSampler'],
-            1.0,
-            camera,
-            B.Texture.BILINEAR_SAMPLINGMODE,
-            scene.getEngine(),
-            false
-        );
+        const vBlur = new B.PostProcess('bloomVBlur', 'bloomComposite', {
+            uniforms: ['u_intensity', 'u_radius', 'u_screenSize'],
+            samplers: ['origSampler'],
+            size: 1.0,
+            camera: camera,
+            samplingMode: B.Texture.BILINEAR_SAMPLINGMODE,
+            engine: scene.getEngine(),
+            reusable: false
+        });
 
         hBlur.onApplyObservable.add((effect) => {
             const vals = getUniforms();

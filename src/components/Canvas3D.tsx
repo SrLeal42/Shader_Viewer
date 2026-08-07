@@ -116,13 +116,6 @@ export function Canvas3D() {
                 className={`${styles.tweakpaneContainerRight} ${!isUIVisible ? styles.hiddenUI : ''}`} />
 
             {/* Botão de Toggle */}
-            {/* <button
-                className={`${styles.toggleUIButton} ${isIdle ? styles.hiddenButton : ''}`}
-                onClick={() => setIsUIVisible(!isUIVisible)}
-                title={isUIVisible ? "Ocultar Interface (H)" : "Mostrar Interface (H)"}
-            >
-                👁
-            </button> */}
             <button
                 className={`${styles.toggleUIButton} ${isIdle ? styles.hiddenButton : ''}`}
                 onClick={() => setIsUIVisible(!isUIVisible)}
