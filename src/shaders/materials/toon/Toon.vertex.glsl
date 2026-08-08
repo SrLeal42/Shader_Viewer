@@ -1,16 +1,17 @@
+#version 300 es
 precision highp float;
 
 // Attributes
-attribute vec3 position;
-attribute vec3 normal;
+in vec3 position;
+in vec3 normal;
 
 // Uniforms do Babylon (nomes padrão)
 uniform mat4 worldViewProjection;
 uniform mat4 world;
 
 // Varyings para o fragment
-varying vec3 vNormal;
-varying vec3 vWorldPosition;
+out vec3 vNormal;
+out vec3 vWorldPosition;
 
 void main() {
     vNormal = normalize(mat3(world) * normal);

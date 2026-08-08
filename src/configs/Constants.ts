@@ -1,3 +1,5 @@
+import type { ShaderUniform } from '../shaders/Types';
+
 export const ENVIRONMENT_WALLS = [
     'floor',
     'ceil',
@@ -47,3 +49,33 @@ export const SKYBOX_UNIFORMS = {
     BH_MASS: 'u_bhMass',
     BH_RADIUS: 'u_bhRadius'
 };
+
+
+export const TOON_OUTLINE_UNIFORMS: ShaderUniform[] = [
+    {
+        uniform: 'u_edgeWidth',
+        label: 'Espessura Outline',
+        description: 'Largura da linha de contorno em pixels.',
+        targetPostProcess: 'toon_edge',
+        type: 'float',
+        defaultValue: 0.5,
+        min: 0.1, max: 5.0, step: 0.1,
+    },
+    {
+        uniform: 'u_edgeColor',
+        label: 'Cor do Outline',
+        description: 'Cor sólida do contorno anime.',
+        targetPostProcess: 'toon_edge',
+        type: 'color',
+        defaultValue: { r: 0.0, g: 0.0, b: 0.0 }, // Preto
+    },
+    {
+        uniform: 'u_depthThreshold',
+        label: 'Sensibilidade (Silhueta)',
+        description: 'Sensibilidade para detectar a borda externa.',
+        targetPostProcess: 'toon_edge',
+        type: 'float',
+        defaultValue: 0.03,
+        min: 0.001, max: 0.5, step: 0.001,
+    }
+];

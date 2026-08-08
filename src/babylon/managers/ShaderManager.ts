@@ -51,29 +51,23 @@ export class ShaderManager {
     /** Aplica um material shader ao mesh e todos os seus filhos */
     public applyMaterial(shaderId: MaterialShaderId, mesh: B.AbstractMesh): void {
 
-        // Cache hit ou cria novo
+        const config = MaterialShaders[shaderId];
+
         if (!this.materialCache.has(shaderId)) {
-            const config = MaterialShaders[shaderId];
             const material = config.create(this.scene);
-
-            // Aplica os defaults dos uniforms
-            config.uniforms.forEach(u => {
-                this.applyUniform(material, u, u.defaultValue);
-            });
-
+            config.uniforms.forEach(u => this.applyUniform(material, u, u.defaultValue));
             this.materialCache.set(shaderId, material);
         }
 
         const material = this.materialCache.get(shaderId)!;
-
-        // Aplica em todos os meshes (root + children)
         mesh.material = material;
-        for (const child of mesh.getChildMeshes()) {
+
+        const children = mesh.getChildMeshes();
+        for (const child of children) {
             child.material = material;
         }
 
         this._activeMaterialId = shaderId;
-
         this.lightManager.injectLightUniforms(material);
     }
 
@@ -140,7 +134,14 @@ export class ShaderManager {
     /** Seta um uniform no material shader ativo */
     public setMaterialUniform(uniform: ShaderUniform, value: unknown): void {
         if (!this._activeMaterialId) return;
+
+        if (uniform.targetPostProcess) {
+            this.setPostProcessUniform(uniform.targetPostProcess as any, uniform, value);
+            return;
+        }
+
         const mat = this.materialCache.get(this._activeMaterialId);
+
         if (!mat) return;
 
         this.applyUniform(mat, uniform, value);
@@ -162,6 +163,7 @@ export class ShaderManager {
             const mat = this.materialCache.get(this._activeMaterialId);
             if (mat) {
                 mat.setFloat('u_time', time);
+                mat.setVector3('u_cameraPos', this.camera.position);
 
                 if (this.lightManager.isDirty) {
                     this.lightManager.injectLightUniforms(mat);

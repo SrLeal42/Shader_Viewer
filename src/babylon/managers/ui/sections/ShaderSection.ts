@@ -57,6 +57,9 @@ export class ShaderSection {
         // --- Checkboxes de Post-Process (quando houver) ---
         if (Object.keys(PostProcessShaders).length > 0) {
             for (const [id, config] of Object.entries(PostProcessShaders)) {
+
+                if (config.hidden) continue;
+
                 const ppParams = { [id]: false };
                 const ppBinding = this.rootPPFolder.addBinding(ppParams, id, {
                     label: config.label,

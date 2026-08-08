@@ -1,17 +1,21 @@
 import * as B from '@babylonjs/core';
 import type { MaterialShaderConfig } from '../../Types';
 
-import vertexSource from './toon.vertex.glsl?raw';
-import fragmentSource from './toon.fragment.glsl?raw';
+import vertexSource from './Toon.vertex.glsl?raw';
+import fragmentSource from './Toon.fragment.glsl?raw';
+
+import { TOON_OUTLINE_UNIFORMS } from '../../../configs/Constants';
+
 
 export const ToonConfig: MaterialShaderConfig = {
     label: 'Toon Shading',
     title: 'Parâmetros do Toon',
-    description: "Material estilo desenho animado",
+    description: "Material estilo desenho animado com outline e specular",
     category: 'material',
 
+    postProcessDependencies: ['toon_edge'],
+
     create: (scene: B.Scene) => {
-        // Registra os shaders no store interno do Babylon
         B.Effect.ShadersStore['toonVertexShader'] = vertexSource;
         B.Effect.ShadersStore['toonFragmentShader'] = fragmentSource;
 
@@ -19,27 +23,33 @@ export const ToonConfig: MaterialShaderConfig = {
             attributes: ['position', 'normal'],
             uniforms: [
                 'worldViewProjection', 'world',
-                'u_time', 'u_color', 'u_levels',
-                'u_hemiDir', 'u_hemiColor', 'u_pointPos', 'u_pointColor'
+                'u_time', 'u_cameraPos',
+                'u_color', 'u_levels', 'u_shadowMin',
+                'u_hemiDir', 'u_hemiColor', 'u_pointPos', 'u_pointColor',
+                'u_glossiness', 'u_specThreshold', 'u_specIntensity', 'u_specColor',
+                'u_rimMin', 'u_rimMax', 'u_rimIntensity', 'u_rimColor'
             ],
         });
     },
 
     uniforms: [
-        {
-            uniform: 'u_levels',
-            label: 'Níveis de Sombra',
-            description: 'Controla a quantidade de degraus de luz.',
-            type: 'float',
-            defaultValue: 7,
-            min: 2, max: 15, step: 1,
-        },
-        {
-            uniform: 'u_color',
-            label: 'Cor Base',
-            description: 'A cor intrínseca principal do objeto.',
-            type: 'color',
-            defaultValue: { r: 0.8, g: 0.2, b: 0.3 },
-        }
+        // --- Diffuse ---
+        { uniform: 'u_color', label: 'Cor Base', type: 'color', defaultValue: { r: 0.8, g: 0.2, b: 0.3 } },
+        { uniform: 'u_levels', label: 'Degraus', type: 'float', defaultValue: 5, min: 2, max: 10, step: 1 },
+        { uniform: 'u_shadowMin', label: 'Sombra Min', type: 'float', defaultValue: 0.15, min: 0.0, max: 1.0, step: 0.05 },
+
+        // --- Specular ---
+        { uniform: 'u_specColor', label: 'Cor Specular', type: 'color', defaultValue: { r: 1.0, g: 1.0, b: 1.0 } },
+        { uniform: 'u_specIntensity', label: 'Força Specular', type: 'float', defaultValue: 0.5, min: 0.0, max: 2.0, step: 0.1 },
+        { uniform: 'u_glossiness', label: 'Glossiness', type: 'float', defaultValue: 50.0, min: 1.0, max: 128.0, step: 1.0 },
+        { uniform: 'u_specThreshold', label: 'Corte Specular', type: 'float', defaultValue: 0.5, min: 0.0, max: 1.0, step: 0.01 },
+
+        // --- Rim Light ---
+        { uniform: 'u_rimColor', label: 'Cor do Rim', type: 'color', defaultValue: { r: 1.0, g: 1.0, b: 1.0 } },
+        { uniform: 'u_rimIntensity', label: 'Força do Rim', type: 'float', defaultValue: 0.5, min: 0.0, max: 3.0, step: 0.1 },
+        { uniform: 'u_rimMin', label: 'Rim Min', type: 'float', defaultValue: 0.6, min: 0.0, max: 1.0, step: 0.01 },
+        { uniform: 'u_rimMax', label: 'Rim Max', type: 'float', defaultValue: 1.0, min: 0.0, max: 1.0, step: 0.01 },
+
+        ...TOON_OUTLINE_UNIFORMS
     ]
 };

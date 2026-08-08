@@ -87,7 +87,7 @@ export const ModelConfigs = {
         label: 'Suzanne',
         title: 'Propriedades da Suzanne',
         colliderType: B.PhysicsShapeType.CONVEX_HULL,
-        initialRotation: new B.Vector3(0, Math.PI, 0),
+        // initialRotation: new B.Vector3(0, Math.PI, 0),
         description: 'Suzanner',
         loader: createGLBLoader('suzanne.glb'),
         parameters: [createScaleParam(0.6)]

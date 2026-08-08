@@ -6,6 +6,7 @@ interface BaseUniform {
     uniform: string;   // Nome do uniform no GLSL (ex: 'u_levels')
     label: string;     // Nome exibido no Tweakpane
     description?: string;
+    targetPostProcess?: string;
 }
 
 interface FloatUniform extends BaseUniform {
@@ -40,9 +41,11 @@ interface BaseShaderConfig {
 export interface MaterialShaderConfig extends BaseShaderConfig {
     category: 'material';
     create: (scene: B.Scene) => B.ShaderMaterial;
+    postProcessDependencies?: string[];
 }
 
 export interface PostProcessShaderConfig extends BaseShaderConfig {
     category: 'postprocess';
     create: (scene: B.Scene, camera: B.Camera, getUniforms: () => Record<string, unknown>) => B.PostProcess;
+    hidden?: boolean;
 }
