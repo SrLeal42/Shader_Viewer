@@ -10,6 +10,7 @@ import type { SkyboxId } from '../../../configs/SkyboxConfigs';
 import type { SkyboxEffectId } from '../../../configs/SkyboxEffectsConfigs';
 import type { LightModeId, PointAnimationType } from '../../../configs/LightConfigs';
 import type { MaterialShaderId, PostProcessShaderId } from '../../../shaders/Registry';
+import type { WeatherPresetId } from '../../../configs/weather/WeatherRegistry';
 
 import { ModelSection } from './sections/ModelSection';
 import { TransformSection } from './sections/TransformSection';
@@ -133,6 +134,12 @@ export class UIManager {
         registerForceOffCallback: (callback: (id: SkyboxEffectId) => void) => void
     ): void {
         this.environmentSection.setupEffects(onEffectToggle, registerForceOffCallback);
+    }
+
+    public setupWeatherControls(
+        onChange: (presetId: WeatherPresetId | 'none') => void
+    ): void {
+        this.environmentSection.setupWeather(onChange);
     }
 
     public setupLightControls(

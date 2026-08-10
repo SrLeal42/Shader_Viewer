@@ -2,8 +2,10 @@ import type { Pane, FolderApi } from 'tweakpane';
 
 import { SkyboxConfigs, type SkyboxId } from '../../../../configs/SkyboxConfigs';
 import { SkyboxEffectsConfigs, MAX_ACTIVE_EFFECTS, type SkyboxEffectId } from '../../../../configs/SkyboxEffectsConfigs';
+
 import { EnvironmentConfigs } from '../../../../configs/EnvironmentConfigs';
 
+import { WeatherPresets, type WeatherPresetId } from '../../../../configs/weather/WeatherRegistry';
 
 export class EnvironmentSection {
     private pane: Pane;
@@ -97,6 +99,29 @@ export class EnvironmentSection {
             }
         });
 
+    }
+
+
+    public setupWeather(
+        onChange: (presetId: WeatherPresetId | 'none') => void
+    ): void {
+        const folder = this.pane.addFolder({ title: 'Clima' });
+
+        const options: Record<string, string> = { 'Nenhum': 'none' };
+        for (const [id, config] of Object.entries(WeatherPresets)) {
+            options[config.label] = id;
+        }
+
+        const params = { weather: 'none' as string };
+
+        const binding = folder.addBinding(params, 'weather', {
+            options,
+            label: 'Efeito'
+        }).on('change', (ev) => {
+            onChange(ev.value as WeatherPresetId | 'none');
+        });
+
+        binding.element.title = 'Selecione um efeito climático para a cena.';
     }
 
 

@@ -9,6 +9,8 @@ import { EnvironmentManager } from './managers/EnvironmentManager';
 import { SkyboxEffectManager } from './managers/SkyboxEffectManager';
 import { InteractionManager } from './managers/InteractionManager';
 import { LightManager } from './managers/LightManagers';
+import { WeatherManager } from './managers/WeatherManager';
+
 
 import { ModelConfigs, type ModelConfig, type ModelId } from '../configs/ModelConfigs';
 import { PhysicsConfigs } from '../configs/PhysicsConfigs';
@@ -33,6 +35,7 @@ export class SceneController {
 
     private environmentManager: EnvironmentManager;
     private skyboxEffectManager: SkyboxEffectManager;
+    private weatherManager: WeatherManager;
     private lightManager: LightManager;
 
     private modelManager: ModelManager;
@@ -77,6 +80,7 @@ export class SceneController {
         this.modelManager = new ModelManager(this.scene);
         this.environmentManager = new EnvironmentManager(this.scene);
         this.skyboxEffectManager = new SkyboxEffectManager(this.environmentManager.activeSkyboxMaterial);
+        this.weatherManager = new WeatherManager(this.scene, this.cameraManager.camera);
         this.lightManager = new LightManager(this.scene);
         this.shaderManager = new ShaderManager(this.scene, this.cameraManager.camera, this.lightManager);
         this.interactionManager = new InteractionManager(
@@ -112,6 +116,14 @@ export class SceneController {
             (id, enabled) => this.skyboxEffectManager.setEffect(id, enabled),
             (callback) => { this.skyboxEffectManager.onEffectForcedOff = callback; }
         );
+
+        this.uiManager.setupWeatherControls((presetId) => {
+            if (presetId === 'none') {
+                this.weatherManager.disable();
+            } else {
+                this.weatherManager.enable(presetId);
+            }
+        });
 
         this.uiManager.setupLightControls(
             this.lightManager.currentMode,
@@ -189,6 +201,7 @@ export class SceneController {
 
             this.shaderManager.updateTime(elapsed);
             this.skyboxEffectManager.updateTime(elapsed);
+            this.weatherManager.update(elapsed);
 
             if (this.transformState.physics && this.modelManager.currentEntity) {
                 this.physicsManager.applySpring(this.modelManager.currentEntity.mesh);
@@ -503,6 +516,7 @@ export class SceneController {
         this.shaderManager.dispose();
         this.environmentManager.dispose();
         this.skyboxEffectManager.dispose();
+        this.weatherManager.dispose();
         this.interactionManager.dispose();
         this.physicsManager.dispose();
         this.lightManager.dispose();
