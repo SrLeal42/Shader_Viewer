@@ -25,6 +25,8 @@ export interface FogConfig {
     color: { r: number; g: number; b: number };
     density: number;
     maxOpacity: number;
+    start: number;        // Distância onde a névoa começa
+    falloffCurve: number; // Curva de intensidade (ex: 0.5, 1.0, 2.0)
 }
 
 // ─── Configuração do Efeito de Câmera (Post-Process) ───

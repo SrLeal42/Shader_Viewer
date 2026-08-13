@@ -29,6 +29,8 @@ export const SnowConfig: WeatherPresetConfig = {
         color: { r: 0.85, g: 0.88, b: 0.92 },
         density: .5,
         maxOpacity: 0.65,
+        start: 2.5,
+        falloffCurve: 0.7,
     },
 
     cameraEffect: {

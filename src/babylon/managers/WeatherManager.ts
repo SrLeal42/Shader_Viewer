@@ -194,7 +194,7 @@ export class WeatherManager {
             'weatherFog',
             shaderName,
             {
-                uniforms: ['u_fogColor', 'u_fogDensity', 'u_maxOpacity', 'u_cameraMinZ', 'u_cameraMaxZ'],
+                uniforms: ['u_fogColor', 'u_fogDensity', 'u_maxOpacity', 'u_fogStart', 'u_fogCurve', 'u_cameraMinZ', 'u_cameraMaxZ'],
                 samplers: ['depthSampler'],
                 size: 1.0,
                 camera: this.camera,
@@ -208,6 +208,8 @@ export class WeatherManager {
             effect.setColor3('u_fogColor', new B.Color3(fogConfig.color.r, fogConfig.color.g, fogConfig.color.b));
             effect.setFloat('u_fogDensity', fogConfig.density);
             effect.setFloat('u_maxOpacity', fogConfig.maxOpacity);
+            effect.setFloat('u_fogStart', fogConfig.start);
+            effect.setFloat('u_fogCurve', fogConfig.falloffCurve);
             effect.setFloat('u_cameraMinZ', this.camera.minZ);
             effect.setFloat('u_cameraMaxZ', this.camera.maxZ);
 

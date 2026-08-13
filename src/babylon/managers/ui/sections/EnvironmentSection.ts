@@ -116,7 +116,7 @@ export class EnvironmentSection {
 
         const binding = folder.addBinding(params, 'weather', {
             options,
-            label: 'Efeito'
+            label: 'Efeito de Clima'
         }).on('change', (ev) => {
             onChange(ev.value as WeatherPresetId | 'none');
         });
