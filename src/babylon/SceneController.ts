@@ -199,6 +199,8 @@ export class SceneController {
         this.engine.runRenderLoop(() => {
             const elapsed = (performance.now() - startTime) / 1000;
 
+            document.title = `Shader Viewer | FPS: ${this.engine.getFps().toFixed(0)}`;
+
             this.shaderManager.updateTime(elapsed);
             this.skyboxEffectManager.updateTime(elapsed);
             this.weatherManager.update(elapsed);
