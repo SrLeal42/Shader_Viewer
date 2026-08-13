@@ -9,6 +9,11 @@ export const SnowConfig: WeatherPresetConfig = {
     particles: [
         {
             texturePath: '/textures/weather/snow/flakes.png',
+            spriteSheet: {
+                cellWidth: 435,
+                cellHeight: 500,
+                totalCells: 6,
+            },
             capacity: 1300,
             emitRate: 300,
             lifetime: { min: 6, max: 9 },
@@ -35,9 +40,16 @@ export const SnowConfig: WeatherPresetConfig = {
 
     cameraEffect: {
         fragmentSource: frostFragmentSource,
-        uniforms: ['u_time', 'u_intensity'],
+        uniforms: ['u_time', 'u_intensity', 'u_vignetteInner', 'u_vignetteOuter', 'u_pulseSpeed', 'u_pulseAmplitude'],
         textures: [
             { sampler: 'frostSampler', path: '/textures/weather/snow/frost_overlay.png' }
-        ]
+        ],
+        overlay: {
+            intensity: 1.0,
+            vignetteInner: 0.4,
+            vignetteOuter: 0.85,
+            pulseSpeed: 0.5,
+            pulseAmplitude: 0.15,
+        }
     }
 };

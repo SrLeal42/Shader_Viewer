@@ -15,7 +15,7 @@ export class WeatherManager {
     private fogPostProcess: B.PostProcess | null = null;
     private particleSystems: B.ParticleSystem[] = [];
     private cameraPostProcess: B.PostProcess | null = null;
-    private frostTexture: B.Texture | null = null;
+    private cameraTextures: Map<string, B.Texture> = new Map();
 
     private currentTime = 0;
 
@@ -80,10 +80,10 @@ export class WeatherManager {
             this.fogPostProcess = null;
         }
 
-        if (this.frostTexture) {
-            this.frostTexture.dispose();
-            this.frostTexture = null;
+        for (const tex of this.cameraTextures.values()) {
+            tex.dispose();
         }
+        this.cameraTextures.clear();
 
         this._activePresetId = null;
     }
@@ -105,6 +105,16 @@ export class WeatherManager {
         // Textura (se existir)
         if (layer.texturePath) {
             ps.particleTexture = new B.Texture(layer.texturePath, this.scene);
+        }
+
+        if (layer.spriteSheet) {
+            ps.isAnimationSheetEnabled = true;
+            ps.spriteCellWidth = layer.spriteSheet.cellWidth;
+            ps.spriteCellHeight = layer.spriteSheet.cellHeight;
+            ps.startSpriteCellID = 0;
+            ps.endSpriteCellID = layer.spriteSheet.totalCells - 1;
+            ps.spriteCellChangeSpeed = 0; // 0 = escolhe uma célula e mantém (não anima)
+            ps.spriteRandomStartCell = true;
         }
 
         // Emissor: caixa grande acima da câmera
@@ -223,11 +233,11 @@ export class WeatherManager {
         const effect = config.cameraEffect!;
 
         const shaderName = `weatherCamera_${this._activePresetId ?? 'default'}`;
+
         B.Effect.ShadersStore[`${shaderName}FragmentShader`] = effect.fragmentSource;
 
         // Coleta os samplers extras (ex: frostSampler)
         const samplerNames = effect.textures?.map(t => t.sampler) ?? [];
-
         const pp = new B.PostProcess(
             'weatherCameraEffect',
             shaderName,
@@ -242,28 +252,32 @@ export class WeatherManager {
             }
         );
 
-        // Carrega texturas extras
+        // Carrega texturas extras (genérico, baseado no config)
         if (effect.textures) {
             for (const tex of effect.textures) {
-
                 const texture = new B.Texture(tex.path, this.scene, false, false);
-                texture.onLoadObservable.addOnce(() => {
-                    // Textura carregou com sucesso
-                });
-
-                if (tex.sampler === 'frostSampler') {
-                    this.frostTexture = texture;
-                }
+                this.cameraTextures.set(tex.sampler, texture);
             }
         }
 
         pp.onApplyObservable.add((ppEffect) => {
             ppEffect.setFloat('u_time', this.currentTime);
-            ppEffect.setFloat('u_intensity', 1.0);
 
-            if (this.frostTexture && this.frostTexture.isReady()) {
-                ppEffect.setTexture('frostSampler', this.frostTexture);
+            // Overlay params (via config, com fallbacks seguros)
+            const ov = effect.overlay;
+            ppEffect.setFloat('u_intensity', ov?.intensity ?? 1.0);
+            ppEffect.setFloat('u_vignetteInner', ov?.vignetteInner ?? 0.3);
+            ppEffect.setFloat('u_vignetteOuter', ov?.vignetteOuter ?? 0.8);
+            ppEffect.setFloat('u_pulseSpeed', ov?.pulseSpeed ?? 0.5);
+            ppEffect.setFloat('u_pulseAmplitude', ov?.pulseAmplitude ?? 0.15);
+
+            // Texturas dinâmicas
+            for (const [samplerName, texture] of this.cameraTextures) {
+                if (texture.isReady()) {
+                    ppEffect.setTexture(samplerName, texture);
+                }
             }
+
         });
 
         this.cameraPostProcess = pp;
