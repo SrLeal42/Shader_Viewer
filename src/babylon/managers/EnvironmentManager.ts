@@ -136,8 +136,9 @@ export class EnvironmentManager {
 
         this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.ROTATION_1, oldRotation);
 
-        // Carrega a textura que realmente queremos mostrar (Textura 2)
-        const skyTexture = B.CubeTexture.CreateFromPrefilteredData(config.path, this.scene);
+        // Clonamos a textura que realmente queremos mostrar (Textura 2)
+        const skyTexture = envTexture!.clone();
+        skyTexture.name = `skyboxVisual_${id}`;
         skyTexture.coordinatesMode = B.Texture.SKYBOX_MODE;
         this.nextVisualTexture = skyTexture;
 

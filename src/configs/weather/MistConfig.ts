@@ -1,7 +1,7 @@
 import type { WeatherPresetConfig } from './WeatherTypes';
 
 export const MistConfig: WeatherPresetConfig = {
-    label: 'Neblina',
+    label: 'Neblina Densa',
     description: 'Uma neblina densa branca toma a cena',
 
     fog: {

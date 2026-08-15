@@ -42,9 +42,8 @@ export class SceneController {
     private currentParams: Record<string, unknown> = {};
 
     private shaderManager: ShaderManager;
-    // private shaderParams: Record<string, unknown> = {};
     private ppParams = new Map<PostProcessShaderId, Record<string, unknown>>();
-    private activeMaterialPostProcesses: string[] = [];
+    private activeMaterialPostProcesses: PostProcessShaderId[] = [];
 
     private shaderParamsCache: Record<string, Record<string, unknown>> = {};
 
@@ -390,13 +389,12 @@ export class SceneController {
         if (!entity) return;
 
         this.activeMaterialPostProcesses.forEach(ppId => {
-            this.shaderManager.disablePostProcess(ppId as any);
+            this.shaderManager.disablePostProcess(ppId);
         });
         this.activeMaterialPostProcesses = [];
 
         entity.restoreOriginalMaterials();
 
-        // this.shaderParams = {};
         if (shaderId === 'none') {
             this.shaderManager.clearActiveMaterial();
             this.uiManager.clearShaderPanel();
@@ -422,8 +420,9 @@ export class SceneController {
 
         if (config.postProcessDependencies) {
             config.postProcessDependencies.forEach(ppId => {
-                this.shaderManager.enablePostProcess(ppId as any);
-                this.activeMaterialPostProcesses.push(ppId);
+                const id = ppId as PostProcessShaderId;
+                this.shaderManager.enablePostProcess(id);
+                this.activeMaterialPostProcesses.push(id);
             });
         }
 

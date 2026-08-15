@@ -120,7 +120,6 @@ export class ShaderManager {
 
             if (!currentValues) return;
 
-            const flatUniforms = flattenUniforms(config.uniforms);
             flatUniforms.forEach(u => {
                 this.applyUniform(effect, u, currentValues[u.uniform]);
             });
