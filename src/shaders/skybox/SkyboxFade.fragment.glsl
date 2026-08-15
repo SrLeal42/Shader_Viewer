@@ -34,7 +34,9 @@ uniform float u_meteorDensity;
 uniform float u_meteorAngle;
 uniform float u_auroraSpeed;
 uniform float u_auroraIntensity;
-uniform vec3 u_auroraColor; // Note que a cor usa 'vec3'
+uniform vec3 u_auroraColor;
+uniform vec3 u_auroraColorTop;
+uniform float u_auroraThreshold; 
 uniform float u_bhMass;
 uniform float u_bhRadius;
 
@@ -105,16 +107,39 @@ vec3 applyMeteors(vec3 dir, float time) {
 
 // Aurora Boreal
 vec3 applyAurora(vec3 dir, float time) {
-    float h = smoothstep(-0.2, 0.5, dir.y) * smoothstep(1.0, 0.5, dir.y);
+    // ─── Faixa Vertical: Confina a aurora entre o horizonte e o topo ───
+    float h = smoothstep(-0.1, 0.3, dir.y) * smoothstep(0.9, 0.5, dir.y);
     
-    // Troca os multiplicadores de tempo fixos pela nossa variável de velocidade base
-    float n = noise(dir * 2.0 + vec3(time * u_auroraSpeed, 0.0, time * u_auroraSpeed * 2.0));
-    float n2 = noise(dir * 5.0 - vec3(time * u_auroraSpeed * 3.0));
+    // ─── Forma de Cortina: Noise baseado no ângulo horizontal ───
+    // Usar atan() cria faixas verticais em vez de manchas redondas
+    float angle = atan(dir.z, dir.x);
     
-    float intensity = smoothstep(0.4, 0.7, n * n2) * h;
+    // Camada principal (cortinas largas e lentas)
+    float curtain1 = noise(vec3(
+        angle * 3.0 + time * u_auroraSpeed * 0.5,
+        dir.y * 0.5,
+        time * u_auroraSpeed
+    ));
     
-    // Multiplica pela cor e intensidade que vieram do Config
-    return u_auroraColor * intensity * u_auroraIntensity; 
+    // Camada de detalhe (cortinas finas e rápidas, sobrepostas)
+    float curtain2 = noise(vec3(
+        angle * 7.0 - time * u_auroraSpeed * 1.2,
+        dir.y * 0.3 + time * u_auroraSpeed * 0.3,
+        time * u_auroraSpeed * 0.8
+    ));
+    
+    // Combina as camadas com pesos diferentes
+    float shape = curtain1 * 0.7 + curtain2 * 0.3;
+    
+    // ─── Threshold: Controla a "espessura" das cortinas ───
+    float intensity = smoothstep(u_auroraThreshold, u_auroraThreshold + 0.3, shape) * h;
+    
+    // ─── Gradiente de Cor: Verde embaixo → Roxo em cima ───
+    // Normaliza a posição vertical dentro da faixa visível da aurora
+    float heightFactor = smoothstep(0.0, 1.0, dir.y);
+    vec3 auroraColor = mix(u_auroraColor, u_auroraColorTop, heightFactor);
+    
+    return auroraColor * intensity * u_auroraIntensity;
 }
 
 vec4 applyBlackhole(vec3 dir, float time) {

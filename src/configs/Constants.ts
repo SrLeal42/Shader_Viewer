@@ -45,6 +45,8 @@ export const SKYBOX_UNIFORMS = {
     AURORA_SPEED: 'u_auroraSpeed',
     AURORA_INTENSITY: 'u_auroraIntensity',
     AURORA_COLOR: 'u_auroraColor',
+    AURORA_COLOR_TOP: 'u_auroraColorTop',
+    AURORA_THRESHOLD: 'u_auroraThreshold',
 
     BH_MASS: 'u_bhMass',
     BH_RADIUS: 'u_bhRadius'

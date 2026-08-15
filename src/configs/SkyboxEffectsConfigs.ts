@@ -34,9 +34,11 @@ export const SkyboxEffectsConfigs: Record<SkyboxEffectId, SkyboxEffectConfig> = 
         title: 'Aurora Boreal',
         description: 'Gera ondas luminosas dinâmicas no fundo, criando um efeito de aurora.',
         uniforms: {
-            "u_auroraSpeed": 0.1,
-            "u_auroraIntensity": 1.5,
-            "u_auroraColor": [0.1, 1.0, 0.5] // Verde Neon.
+            "u_auroraSpeed": 0.2,
+            "u_auroraIntensity": 1.6,
+            "u_auroraColor": [0.1, 0.9, 0.4],        // Verde (base)
+            "u_auroraColorTop": [0.5, 0.1, 0.8],     // Roxo (topo)
+            "u_auroraThreshold": 0.4                 // Limiar de visibilidade
         }
     },
     blackhole: {

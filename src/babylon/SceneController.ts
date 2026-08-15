@@ -396,7 +396,7 @@ export class SceneController {
 
         entity.restoreOriginalMaterials();
 
-        this.shaderParams = {};
+        // this.shaderParams = {};
         if (shaderId === 'none') {
             this.shaderManager.clearActiveMaterial();
             this.uiManager.clearShaderPanel();

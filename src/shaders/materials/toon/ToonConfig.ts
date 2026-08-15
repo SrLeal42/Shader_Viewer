@@ -37,8 +37,8 @@ export const ToonConfig: MaterialShaderConfig = {
             type: 'folder',
             label: 'Cores Base (Diffuse)',
             children: [
-                { uniform: 'u_color', label: 'Cor Base', description: 'A cor principal do material, usada nas áreas iluminadas.', type: 'color', defaultValue: { r: 0.8, g: 0.2, b: 0.3 } },
-                { uniform: 'u_levels', label: 'Degraus', description: 'Define quantas faixas/tons de sombra o material terá. Mais degraus = sombra mais suave.', type: 'float', defaultValue: 5, min: 2, max: 10, step: 1 },
+                { uniform: 'u_color', label: 'Cor Base', description: 'A cor principal do material.', type: 'color', defaultValue: { r: 0.8, g: 0.2, b: 0.3 } },
+                { uniform: 'u_levels', label: 'Degraus', description: 'Define quantas faixas/tons de sombra o material terá.', type: 'float', defaultValue: 5, min: 2, max: 10, step: 1 },
                 { uniform: 'u_shadowMin', label: 'Sombra Min', description: 'O quão escuro o material pode ficar nas áreas com menos iluminação.', type: 'float', defaultValue: 0.15, min: 0.0, max: 1.0, step: 0.05 },
             ]
         },

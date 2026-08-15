@@ -32,7 +32,7 @@ export const SnowConfig: WeatherPresetConfig = {
 
     fog: {
         color: { r: 0.85, g: 0.88, b: 0.92 },
-        density: .5,
+        density: .2,
         maxOpacity: 0.65,
         start: 2.5,
         falloffCurve: 0.7,
