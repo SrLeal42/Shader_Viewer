@@ -1,6 +1,6 @@
 import type { FolderApi } from 'tweakpane';
 
-import type { ShaderUniform } from '../../../../shaders/Types';
+import { flattenUniforms, type ShaderUniform, type ValueUniform } from '../../../../shaders/Types';
 
 import {
     MaterialShaders, PostProcessShaders,
@@ -117,23 +117,28 @@ export class ShaderSection {
         folder: FolderApi,
         uniforms: ShaderUniform[],
         targetProxy: Record<string, unknown>,
-        onChange: (uniform: ShaderUniform, value: unknown) => void
+        onChange: (uniform: ValueUniform, value: unknown) => void,
+        isRoot: boolean = true,
+        allBindings: any[] = []
     ): void {
-        const bindings: any[] = [];
 
         uniforms.forEach((u: ShaderUniform) => {
-            if (targetProxy[u.uniform] === undefined) {
-                targetProxy[u.uniform] =
-                    typeof u.defaultValue === 'object' ? { ...u.defaultValue } : u.defaultValue;
+
+            if (u.type === 'folder') {
+                const subFolder = folder.addFolder({ title: u.label });
+                // Chamada recursiva para desenhar os filhos dentro da pasta
+                this.buildUniformControls(subFolder, u.children, targetProxy, onChange, false, allBindings);
+                return;
             }
 
-            const bindingOptions: Record<string, unknown> = {
-                label: u.label,
-            };
+            if (!(u.uniform in targetProxy)) {
+                targetProxy[u.uniform] = typeof u.defaultValue === 'object' ? { ...u.defaultValue } : u.defaultValue;
+            }
 
+            const bindingOptions: any = { label: u.label };
             if (u.type === 'color') {
                 bindingOptions.color = { type: 'float' };
-            } else {
+            } else if (u.type === 'float') {
                 bindingOptions.min = 'min' in u ? u.min : undefined;
                 bindingOptions.max = 'max' in u ? u.max : undefined;
                 bindingOptions.step = 'step' in u ? u.step : undefined;
@@ -148,18 +153,25 @@ export class ShaderSection {
                 binding.element.title = u.description;
             }
 
-            bindings.push(binding);
+            allBindings.push(binding);
         });
 
-        folder.addButton({ title: 'Restaurar Padrões' })
-            .on('click', () => {
-                uniforms.forEach((u: ShaderUniform) => {
-                    const resetValue = typeof u.defaultValue === 'object' ? { ...u.defaultValue } : u.defaultValue;
-                    targetProxy[u.uniform] = resetValue;
-                    onChange(u, resetValue);
+        // Botão de reset só aparece fora das pastas
+        if (isRoot) {
+            folder.addButton({ title: 'Restaurar Padrões' })
+                .on('click', () => {
+                    const flatUniforms = flattenUniforms(uniforms);
+                    flatUniforms.forEach(u => {
+                        const resetValue = typeof u.defaultValue === 'object' ? { ...u.defaultValue } : u.defaultValue;
+                        targetProxy[u.uniform] = resetValue;
+                        onChange(u, resetValue);
+                    });
+                    
+                    // Atualiza a UI de todos os bindings coletados
+                    allBindings.forEach(b => b.refresh());
                 });
-                bindings.forEach(b => b.refresh());
-            });
+        }
+
     }
 
     public forceUncheckPostProcess(id: string): void {

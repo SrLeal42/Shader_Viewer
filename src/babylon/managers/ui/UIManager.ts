@@ -1,7 +1,7 @@
 import { Pane } from 'tweakpane';
 
 import type { UIConfig, UIParameter } from '../../../types/UI';
-import type { ShaderUniform } from '../../../shaders/Types';
+import type { ShaderUniform, ValueUniform } from '../../../shaders/Types';
 import type { FrustumLimits } from '../../../types/Camera';
 
 import type { ModelId } from '../../../configs/ModelConfigs';
@@ -89,7 +89,7 @@ export class UIManager {
         title: string,
         uniforms: ShaderUniform[],
         targetProxy: Record<string, unknown>,
-        onChange: (uniform: ShaderUniform, value: unknown) => void
+        onChange: (uniform: ValueUniform, value: unknown) => void
     ): void {
         this.shaderSection.buildPanel(title, uniforms, targetProxy, onChange);
     }
@@ -99,7 +99,7 @@ export class UIManager {
         title: string,
         uniforms: ShaderUniform[],
         targetProxy: Record<string, unknown>,
-        onChange: (uniform: ShaderUniform, value: unknown) => void
+        onChange: (uniform: ValueUniform, value: unknown) => void
     ): void {
         this.shaderSection.buildPostProcessPanel(id, title, uniforms, targetProxy, onChange);
     }

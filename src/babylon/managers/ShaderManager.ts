@@ -5,7 +5,7 @@ import {
     type MaterialShaderId, type PostProcessShaderId
 } from '../../shaders/Registry';
 
-import type { ShaderUniform } from '../../shaders/Types';
+import { flattenUniforms, type ValueUniform } from '../../shaders/Types';
 
 import type { LightManager } from './LightManagers';
 
@@ -19,6 +19,8 @@ export class ShaderManager {
     // Material: mutuamente exclusivo
     private _activeMaterialId: MaterialShaderId | null = null;
     private materialCache = new Map<MaterialShaderId, B.ShaderMaterial>();
+
+    private _activeUniforms: string[] = [];
 
     // Post-process: empilhável
     private activePostProcesses = new Map<PostProcessShaderId, B.PostProcess>();
@@ -53,9 +55,11 @@ export class ShaderManager {
 
         const config = MaterialShaders[shaderId];
 
+        // Achata a árvore antes de ler
+        const flatUniforms = flattenUniforms(config.uniforms);
         if (!this.materialCache.has(shaderId)) {
             const material = config.create(this.scene);
-            config.uniforms.forEach(u => this.applyUniform(material, u, u.defaultValue));
+            flatUniforms.forEach(u => this.applyUniform(material, u, u.defaultValue));
             this.materialCache.set(shaderId, material);
         }
 
@@ -66,6 +70,11 @@ export class ShaderManager {
         for (const child of children) {
             child.material = material;
         }
+
+        this._activeUniforms = [];
+        flatUniforms.forEach(u => {
+            this._activeUniforms.push(u.uniform);
+        });
 
         this._activeMaterialId = shaderId;
         this.lightManager.injectLightUniforms(material);
@@ -96,7 +105,8 @@ export class ShaderManager {
         // Inicializa os valores com os defaults
         const values: Record<string, unknown> = {};
 
-        config.uniforms.forEach(u => {
+        const flatUniforms = flattenUniforms(config.uniforms);
+        flatUniforms.forEach(u => {
             values[u.uniform] = u.defaultValue;
         });
 
@@ -110,7 +120,8 @@ export class ShaderManager {
 
             if (!currentValues) return;
 
-            config.uniforms.forEach(u => {
+            const flatUniforms = flattenUniforms(config.uniforms);
+            flatUniforms.forEach(u => {
                 this.applyUniform(effect, u, currentValues[u.uniform]);
             });
         });
@@ -132,7 +143,7 @@ export class ShaderManager {
     // ─── Uniforms ───
 
     /** Seta um uniform no material shader ativo */
-    public setMaterialUniform(uniform: ShaderUniform, value: unknown): void {
+    public setMaterialUniform(uniform: ValueUniform, value: unknown): void {
         if (!this._activeMaterialId) return;
 
         if (uniform.targetPostProcess) {
@@ -148,7 +159,7 @@ export class ShaderManager {
     }
 
     /** Seta um uniform num post-process ativo */
-    public setPostProcessUniform(shaderId: PostProcessShaderId, uniform: ShaderUniform, value: unknown): void {
+    public setPostProcessUniform(shaderId: PostProcessShaderId, uniform: ValueUniform, value: unknown): void {
         const values = this.ppUniformValues.get(shaderId);
 
         if (!values) return;
@@ -174,7 +185,7 @@ export class ShaderManager {
 
     // ─── Helpers internos ───
 
-    private applyUniform(target: B.ShaderMaterial | B.Effect, uniform: ShaderUniform, value: unknown): void {
+    private applyUniform(target: B.ShaderMaterial | B.Effect, uniform: ValueUniform, value: unknown): void {
         switch (uniform.type) {
             case 'float':
                 target.setFloat(uniform.uniform, value as number);

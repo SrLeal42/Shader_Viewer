@@ -27,7 +27,15 @@ interface BooleanUniform extends BaseUniform {
     defaultValue: boolean;
 }
 
-export type ShaderUniform = FloatUniform | ColorUniform | BooleanUniform;
+export interface FolderUniform {
+    type: 'folder';
+    label: string;
+    children: ShaderUniform[];
+}
+
+export type ValueUniform = FloatUniform | ColorUniform | BooleanUniform;
+export type ShaderUniform = ValueUniform | FolderUniform;
+
 
 // --- Configs por categoria ---
 
@@ -48,4 +56,19 @@ export interface PostProcessShaderConfig extends BaseShaderConfig {
     category: 'postprocess';
     create: (scene: B.Scene, camera: B.Camera, getUniforms: () => Record<string, unknown>) => B.PostProcess;
     hidden?: boolean;
+}
+
+
+export function flattenUniforms(uniforms: ShaderUniform[]): ValueUniform[] {
+    const result: ValueUniform[] = [];
+
+    for (const u of uniforms) {
+        if (u.type === 'folder') {
+            result.push(...flattenUniforms(u.children));
+        } else {
+            result.push(u);
+        }
+    }
+
+    return result;
 }

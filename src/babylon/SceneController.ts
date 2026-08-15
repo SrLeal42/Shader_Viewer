@@ -42,9 +42,11 @@ export class SceneController {
     private currentParams: Record<string, unknown> = {};
 
     private shaderManager: ShaderManager;
-    private shaderParams: Record<string, unknown> = {};
+    // private shaderParams: Record<string, unknown> = {};
     private ppParams = new Map<PostProcessShaderId, Record<string, unknown>>();
     private activeMaterialPostProcesses: string[] = [];
+
+    private shaderParamsCache: Record<string, Record<string, unknown>> = {};
 
     private interactionManager: InteractionManager;
 
@@ -401,13 +403,18 @@ export class SceneController {
             return;
         }
 
+        if (!this.shaderParamsCache[shaderId]) {
+            this.shaderParamsCache[shaderId] = {};
+        }
+        const currentParams = this.shaderParamsCache[shaderId];
+
         this.shaderManager.applyMaterial(shaderId, entity.mesh);
 
         const config = MaterialShaders[shaderId];
         this.uiManager.buildShaderPanel(
             config.title,
             config.uniforms,
-            this.shaderParams,
+            currentParams,
             (uniform, value) => {
                 this.shaderManager.setMaterialUniform(uniform, value);
             }
