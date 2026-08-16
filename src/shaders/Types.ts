@@ -27,13 +27,19 @@ interface BooleanUniform extends BaseUniform {
     defaultValue: boolean;
 }
 
+export interface ListUniform extends BaseUniform {
+    type: 'list';
+    defaultValue: string | number;
+    options: Record<string, string | number>;
+}
+
 export interface FolderUniform {
     type: 'folder';
     label: string;
     children: ShaderUniform[];
 }
 
-export type ValueUniform = FloatUniform | ColorUniform | BooleanUniform;
+export type ValueUniform = FloatUniform | ColorUniform | BooleanUniform | ListUniform;
 export type ShaderUniform = ValueUniform | FolderUniform;
 
 
@@ -50,6 +56,7 @@ export interface MaterialShaderConfig extends BaseShaderConfig {
     category: 'material';
     create: (scene: B.Scene) => B.ShaderMaterial;
     postProcessDependencies?: string[];
+    needsAlbedoTexture?: boolean;
 }
 
 export interface PostProcessShaderConfig extends BaseShaderConfig {

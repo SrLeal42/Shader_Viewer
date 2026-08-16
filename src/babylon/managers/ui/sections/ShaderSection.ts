@@ -142,6 +142,8 @@ export class ShaderSection {
                 bindingOptions.min = 'min' in u ? u.min : undefined;
                 bindingOptions.max = 'max' in u ? u.max : undefined;
                 bindingOptions.step = 'step' in u ? u.step : undefined;
+            } else if (u.type === 'list') {
+                bindingOptions.options = u.options;
             }
 
             const binding = folder.addBinding(targetProxy, u.uniform, bindingOptions)

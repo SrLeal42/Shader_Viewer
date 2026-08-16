@@ -26,12 +26,23 @@ export class ShaderManager {
     private activePostProcesses = new Map<PostProcessShaderId, B.PostProcess>();
     private ppUniformValues = new Map<PostProcessShaderId, Record<string, unknown>>();
 
+    // Fallback para texturas não definidas (evita GL_INVALID_OPERATION feedback loop)
+    private fallbackTexture: B.Texture;
+
 
     constructor(scene: B.Scene, camera: B.Camera, lightManager: LightManager) {
         this.scene = scene;
         this.camera = camera;
 
         this.lightManager = lightManager;
+
+        // Cria uma textura 1x1 branca como fallback
+        const dt = new B.DynamicTexture("fallbackTex", {width: 1, height: 1}, scene, false);
+        const ctx = dt.getContext();
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, 1, 1);
+        dt.update();
+        this.fallbackTexture = dt;
     }
 
     // ─── Getters ───
@@ -51,7 +62,11 @@ export class ShaderManager {
     // ─── Material Shaders ───
 
     /** Aplica um material shader ao mesh e todos os seus filhos */
-    public applyMaterial(shaderId: MaterialShaderId, mesh: B.AbstractMesh): void {
+    public applyMaterial(
+        shaderId: MaterialShaderId,
+        mesh: B.AbstractMesh,
+        getAlbedo?: (mesh: B.AbstractMesh) => B.BaseTexture | null
+    ): void {
 
         const config = MaterialShaders[shaderId];
 
@@ -69,6 +84,29 @@ export class ShaderManager {
         const children = mesh.getChildMeshes();
         for (const child of children) {
             child.material = material;
+        }
+
+
+        // ─── Injeção de textura albedo (para shaders que preservam a textura original) ───
+        if (config.needsAlbedoTexture && getAlbedo) {
+            // Tenta extrair do mesh principal
+            let albedo = getAlbedo(mesh);
+
+            // Se o root não tem textura, tenta o primeiro filho que tiver
+            if (!albedo) {
+                for (const child of children) {
+                    albedo = getAlbedo(child);
+                    if (albedo) break;
+                }
+            }
+
+            if (albedo) {
+                material.setTexture('u_albedo', albedo);
+                material.setFloat('u_hasAlbedo', 1.0);
+            } else {
+                material.setTexture('u_albedo', this.fallbackTexture);
+                material.setFloat('u_hasAlbedo', 0.0);
+            }
         }
 
         this._activeUniforms = [];
@@ -197,6 +235,9 @@ export class ShaderManager {
             case 'boolean':
                 target.setFloat(uniform.uniform, (value as boolean) ? 1.0 : 0.0);
                 break;
+            case 'list':
+                target.setFloat(uniform.uniform, value as number);
+                break;
         }
     }
 
@@ -214,5 +255,7 @@ export class ShaderManager {
         this.ppUniformValues.clear();
 
         this._activeMaterialId = null;
+
+        this.fallbackTexture.dispose();
     }
 }

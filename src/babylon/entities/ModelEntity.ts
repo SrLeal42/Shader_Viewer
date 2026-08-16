@@ -200,6 +200,23 @@ export class ModelEntity {
         }
     }
 
+    /** Retorna a textura albedo/diffuse do material ORIGINAL de um mesh */
+    public getOriginalAlbedoTexture(mesh: B.AbstractMesh): B.BaseTexture | null {
+        const originalMat = this.originalMaterials.get(mesh);
+
+        if (!originalMat) return null;
+
+        if ('albedoTexture' in originalMat && originalMat.albedoTexture) {
+            return originalMat.albedoTexture as B.BaseTexture;
+        }
+
+        if ('diffuseTexture' in originalMat && originalMat.diffuseTexture) {
+            return originalMat.diffuseTexture as B.BaseTexture;
+        }
+
+        return null;
+    }
+
     // ─── Visibilidade ───
 
     public setEnabled(enabled: boolean): void {
