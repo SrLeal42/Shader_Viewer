@@ -3,11 +3,13 @@ import type { MaterialShaderConfig, PostProcessShaderConfig } from './Types';
 // Material Shaders — mutuamente exclusivos
 import { ToonConfig } from './materials/toon/ToonConfig';
 import { PixelArtConfig } from './materials/pixelart/PixelArtConfig';
+import { GlassConfig } from './materials/glass/GlassConfig';
 
 
 export const MaterialShaders = {
     toon: ToonConfig,
     pixelart: PixelArtConfig,
+    glass: GlassConfig,
 } as const satisfies Record<string, MaterialShaderConfig>;
 
 // Post-Process Shaders — empilháveis

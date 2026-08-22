@@ -325,8 +325,16 @@ export class SceneController {
 
         // Re-aplica o shader ativo
         if (this.shaderManager.activeMaterialId) {
-            this.shaderManager.applyMaterial(this.shaderManager.activeMaterialId, entity.mesh, (m) => entity.getOriginalAlbedoTexture(m));
+            this.shaderManager.applyMaterial(
+                this.shaderManager.activeMaterialId,
+                entity.mesh,
+                {
+                    getAlbedo: (m) => entity.getOriginalAlbedoTexture(m),
+                    getCubemap: () => this.environmentManager.getCurrentCubemap()
+                }
+            );
         }
+
     }
 
     private capturePreviousModelState() {
@@ -406,7 +414,10 @@ export class SceneController {
         }
         const currentParams = this.shaderParamsCache[shaderId];
 
-        this.shaderManager.applyMaterial(shaderId, entity.mesh, (m) => entity.getOriginalAlbedoTexture(m));
+        this.shaderManager.applyMaterial(shaderId, entity.mesh, {
+            getAlbedo: (m) => entity.getOriginalAlbedoTexture(m),
+            getCubemap: () => this.environmentManager.getCurrentCubemap()
+        });
 
         const config = MaterialShaders[shaderId];
         this.uiManager.buildShaderPanel(

@@ -52,6 +52,10 @@ export class EnvironmentManager {
         return this.skyboxMaterial;
     }
 
+    /** Retorna o CubeTexture do ambiente ativo (skybox), ou null se estiver no modo Cor */
+    public getCurrentCubemap(): B.BaseTexture | null {
+        return this.scene.environmentTexture;
+    }
 
     private initSkybox(): void {
         this.skyboxMesh = B.MeshBuilder.CreateBox('skybox', { size: 1000 }, this.scene);

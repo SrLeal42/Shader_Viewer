@@ -5,7 +5,7 @@ import {
     type MaterialShaderId, type PostProcessShaderId
 } from '../../shaders/Registry';
 
-import { flattenUniforms, type ValueUniform } from '../../shaders/Types';
+import { flattenUniforms, type ValueUniform, type MaterialApplyContext } from '../../shaders/Types';
 
 import type { LightManager } from './LightManagers';
 
@@ -28,6 +28,14 @@ export class ShaderManager {
 
     // Fallback para texturas não definidas (evita GL_INVALID_OPERATION feedback loop)
     private fallbackTexture: B.Texture;
+    private fallbackCubemap: B.RawCubeTexture;
+
+    // Screen-space refraction (RTT)
+    private sceneRTT: B.RenderTargetTexture | null = null;
+    private sceneRTTMesh: B.AbstractMesh | null = null;
+
+    // Callback armazenado para re-injeção dinâmica do cubemap
+    private getCubemapCallback: (() => B.BaseTexture | null) | null = null;
 
 
     constructor(scene: B.Scene, camera: B.Camera, lightManager: LightManager) {
@@ -36,13 +44,7 @@ export class ShaderManager {
 
         this.lightManager = lightManager;
 
-        // Cria uma textura 1x1 branca como fallback
-        const dt = new B.DynamicTexture("fallbackTex", {width: 1, height: 1}, scene, false);
-        const ctx = dt.getContext();
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, 1, 1);
-        dt.update();
-        this.fallbackTexture = dt;
+        this.createFallbackTextures();
     }
 
     // ─── Getters ───
@@ -65,7 +67,7 @@ export class ShaderManager {
     public applyMaterial(
         shaderId: MaterialShaderId,
         mesh: B.AbstractMesh,
-        getAlbedo?: (mesh: B.AbstractMesh) => B.BaseTexture | null
+        context?: MaterialApplyContext
     ): void {
 
         const config = MaterialShaders[shaderId];
@@ -87,15 +89,14 @@ export class ShaderManager {
         }
 
 
-        // ─── Injeção de textura albedo (para shaders que preservam a textura original) ───
-        if (config.needsAlbedoTexture && getAlbedo) {
-            // Tenta extrair do mesh principal
-            let albedo = getAlbedo(mesh);
 
-            // Se o root não tem textura, tenta o primeiro filho que tiver
+        // ─── Injeção de textura albedo ───
+        if (config.needsAlbedoTexture && context?.getAlbedo) {
+
+            let albedo = context.getAlbedo(mesh);
             if (!albedo) {
                 for (const child of children) {
-                    albedo = getAlbedo(child);
+                    albedo = context.getAlbedo(child);
                     if (albedo) break;
                 }
             }
@@ -109,6 +110,57 @@ export class ShaderManager {
             }
         }
 
+        // ─── Screen-space refraction (RTT da cena sem o modelo) ───
+        this.disposeSceneRTT(); // Limpa RTT anterior se houver
+        if (config.needsSceneTexture) {
+
+            const engine = this.scene.getEngine();
+            const rtt = new B.RenderTargetTexture(
+                'glassSceneRTT',
+                { width: engine.getRenderWidth(), height: engine.getRenderHeight() },
+                this.scene,
+                false // generateMipMaps
+            );
+            this.sceneRTTMesh = mesh;
+
+            // A cada frame, repopula o renderList com TODOS os meshes
+            // exceto o modelo com vidro e seus filhos
+            const childSet = new Set<B.AbstractMesh>(children);
+            rtt.onBeforeRenderObservable.add(() => {
+                rtt.renderList!.length = 0;
+                for (const sceneMesh of this.scene.meshes) {
+                    if (sceneMesh !== mesh && !childSet.has(sceneMesh)) {
+                        rtt.renderList!.push(sceneMesh);
+                    }
+                }
+            });
+
+            this.scene.customRenderTargets.push(rtt);
+            this.sceneRTT = rtt;
+
+            material.setTexture('u_sceneTexture', rtt);
+            material.setVector2('u_screenSize', new B.Vector2(
+                engine.getRenderWidth(), engine.getRenderHeight()
+            ));
+        }
+
+        // ─── Cubemap do ambiente para reflexão ───
+        this.getCubemapCallback = context?.getCubemap ?? null;
+
+        if (config.needsEnvironmentCubemap) {
+
+            const cubemap = context?.getCubemap?.();
+            if (cubemap) {
+                material.setTexture('u_envCubemap', cubemap);
+                material.setFloat('u_hasEnvCubemap', 1.0);
+            } else {
+                material.setTexture('u_envCubemap', this.fallbackCubemap);
+                material.setFloat('u_hasEnvCubemap', 0.0);
+            }
+
+        }
+
+
         this._activeUniforms = [];
         flatUniforms.forEach(u => {
             this._activeUniforms.push(u.uniform);
@@ -120,6 +172,7 @@ export class ShaderManager {
 
     /** Remove o shader ativo (a restauração do material original é responsabilidade do ModelManager) */
     public clearActiveMaterial(): void {
+        this.disposeSceneRTT();
         this._activeMaterialId = null;
     }
 
@@ -207,17 +260,43 @@ export class ShaderManager {
 
     /** Atualiza u_time apenas nos shaders ativos (chamado no render loop) */
     public updateTime(time: number): void {
+
         if (this._activeMaterialId) {
+
             const mat = this.materialCache.get(this._activeMaterialId);
             if (mat) {
+
                 mat.setFloat('u_time', time);
                 mat.setVector3('u_cameraPos', this.camera.position);
+
+                // Atualiza screenSize para shaders com screen-space refraction
+                const config = MaterialShaders[this._activeMaterialId];
+                if (config.needsSceneTexture) {
+                    const engine = this.scene.getEngine();
+                    mat.setVector2('u_screenSize', new B.Vector2(engine.getRenderWidth(), engine.getRenderHeight()));
+                }
+
+                // Re-injeta cubemap dinamicamente (acompanha troca de skybox)
+                if (config.needsEnvironmentCubemap && this.getCubemapCallback) {
+
+                    const cubemap = this.getCubemapCallback();
+                    if (cubemap) {
+                        mat.setTexture('u_envCubemap', cubemap);
+                        mat.setFloat('u_hasEnvCubemap', 1.0);
+                    } else {
+                        mat.setTexture('u_envCubemap', this.fallbackCubemap);
+                        mat.setFloat('u_hasEnvCubemap', 0.0);
+                    }
+
+                }
 
                 if (this.lightManager.isDirty) {
                     this.lightManager.injectLightUniforms(mat);
                 }
+
             }
         }
+
     }
 
     // ─── Helpers internos ───
@@ -241,9 +320,41 @@ export class ShaderManager {
         }
     }
 
+
+    private createFallbackTextures(): void {
+
+        // Textura 2D 1x1 branca (para samplers 2D não definidos)
+        const dt = new B.DynamicTexture('fallbackTex', { width: 1, height: 1 }, this.scene, false);
+        const ctx = dt.getContext();
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, 1, 1);
+        dt.update();
+        this.fallbackTexture = dt;
+
+        // CubeTexture 1x1 preta (para samplerCube não definidos)
+        const black = new Uint8Array([0, 0, 0, 255]);
+        this.fallbackCubemap = new B.RawCubeTexture(
+            this.scene,
+            [black, black, black, black, black, black],
+            1
+        );
+    }
+
     // ─── Cleanup ───
 
+    private disposeSceneRTT(): void {
+        if (this.sceneRTT) {
+            const idx = this.scene.customRenderTargets.indexOf(this.sceneRTT);
+            if (idx !== -1) this.scene.customRenderTargets.splice(idx, 1);
+            this.sceneRTT.dispose();
+            this.sceneRTT = null;
+            this.sceneRTTMesh = null;
+        }
+        this.getCubemapCallback = null;
+    }
+
     public dispose(): void {
+
         for (const mat of this.materialCache.values()) mat.dispose();
 
         for (const pp of this.activePostProcesses.values()) pp.dispose();
@@ -254,8 +365,13 @@ export class ShaderManager {
 
         this.ppUniformValues.clear();
 
+        this.disposeSceneRTT();
+
         this._activeMaterialId = null;
 
         this.fallbackTexture.dispose();
+
+        this.fallbackCubemap.dispose();
     }
+
 }

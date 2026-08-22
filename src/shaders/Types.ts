@@ -57,6 +57,13 @@ export interface MaterialShaderConfig extends BaseShaderConfig {
     create: (scene: B.Scene) => B.ShaderMaterial;
     postProcessDependencies?: string[];
     needsAlbedoTexture?: boolean;
+    needsSceneTexture?: boolean;
+    needsEnvironmentCubemap?: boolean;
+}
+
+export interface MaterialApplyContext {
+    getAlbedo?: (mesh: B.AbstractMesh) => B.BaseTexture | null;
+    getCubemap?: () => B.BaseTexture | null;
 }
 
 export interface PostProcessShaderConfig extends BaseShaderConfig {
