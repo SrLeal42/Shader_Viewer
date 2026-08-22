@@ -12,8 +12,11 @@ export const ENVIRONMENT_WALLS = [
 export const SKYBOX_UNIFORMS = {
     MIX: 'u_mix',
 
-    ROTATION_1: 'u_rotation1',
-    ROTATION_2: 'u_rotation2',
+    ROTATION_Y_1: 'u_rotationY1',
+    ROTATION_Y_2: 'u_rotationY2',
+
+    ROTATION_X_1: 'u_rotationX1',
+    ROTATION_X_2: 'u_rotationX2',
 
     VISIBILITY: 'u_visibility',
 

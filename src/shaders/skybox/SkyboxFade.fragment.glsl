@@ -7,8 +7,10 @@ out vec4 outColor;
 uniform samplerCube texture1;
 uniform samplerCube texture2;
 uniform float u_mix;
-uniform float u_rotation1;
-uniform float u_rotation2;
+uniform float u_rotationY1;
+uniform float u_rotationY2;
+uniform float u_rotationX1;
+uniform float u_rotationX2;
 
 uniform float u_visibility;
 uniform vec3 u_bgColor;
@@ -48,7 +50,11 @@ vec3 rotateY(vec3 v, float angle) {
     return vec3(c * v.x + s * v.z, v.y, -s * v.x + c * v.z);
 }
 
-
+vec3 rotateX(vec3 v, float angle) {
+    float s = sin(angle);
+    float c = cos(angle);
+    return vec3(v.x, c * v.y - s * v.z, s * v.y + c * v.z);
+}
 
 // --- MATEMÁTICA DOS EFEITOS ---
 float hash(float n) { return fract(sin(n) * 43758.5453123); }
@@ -195,11 +201,20 @@ void main() {
     vec3 finalBackground;
     
     if (u_visibility > 0.0) {
-        vec3 dir1 = rotateY(dir, u_rotation1);
-        vec3 dir2 = rotateY(dir, u_rotation2);
+        vec3 dir1 = dir;
+        vec3 dir2 = dir;
+    
+        // Aplica Rotação X primeiro, depois Y
+        if (u_rotationX1 != 0.0) dir1 = rotateX(dir1, u_rotationX1);
+        if (u_rotationY1 != 0.0) dir1 = rotateY(dir1, u_rotationY1);
+        if (u_rotationX2 != 0.0) dir2 = rotateX(dir2, u_rotationX2);
+        if (u_rotationY2 != 0.0) dir2 = rotateY(dir2, u_rotationY2);
+    
         vec4 color1 = textureLod(texture1, dir1, u_blur1 * MAX_LOD);
         vec4 color2 = textureLod(texture2, dir2, u_blur2 * MAX_LOD);
+    
         vec3 skyColor = mix(color1.rgb, color2.rgb, u_mix);
+    
         finalBackground = mix(u_bgColor, skyColor, u_visibility);
     } else {
         finalBackground = u_bgColor;

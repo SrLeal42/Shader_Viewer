@@ -125,10 +125,13 @@ export class EnvironmentManager {
         this.currentVisualTexture = this.nextVisualTexture;
         this.skyboxMaterial.setTexture("texture1", this.currentVisualTexture);
 
-        let oldRotation = 0;
+        let oldYRotation = 0;
+        let oldXRotation = 0;
+
         if (this.currentSkyboxId !== 'color') {
             const oldConfig = SkyboxConfigs[this.currentSkyboxId];
-            oldRotation = oldConfig?.rotationY ?? 0;
+            oldYRotation = oldConfig?.rotationY ?? 0;
+            oldXRotation = oldConfig?.rotationX ?? 0;
 
             this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.BLUR_1, oldConfig?.blur ?? 0.0);
         } else {
@@ -138,7 +141,8 @@ export class EnvironmentManager {
         // Blur da textura que está entrando (texture2) = blur do skybox novo
         this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.BLUR_2, config.blur ?? 0.0);
 
-        this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.ROTATION_1, oldRotation);
+        this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.ROTATION_Y_1, oldYRotation);
+        this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.ROTATION_X_1, oldXRotation);
 
         // Clonamos a textura que realmente queremos mostrar (Textura 2)
         const skyTexture = envTexture!.clone();
@@ -148,7 +152,8 @@ export class EnvironmentManager {
 
         this.skyboxMaterial.setTexture("texture2", this.nextVisualTexture);
 
-        this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.ROTATION_2, config.rotationY ?? 0);
+        this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.ROTATION_Y_2, config.rotationY ?? 0);
+        this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.ROTATION_X_2, config.rotationX ?? 0);
 
         this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.TONEMAP_STRENGTH, config.tonemapStrength ?? 0.0);
 

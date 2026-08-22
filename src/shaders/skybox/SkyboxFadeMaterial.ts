@@ -17,7 +17,8 @@ export function createSkyboxFadeMaterial(name: string, scene: B.Scene): B.Shader
             attributes: ["position"],
             uniforms: [
                 "worldViewProjection",
-                SKYBOX_UNIFORMS.MIX, SKYBOX_UNIFORMS.ROTATION_1, SKYBOX_UNIFORMS.ROTATION_2,
+                SKYBOX_UNIFORMS.MIX, SKYBOX_UNIFORMS.ROTATION_Y_1, SKYBOX_UNIFORMS.ROTATION_Y_2,
+                SKYBOX_UNIFORMS.ROTATION_X_1, SKYBOX_UNIFORMS.ROTATION_X_2,
                 SKYBOX_UNIFORMS.VISIBILITY, SKYBOX_UNIFORMS.BG_COLOR, SKYBOX_UNIFORMS.TONEMAP_STRENGTH,
                 SKYBOX_UNIFORMS.BLUR_1, SKYBOX_UNIFORMS.BLUR_2, SKYBOX_UNIFORMS.EXPOSURE, SKYBOX_UNIFORMS.SATURATION,
                 SKYBOX_UNIFORMS.TIME, SKYBOX_UNIFORMS.ENABLE_WARP, SKYBOX_UNIFORMS.ENABLE_METEORS, SKYBOX_UNIFORMS.ENABLE_AURORA,
@@ -34,8 +35,10 @@ export function createSkyboxFadeMaterial(name: string, scene: B.Scene): B.Shader
 
     // Valores Iniciais
     material.setFloat(SKYBOX_UNIFORMS.MIX, 0.0);
-    material.setFloat(SKYBOX_UNIFORMS.ROTATION_1, 0.0);
-    material.setFloat(SKYBOX_UNIFORMS.ROTATION_2, 0.0);
+    material.setFloat(SKYBOX_UNIFORMS.ROTATION_Y_1, 0.0);
+    material.setFloat(SKYBOX_UNIFORMS.ROTATION_Y_2, 0.0);
+    material.setFloat(SKYBOX_UNIFORMS.ROTATION_X_1, 0.0);
+    material.setFloat(SKYBOX_UNIFORMS.ROTATION_X_2, 0.0);
     material.setFloat(SKYBOX_UNIFORMS.VISIBILITY, 0.0);
     material.setColor3(SKYBOX_UNIFORMS.BG_COLOR, B.Color3.Black());
     material.setFloat(SKYBOX_UNIFORMS.TONEMAP_STRENGTH, 0.3);
