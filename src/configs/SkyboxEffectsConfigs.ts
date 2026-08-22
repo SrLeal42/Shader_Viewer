@@ -16,7 +16,7 @@ export const SkyboxEffectsConfigs: Record<SkyboxEffectId, SkyboxEffectConfig> = 
         description: 'Cria um efeito de distorção no espaço.',
         uniforms: {
             "u_warpSpeed": 0.1,
-            "u_warpIntensity": 0.2
+            "u_warpIntensity": 0.05
         }
     },
     meteors: {
