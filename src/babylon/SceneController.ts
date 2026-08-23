@@ -15,6 +15,7 @@ import { WeatherManager } from './managers/WeatherManager';
 import { ModelConfigs, type ModelConfig, type ModelId } from '../configs/ModelConfigs';
 import { PhysicsConfigs } from '../configs/PhysicsConfigs';
 import type { SkyboxId } from '../configs/SkyboxConfigs';
+import { ScenePresets, ACTIVE_PRESET } from '../configs/ScenePresets';
 
 import type { ModelEntity } from './entities/ModelEntity';
 
@@ -178,13 +179,72 @@ export class SceneController {
         const limits = controller.cameraManager.calculateFrustumLimits();
 
         controller.environmentManager.resizeBoundaries(limits);
+        const preset = ScenePresets[ACTIVE_PRESET];
 
-        await controller.switchModel('sphere');
+        await controller.switchModel(preset.model, preset.modelParams);
 
-        // Check novamente após o load do modelo
         if (signal?.aborted) {
             controller.dispose();
             throw new DOMException('Inicialização abortada', 'AbortError');
+        }
+
+        // Aplica Transformações e Física
+        if (preset.transform && controller.modelManager.currentEntity) {
+
+            if (preset.transform.position) {
+                controller.transformState.pos = { ...preset.transform.position };
+            }
+
+            if (preset.transform.rotation) {
+                controller.transformState.rot = { ...preset.transform.rotation };
+            }
+
+            if (preset.transform.physics !== undefined) {
+                controller.transformState.physics = preset.transform.physics;
+            }
+
+            // Aplica as mudanças no motor físico e visual
+            controller.handlePhysicsChange(controller.transformState.physics);
+            controller.handleTransformChange();
+
+            if (controller.transformUI) controller.transformUI.refresh(); // Atualiza a barra lateral
+
+        }
+
+        await controller.switchSkybox(preset.skybox);
+
+        // Aplica o Shader e seus Parâmetros
+        if (preset.material !== 'none') {
+            if (preset.materialParams) {
+                // Injeta na memória antes do shader compilar a UI
+                controller.shaderParamsCache[preset.material] = { ...preset.materialParams };
+            }
+
+            controller.switchMaterialShader(preset.material);
+
+            controller.shaderManager.injectMaterialUniforms(controller.shaderParamsCache[preset.material]);
+
+        }
+
+        // Liga Efeitos de Pós-Processamento e injeta valores customizados
+        if (preset.postProcesses) {
+            for (const [ppId, params] of Object.entries(preset.postProcesses)) {
+                // Injeta no cache para quando a UI for construída ela usar seus valores
+                controller.ppParams.set(ppId as PostProcessShaderId, { ...params });
+                // Ativa o post process (isso também vai amarrar os valores recém-injetados com os Shaders)
+                controller.togglePostProcess(ppId as PostProcessShaderId, true);
+
+                controller.shaderManager.injectPostProcessUniforms(
+                    ppId as PostProcessShaderId,
+                    controller.ppParams.get(ppId as PostProcessShaderId)!
+                );
+            }
+        }
+
+        if (preset.skyboxEffects) {
+            preset.skyboxEffects.forEach(effectId => {
+                controller.skyboxEffectManager.setEffect(effectId, true);
+            });
         }
 
         controller.startRenderLoop();
@@ -266,7 +326,7 @@ export class SceneController {
 
     // ─── Troca de modelo ───
 
-    private async switchModel(modelId: ModelId) {
+    private async switchModel(modelId: ModelId, initialParams?: Record<string, unknown>) {
         const gen = ++this.switchGeneration;
         const config: ModelConfig = ModelConfigs[modelId];
 
@@ -279,7 +339,8 @@ export class SceneController {
         }
 
         // Painel de parâmetros do modelo
-        this.currentParams = {};
+        this.currentParams = initialParams ? { ...initialParams } : {};
+
         this.uiManager.buildDynamicPanel(config, this.currentParams, (param, value) => {
             const entity = this.modelManager.currentEntity;
             if (param.onApply && entity) {
@@ -455,7 +516,11 @@ export class SceneController {
             this.shaderManager.enablePostProcess(shaderId);
 
             const config = PostProcessShaders[shaderId];
-            const proxy: Record<string, unknown> = {};
+            let proxy = this.ppParams.get(shaderId);
+            if (!proxy) {
+                proxy = {};
+                this.ppParams.set(shaderId, proxy);
+            }
             this.ppParams.set(shaderId, proxy);
             this.uiManager.buildPostProcessPanel(
                 shaderId,

@@ -4,6 +4,7 @@ import { SkyboxConfigs, type SkyboxId } from '../../../../configs/SkyboxConfigs'
 import { SkyboxEffectsConfigs, MAX_ACTIVE_EFFECTS, type SkyboxEffectId } from '../../../../configs/SkyboxEffectsConfigs';
 
 import { EnvironmentConfigs } from '../../../../configs/EnvironmentConfigs';
+import { ScenePresets, ACTIVE_PRESET } from '../../../../configs/ScenePresets';
 
 import { WeatherPresets, type WeatherPresetId } from '../../../../configs/weather/WeatherRegistry';
 
@@ -28,7 +29,7 @@ export class EnvironmentSection {
             options[config.label] = id;
         }
 
-        const params = { skybox: 'color' as string };
+        const params = { skybox: ScenePresets[ACTIVE_PRESET].skybox as string };
 
         const skyboxBinding = folder.addBinding(params, 'skybox', {
             options,
@@ -55,6 +56,8 @@ export class EnvironmentSection {
 
         this.skyboxColorFolder = folder.addFolder({ title: 'Cor de Fundo' });
 
+        this.skyboxColorFolder.hidden = params.skybox !== 'color';
+
         const colorBinding = this.skyboxColorFolder.addBinding(colorState, 'bg', {
             label: 'Cor',
             color: { type: 'float' },
@@ -78,7 +81,10 @@ export class EnvironmentSection {
 
         // Varre o arquivo de Configs que criamos e cria um switch para cada efeito
         for (const [id, config] of Object.entries(SkyboxEffectsConfigs)) {
-            params[id] = false;
+            const presetEffects = ScenePresets[ACTIVE_PRESET].skyboxEffects;
+            const isActive = presetEffects ? presetEffects.includes(id as SkyboxEffectId) : false;
+
+            params[id] = isActive;
 
             bindings[id] = folder.addBinding(params, id, { label: config.title })
                 .on('change', (ev) => {

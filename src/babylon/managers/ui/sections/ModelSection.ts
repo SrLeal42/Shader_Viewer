@@ -2,6 +2,7 @@ import type { FolderApi } from 'tweakpane';
 
 import type { UIConfig, UIParameter } from '../../../../types/UI';
 import { ModelConfigs, type ModelId } from '../../../../configs/ModelConfigs';
+import { ScenePresets, ACTIVE_PRESET } from '../../../../configs/ScenePresets';
 
 
 export class ModelSection {
@@ -14,7 +15,7 @@ export class ModelSection {
 
     // Trocar de Modelo (data-driven a partir dos ModelConfigs)
     public setup(onModelSelect: (id: ModelId) => void): void {
-        const params = { model: Object.keys(ModelConfigs)[0] as ModelId };
+        const params = { model: ScenePresets[ACTIVE_PRESET].model };
 
         const options: Record<string, string> = {};
         for (const [id, config] of Object.entries(ModelConfigs)) {

@@ -4,7 +4,7 @@ export interface SkyboxEffectConfig {
     id: SkyboxEffectId;
     title: string;
     description?: string;
-    uniforms?: Record<string, number | number[]>; // <--- Novo campo para guardar os valores
+    uniforms?: Record<string, number | number[]>;
 }
 
 export const MAX_ACTIVE_EFFECTS = 3;

@@ -320,6 +320,36 @@ export class ShaderManager {
         }
     }
 
+    /** Lê um objeto do Tweakpane e injeta todos os valores válidos no Material atual */
+    public injectMaterialUniforms(proxy: Record<string, unknown>): void {
+        if (!this._activeMaterialId) return;
+
+        const config = MaterialShaders[this._activeMaterialId];
+
+        if (!config) return;
+
+        flattenUniforms(config.uniforms).forEach(u => {
+            if (proxy[u.uniform] !== undefined) {
+                this.setMaterialUniform(u, proxy[u.uniform]);
+            }
+        });
+
+    }
+
+    /** Lê um objeto do Tweakpane e injeta todos os valores válidos no Post-Process especificado */
+    public injectPostProcessUniforms(shaderId: PostProcessShaderId, proxy: Record<string, unknown>): void {
+        const config = PostProcessShaders[shaderId];
+
+        if (!config) return;
+
+        flattenUniforms(config.uniforms).forEach(u => {
+            if (proxy[u.uniform] !== undefined) {
+                this.setPostProcessUniform(shaderId, u, proxy[u.uniform]);
+            }
+        });
+
+    }
+
 
     private createFallbackTextures(): void {
 

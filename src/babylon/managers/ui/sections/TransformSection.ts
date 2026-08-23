@@ -61,6 +61,7 @@ export class TransformSection {
 
         return {
             refresh: () => {
+                physicsBinding.refresh();
                 posBinding.refresh();
                 rotBinding.refresh();
             }

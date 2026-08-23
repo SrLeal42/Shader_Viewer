@@ -2,6 +2,8 @@ import type { FolderApi } from 'tweakpane';
 
 import { flattenUniforms, type ShaderUniform, type ValueUniform } from '../../../../shaders/Types';
 
+import { ScenePresets, ACTIVE_PRESET } from '../../../../configs/ScenePresets';
+
 import {
     MaterialShaders, PostProcessShaders,
     type MaterialShaderId, type PostProcessShaderId
@@ -33,7 +35,7 @@ export class ShaderSection {
             materialOptions[config.label] = id;
         }
 
-        const shaderParams = { material: 'none' };
+        const shaderParams = { material: ScenePresets[ACTIVE_PRESET].material as string };
         const materialBinding = this.rootMaterialFolder.addBinding(shaderParams, 'material', {
             options: materialOptions,
             label: 'Material Shader'
@@ -60,7 +62,11 @@ export class ShaderSection {
 
                 if (config.hidden) continue;
 
-                const ppParams = { [id]: false };
+                const isActive = ScenePresets[ACTIVE_PRESET].postProcesses !== undefined &&
+                    ScenePresets[ACTIVE_PRESET].postProcesses[id as PostProcessShaderId] !== undefined;
+
+
+                const ppParams = { [id]: isActive };
                 const ppBinding = this.rootPPFolder.addBinding(ppParams, id, {
                     label: config.label,
                 }).on('change', (ev) => {
@@ -168,7 +174,7 @@ export class ShaderSection {
                         targetProxy[u.uniform] = resetValue;
                         onChange(u, resetValue);
                     });
-                    
+
                     // Atualiza a UI de todos os bindings coletados
                     allBindings.forEach(b => b.refresh());
                 });
