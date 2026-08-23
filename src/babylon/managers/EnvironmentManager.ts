@@ -18,8 +18,8 @@ export class EnvironmentManager {
 
     // ─── Skybox ───
 
-    private skyboxMesh: B.Mesh;
-    private skyboxMaterial: B.ShaderMaterial;
+    private skyboxMesh!: B.Mesh;
+    private skyboxMaterial!: B.ShaderMaterial;
     private currentSkyboxId: SkyboxId | 'color' = 'color';
     private textureCache = new Map<SkyboxId, B.CubeTexture>();
 
@@ -95,7 +95,7 @@ export class EnvironmentManager {
         let envTexture = this.textureCache.get(id);
 
         if (!envTexture) {
-            envTexture = B.CubeTexture.CreateFromPrefilteredData(config.path, this.scene);
+            envTexture = B.CubeTexture.CreateFromPrefilteredData(config.path!, this.scene);
 
             await new Promise<void>((resolve, reject) => {
 
@@ -123,7 +123,9 @@ export class EnvironmentManager {
         // --- Início da lógica de transição visual em GLSL ---
         // A textura "nova" da chamada passada agora é a nossa "antiga" (Textura 1)
         this.currentVisualTexture = this.nextVisualTexture;
-        this.skyboxMaterial.setTexture("texture1", this.currentVisualTexture);
+        if (this.currentVisualTexture) {
+            this.skyboxMaterial.setTexture("texture1", this.currentVisualTexture);
+        }
 
         let oldYRotation = 0;
         let oldXRotation = 0;

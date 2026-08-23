@@ -11,7 +11,7 @@ export const ToonEdgeConfig: PostProcessShaderConfig = {
     description: 'Borda dedicada para o Toon Shader',
     category: 'postprocess',
     hidden: true, // Garante que não apareça na lista de checkboxes do usuário
-    create: (scene: B.Scene, camera: B.Camera, getUniforms: () => Record<string, unknown>) => {
+    create: (scene: B.Scene, camera: B.Camera, _getUniforms: () => Record<string, unknown>) => {
 
         B.Effect.ShadersStore['toonEdgeFragmentShader'] = fragmentSource;
 

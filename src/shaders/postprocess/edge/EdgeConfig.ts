@@ -9,7 +9,7 @@ export const EdgeConfig: PostProcessShaderConfig = {
     title: 'Parâmetros Edge Detection',
     description: 'Detecta bordas baseando-se na profundidade e nas normais, ignorando texturas e luzes.',
     category: 'postprocess',
-    create: (scene: B.Scene, camera: B.Camera, getUniforms: () => Record<string, unknown>) => {
+    create: (scene: B.Scene, camera: B.Camera, _getUniforms: () => Record<string, unknown>) => {
         B.Effect.ShadersStore['edgeFragmentShader'] = fragmentSource;
         // Lista de malhas que não devem gerar bordas (Céu e Barreiras Invisíveis da Física)
         const ignoredMeshes = ['skybox', ...ENVIRONMENT_WALLS];

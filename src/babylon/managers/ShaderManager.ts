@@ -27,12 +27,12 @@ export class ShaderManager {
     private ppUniformValues = new Map<PostProcessShaderId, Record<string, unknown>>();
 
     // Fallback para texturas não definidas (evita GL_INVALID_OPERATION feedback loop)
-    private fallbackTexture: B.Texture;
-    private fallbackCubemap: B.RawCubeTexture;
+    private fallbackTexture!: B.Texture;
+    private fallbackCubemap!: B.RawCubeTexture;
 
     // Screen-space refraction (RTT)
     private sceneRTT: B.RenderTargetTexture | null = null;
-    private sceneRTTMesh: B.AbstractMesh | null = null;
+    // private sceneRTTMesh: B.AbstractMesh | null = null;
 
     // Callback armazenado para re-injeção dinâmica do cubemap
     private getCubemapCallback: (() => B.BaseTexture | null) | null = null;
@@ -121,7 +121,7 @@ export class ShaderManager {
                 this.scene,
                 false // generateMipMaps
             );
-            this.sceneRTTMesh = mesh;
+            // this.sceneRTTMesh = mesh;
 
             // A cada frame, repopula o renderList com TODOS os meshes
             // exceto o modelo com vidro e seus filhos
@@ -378,7 +378,7 @@ export class ShaderManager {
             if (idx !== -1) this.scene.customRenderTargets.splice(idx, 1);
             this.sceneRTT.dispose();
             this.sceneRTT = null;
-            this.sceneRTTMesh = null;
+            // this.sceneRTTMesh = null;
         }
         this.getCubemapCallback = null;
     }

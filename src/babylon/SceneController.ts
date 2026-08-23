@@ -22,6 +22,7 @@ import type { ModelEntity } from './entities/ModelEntity';
 import { MaterialShaders, PostProcessShaders, type MaterialShaderId, type PostProcessShaderId, MAX_POST_PROCESSES } from '../shaders/Registry';
 
 import { FingerInteraction } from './interactions/FingerInteraction';
+import type { ValueUniform } from '../shaders/Types';
 
 
 
@@ -486,7 +487,7 @@ export class SceneController {
             config.uniforms,
             currentParams,
             (uniform, value) => {
-                this.shaderManager.setMaterialUniform(uniform, value);
+                this.shaderManager.setMaterialUniform(uniform as ValueUniform, value);
             }
         );
 
@@ -528,7 +529,7 @@ export class SceneController {
                 config.uniforms,
                 proxy,
                 (uniform, value) => {
-                    this.shaderManager.setPostProcessUniform(shaderId, uniform, value);
+                    this.shaderManager.setPostProcessUniform(shaderId, uniform as ValueUniform, value);
                 }
             );
 
