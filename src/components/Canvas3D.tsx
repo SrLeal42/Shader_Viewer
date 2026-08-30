@@ -11,7 +11,7 @@ export function Canvas3D() {
     const tweakpaneLeftRef = useRef<HTMLDivElement>(null);
     const controllerRef = useRef<SceneController | null>(null);
 
-    const [isUIVisible, setIsUIVisible] = useState(false);
+    const [isUIVisible, setIsUIVisible] = useState(true);
     const [isIdle, setIsIdle] = useState(false);
 
     // --- Lógica do Timer de Inatividade ---

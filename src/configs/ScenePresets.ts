@@ -68,4 +68,4 @@ export const ScenePresets: Record<string, ScenePreset> = {
     }
 };
 
-export const ACTIVE_PRESET: keyof typeof ScenePresets = 'cosmic_monkey'; 
+export const ACTIVE_PRESET: keyof typeof ScenePresets = 'default'; 
