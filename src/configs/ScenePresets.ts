@@ -65,6 +65,45 @@ export const ScenePresets: Record<string, ScenePreset> = {
         },
         skyboxEffects: ['warp', 'meteors']
 
+    },
+
+    chrome_monkey: {
+        model: 'suzanne',
+        skybox: 'cyberpunk',
+        material: 'chrome',
+        transform: {
+            position: { x: 1.1, y: -0.5, z: 2.0 },
+            rotation: { x: -14, y: 20, z: 0 },
+            physics: false
+        },
+
+        modelParams: { scale: 3 },
+
+        materialParams: {
+            "u_metalColor": { r: 0.65, g: 0.24, b: 1.00 },
+            "u_roughness": 0.25,
+            "u_lumThreshold": 0.05,
+            "u_noiseScale": 1.5,
+            "u_noiseStrength": 0.1,
+            "u_noiseSpeed": 0.1,
+            "u_reflectivity": 1.5,
+            "u_fresnelPower": 3.0,
+        },
+        postProcesses: {
+            'bloom': {
+                "u_threshold": 0.35,
+                "u_intensity": 1.6,
+                "u_radius": 3.9,
+            },
+            'reflection': {
+                "u_threshold": 0.23,
+                "u_amplitude": 0.01,
+                "u_frequency": 100.0,
+                "u_bandFrequency": 37.0,
+                "u_bandSpeed": 1.0,
+            }
+        }
+
     }
 };
 

@@ -5,13 +5,14 @@ import { ToonConfig } from './materials/toon/ToonConfig';
 import { PixelArtConfig } from './materials/pixelart/PixelArtConfig';
 import { GlassConfig } from './materials/glass/GlassConfig';
 import { PortalConfig } from './materials/portal/PortalConfig';
-
+import { ChromeConfig } from './materials/chrome/ChromeConfig';
 
 export const MaterialShaders = {
     toon: ToonConfig,
     pixelart: PixelArtConfig,
     glass: GlassConfig,
     portal: PortalConfig,
+    chrome: ChromeConfig,
 } as const satisfies Record<string, MaterialShaderConfig>;
 
 // Post-Process Shaders — empilháveis
