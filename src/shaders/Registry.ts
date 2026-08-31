@@ -6,6 +6,7 @@ import { PixelArtConfig } from './materials/pixelart/PixelArtConfig';
 import { GlassConfig } from './materials/glass/GlassConfig';
 import { PortalConfig } from './materials/portal/PortalConfig';
 import { ChromeConfig } from './materials/chrome/ChromeConfig';
+import { IridescentConfig } from './materials/iridescent/IridescentConfig';
 
 export const MaterialShaders = {
     toon: ToonConfig,
@@ -13,6 +14,7 @@ export const MaterialShaders = {
     glass: GlassConfig,
     portal: PortalConfig,
     chrome: ChromeConfig,
+    iridescent: IridescentConfig,
 } as const satisfies Record<string, MaterialShaderConfig>;
 
 // Post-Process Shaders — empilháveis

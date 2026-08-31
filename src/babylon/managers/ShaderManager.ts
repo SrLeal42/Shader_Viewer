@@ -34,6 +34,8 @@ export class ShaderManager {
     private sceneRTT: B.RenderTargetTexture | null = null;
     // private sceneRTTMesh: B.AbstractMesh | null = null;
 
+    private renderObserver: B.Observer<B.Scene> | null = null;
+
     // Callback armazenado para re-injeção dinâmica do cubemap
     private getCubemapCallback: (() => B.BaseTexture | null) | null = null;
 
@@ -45,6 +47,14 @@ export class ShaderManager {
         this.lightManager = lightManager;
 
         this.createFallbackTextures();
+
+        // Mantém os Uniforms de luzes sincronizados com as animações de Órbita/Pulso
+        this.renderObserver = this.scene.onBeforeRenderObservable.add(() => {
+            if (this.lightManager.isDirty && this._activeMaterialId) {
+                this.reinjectLightUniforms();
+            }
+        });
+
     }
 
     // ─── Getters ───
@@ -384,6 +394,11 @@ export class ShaderManager {
     }
 
     public dispose(): void {
+
+        if (this.renderObserver) {
+            this.scene.onBeforeRenderObservable.remove(this.renderObserver);
+            this.renderObserver = null;
+        }
 
         for (const mat of this.materialCache.values()) mat.dispose();
 
