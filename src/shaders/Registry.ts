@@ -23,6 +23,7 @@ import { BloomConfig } from './postprocess/bloom/BloomConfig';
 import { ToonEdgeConfig } from './postprocess/toon_edge/ToonEdgeConfig';
 import { PixelateConfig } from './postprocess/pixelate/PixelateConfig';
 import { ReflectionConfig } from './postprocess/reflection/ReflectionConfig';
+import { DeteriorationConfig } from './postprocess/deterioration/DeteriorationConfig';
 
 export const MAX_POST_PROCESSES = 5;
 
@@ -32,6 +33,7 @@ export const PostProcessShaders = {
     toon_edge: ToonEdgeConfig,
     pixelate: PixelateConfig,
     reflection: ReflectionConfig,
+    deterioration: DeteriorationConfig,
 } as const satisfies Record<string, PostProcessShaderConfig>;
 
 export type MaterialShaderId = keyof typeof MaterialShaders;

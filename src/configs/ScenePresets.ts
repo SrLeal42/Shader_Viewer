@@ -101,10 +101,66 @@ export const ScenePresets: Record<string, ScenePreset> = {
                 "u_frequency": 100.0,
                 "u_bandFrequency": 37.0,
                 "u_bandSpeed": 1.0,
+            },
+            'deterioration': {
+                "u_noiseStrength": 0.06,
+                "u_noiseScale": 900.0,
+                "u_desaturation": 0.0,
+                "u_vignetteStrength": 0.0,
+                "u_vignetteRadius": 0.2,
+                "u_chromaticAberration": 0.001,
+                "u_scanlineStrength": 0.0,
+                "u_scanlineFrequency": 300.0,
             }
         }
 
+    },
+
+    deteriorated_sphere: {
+        model: 'sphere',
+        skybox: 'xangai',
+        material: 'glass',
+        transform: {
+            position: { x: 0, y: 0, z: 0 },
+            rotation: { x: 0, y: 0, z: 0 },
+            physics: false
+        },
+
+        modelParams: { scale: 2 },
+
+        materialParams: {
+            "u_ior": 1.52,
+            "u_refractionStrength": 0.14,
+            "u_tintColor": { r: 0.30, g: 0.00, b: 1.00 },
+            "u_tintDensity": 0.56,
+            "u_roughness": 0.0,
+            "u_reflectivity": 0.6,
+            "u_fresnelPower": 5.5
+        },
+        postProcesses: {
+            'bloom': {
+                "u_threshold": 0.25,
+                "u_intensity": 3.1,
+                "u_radius": 3.0,
+            },
+            'pixelate': {
+                "u_pixelSize": 3
+            },
+            'deterioration': {
+                "u_noiseStrength": 0.05,
+                "u_noiseScale": 1000.0,
+                "u_desaturation": 0.2,
+                "u_vignetteStrength": 0.5,
+                "u_vignetteRadius": 0.2,
+                "u_chromaticAberration": 0.002,
+                "u_scanlineStrength": 0.1,
+                "u_scanlineFrequency": 300.0,
+            }
+        },
+        skyboxEffects: ['meteors']
+
     }
+
 };
 
-export const ACTIVE_PRESET: keyof typeof ScenePresets = 'default'; 
+export const ACTIVE_PRESET: keyof typeof ScenePresets = 'chrome_monkey'; 
