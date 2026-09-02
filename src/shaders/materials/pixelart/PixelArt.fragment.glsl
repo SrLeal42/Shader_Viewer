@@ -1,6 +1,8 @@
 #version 300 es
 precision highp float;
 
+#include<lighting>
+
 in vec3 vNormal;
 in vec3 vWorldPosition;
 in vec2 vUV;
@@ -26,12 +28,6 @@ uniform float u_ditherPattern;
 // Global
 uniform vec3 u_cameraPos;
 uniform float u_time;
-
-// Luzes
-uniform vec3 u_hemiDir;
-uniform vec3 u_hemiColor;
-uniform vec3 u_pointPos;
-uniform vec3 u_pointColor;
 
 // ─── Bayer 4x4 Ordered Dithering ───
 float bayer4x4(vec2 pos) {
@@ -111,18 +107,19 @@ void main() {
         ? texture(u_albedo, vUV).rgb
         : vec3(0.75);
 
-    // ─── Iluminação (hemi + point) ───
+    // ─── Iluminação (hemi + point + SH) ───
     float hemiNdotL = dot(normal, normalize(u_hemiDir));
+    
     vec3 hemiLight = max(hemiNdotL, 0.0) * u_hemiColor;
-
-    vec3 pointDir = normalize(u_pointPos - vWorldPosition);
-    float pointDist = length(u_pointPos - vWorldPosition);
-    float attenuation = 1.0 / (1.0 + 0.1 * pointDist * pointDist);
-    float pointNdotL = dot(normal, pointDir);
-    vec3 pointLight = max(pointNdotL, 0.0) * u_pointColor * attenuation;
-
-    vec3 totalLight = hemiLight + pointLight;
-    float luminance = dot(totalLight, vec3(0.2126, 0.7152, 0.0722));
+    PointLightData pl = getPointLight(vWorldPosition);
+    
+    float pointNdotL = dot(normal, pl.direction);
+    vec3 pointLight = max(pointNdotL, 0.0) * u_pointColor * pl.attenuation;
+    vec3 ambientSH = evaluateSH(normal);
+    
+    vec3 totalLight = hemiLight + pointLight + ambientSH;
+    
+    float luminance = getLuminance(totalLight);
 
     // Quantiza a iluminação em degraus duros
     float quantizedLight = floor(luminance * u_lightSteps) / u_lightSteps;

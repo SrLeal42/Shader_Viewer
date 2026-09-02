@@ -1,7 +1,7 @@
 import * as B from '@babylonjs/core';
-import type { MaterialShaderConfig } from '../../Types';
+import type { MaterialShaderConfig, MaterialCreateContext } from '../../Types';
+import { SharedInclude, BaseVertex } from '../../shared/SharedIncludes';
 
-import vertexSource from './PixelArt.vertex.glsl?raw';
 import fragmentSource from './PixelArt.fragment.glsl?raw';
 
 export const PixelArtConfig: MaterialShaderConfig = {
@@ -10,13 +10,15 @@ export const PixelArtConfig: MaterialShaderConfig = {
     description: 'Transforma o modelo em pixel art com paleta limitada e dithering.',
     category: 'material',
     needsAlbedoTexture: true,
+    baseVertex: BaseVertex.UV,
+    sharedIncludes: [SharedInclude.LIGHTING],
 
-    create: (scene: B.Scene) => {
-        B.Effect.ShadersStore['pixelartVertexShader'] = vertexSource;
+    create: (scene: B.Scene, ctx: MaterialCreateContext) => {
+        B.Effect.ShadersStore['pixelartVertexShader'] = ctx.vertexSource;
         B.Effect.ShadersStore['pixelartFragmentShader'] = fragmentSource;
 
         return new B.ShaderMaterial('pixelartMat', scene, 'pixelart', {
-            attributes: ['position', 'normal', 'uv'],
+            attributes: ctx.attributes,
             uniforms: [
                 'worldViewProjection', 'world',
                 'u_time', 'u_cameraPos',
@@ -24,7 +26,7 @@ export const PixelArtConfig: MaterialShaderConfig = {
                 'u_colorLevels', 'u_saturation',
                 'u_lightSteps', 'u_shadowMin',
                 'u_ditherStrength', 'u_ditherScale', 'u_ditherPattern',
-                'u_hemiDir', 'u_hemiColor', 'u_pointPos', 'u_pointColor'
+                ...ctx.sharedUniforms
             ],
             samplers: ['u_albedo']
         });

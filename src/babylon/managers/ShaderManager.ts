@@ -5,7 +5,8 @@ import {
     type MaterialShaderId, type PostProcessShaderId
 } from '../../shaders/Registry';
 
-import { flattenUniforms, type ValueUniform, type MaterialApplyContext } from '../../shaders/Types';
+import { registerSharedIncludesInBabylon, resolveSharedUniforms, resolveBaseVertex, SharedInclude } from '../../shaders/shared/SharedIncludes';
+import { flattenUniforms, type ValueUniform, type MaterialApplyContext, type MaterialCreateContext } from '../../shaders/Types';
 
 import type { LightManager } from './LightManagers';
 
@@ -48,11 +49,22 @@ export class ShaderManager {
 
         this.createFallbackTextures();
 
+        registerSharedIncludesInBabylon();
+
         // Mantém os Uniforms de luzes sincronizados com as animações de Órbita/Pulso
         this.renderObserver = this.scene.onBeforeRenderObservable.add(() => {
             if (this.lightManager.isDirty && this._activeMaterialId) {
                 this.reinjectLightUniforms();
+
+                // Se o material ativo usa SharedInclude.LIGHTING, injeta SH também
+                const config = MaterialShaders[this._activeMaterialId];
+                if (config.sharedIncludes?.includes(SharedInclude.LIGHTING)) {
+                    const mat = this.materialCache.get(this._activeMaterialId);
+                    if (mat) this.lightManager.injectSHUniforms(mat);
+                }
+
             }
+
         });
 
     }
@@ -81,12 +93,29 @@ export class ShaderManager {
     ): void {
 
         const config = MaterialShaders[shaderId];
-
-        // Achata a árvore antes de ler
         const flatUniforms = flattenUniforms(config.uniforms);
+
         if (!this.materialCache.has(shaderId)) {
-            const material = config.create(this.scene);
+            // ─── Monta o MaterialCreateContext ───
+            const sharedUniforms = resolveSharedUniforms(config.sharedIncludes);
+
+            let vertexDef;
+            if (config.vertexSource) {
+                vertexDef = { source: config.vertexSource, attributes: ['position', 'normal'] };
+            } else {
+                vertexDef = resolveBaseVertex(config.baseVertex);
+            }
+
+            const ctx: MaterialCreateContext = {
+                vertexSource: vertexDef.source,
+                sharedUniforms,
+                attributes: vertexDef.attributes,
+            };
+
+            const material = config.create(this.scene, ctx);
+
             flatUniforms.forEach(u => this.applyUniform(material, u, u.defaultValue));
+
             this.materialCache.set(shaderId, material);
         }
 
@@ -178,6 +207,11 @@ export class ShaderManager {
 
         this._activeMaterialId = shaderId;
         this.lightManager.injectLightUniforms(material);
+        // Injeta SH se o material usa o include de iluminação
+        if (config.sharedIncludes?.includes(SharedInclude.LIGHTING)) {
+            this.lightManager.injectSHUniforms(material);
+        }
+
     }
 
     /** Remove o shader ativo (a restauração do material original é responsabilidade do ModelManager) */

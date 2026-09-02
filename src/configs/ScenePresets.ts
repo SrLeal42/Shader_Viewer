@@ -163,4 +163,4 @@ export const ScenePresets: Record<string, ScenePreset> = {
 
 };
 
-export const ACTIVE_PRESET: keyof typeof ScenePresets = 'chrome_monkey'; 
+export const ACTIVE_PRESET: keyof typeof ScenePresets = 'default'; 

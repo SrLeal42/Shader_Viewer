@@ -1,4 +1,5 @@
 import type * as B from '@babylonjs/core';
+import type { SharedInclude, BaseVertex } from './shared/SharedIncludes';
 
 // --- Uniforms expostos ao Tweakpane ---
 
@@ -52,9 +53,19 @@ interface BaseShaderConfig {
     uniforms: ShaderUniform[];
 }
 
+// Contexto montado pelo ShaderManager e passado ao create()
+export interface MaterialCreateContext {
+    vertexSource: string;
+    sharedUniforms: string[];
+    attributes: string[];
+}
+
 export interface MaterialShaderConfig extends BaseShaderConfig {
     category: 'material';
-    create: (scene: B.Scene) => B.ShaderMaterial;
+    baseVertex?: BaseVertex;
+    vertexSource?: string;              // Vertex customizado (ignora baseVertex)
+    sharedIncludes?: SharedInclude[];
+    create: (scene: B.Scene, ctx: MaterialCreateContext) => B.ShaderMaterial;
     postProcessDependencies?: string[];
     needsAlbedoTexture?: boolean;
     needsSceneTexture?: boolean;

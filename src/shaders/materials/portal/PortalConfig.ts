@@ -1,7 +1,6 @@
 import * as B from '@babylonjs/core';
-import type { MaterialShaderConfig } from '../../Types';
+import type { MaterialShaderConfig, MaterialCreateContext } from '../../Types';
 
-import vertexSource from './Portal.vertex.glsl?raw';
 import fragmentSource from './Portal.fragment.glsl?raw';
 
 export const PortalConfig: MaterialShaderConfig = {
@@ -10,12 +9,12 @@ export const PortalConfig: MaterialShaderConfig = {
     description: 'Portal dimensional com parallax multi-camada procedural.',
     category: 'material',
 
-    create: (scene: B.Scene) => {
-        B.Effect.ShadersStore['portalVertexShader'] = vertexSource;
+    create: (scene: B.Scene, ctx: MaterialCreateContext) => {
+        B.Effect.ShadersStore['portalVertexShader'] = ctx.vertexSource;
         B.Effect.ShadersStore['portalFragmentShader'] = fragmentSource;
 
         return new B.ShaderMaterial('portalMat', scene, 'portal', {
-            attributes: ['position', 'normal'],
+            attributes: ctx.attributes,
             uniforms: [
                 'worldViewProjection', 'world',
                 'u_time', 'u_cameraPos',

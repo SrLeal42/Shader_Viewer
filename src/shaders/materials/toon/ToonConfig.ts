@@ -1,33 +1,33 @@
 import * as B from '@babylonjs/core';
-import type { MaterialShaderConfig } from '../../Types';
+import type { MaterialShaderConfig, MaterialCreateContext } from '../../Types';
+import { SharedInclude } from '../../shared/SharedIncludes';
 
-import vertexSource from './Toon.vertex.glsl?raw';
 import fragmentSource from './Toon.fragment.glsl?raw';
 
 import { TOON_OUTLINE_UNIFORMS } from '../../../configs/Constants';
-
 
 export const ToonConfig: MaterialShaderConfig = {
     label: 'Toon Shading',
     title: 'Parâmetros do Toon',
     description: "Material estilo desenho animado com outline e specular",
     category: 'material',
+    sharedIncludes: [SharedInclude.LIGHTING],
 
     postProcessDependencies: ['toon_edge'],
 
-    create: (scene: B.Scene) => {
-        B.Effect.ShadersStore['toonVertexShader'] = vertexSource;
+    create: (scene: B.Scene, ctx: MaterialCreateContext) => {
+        B.Effect.ShadersStore['toonVertexShader'] = ctx.vertexSource;
         B.Effect.ShadersStore['toonFragmentShader'] = fragmentSource;
 
         return new B.ShaderMaterial('toonMat', scene, 'toon', {
-            attributes: ['position', 'normal'],
+            attributes: ctx.attributes,
             uniforms: [
                 'worldViewProjection', 'world',
                 'u_time', 'u_cameraPos',
                 'u_color', 'u_levels', 'u_shadowMin',
-                'u_hemiDir', 'u_hemiColor', 'u_pointPos', 'u_pointColor',
                 'u_glossiness', 'u_specThreshold', 'u_specIntensity', 'u_specColor',
-                'u_rimMin', 'u_rimMax', 'u_rimIntensity', 'u_rimColor'
+                'u_rimMin', 'u_rimMax', 'u_rimIntensity', 'u_rimColor',
+                ...ctx.sharedUniforms
             ],
         });
     },

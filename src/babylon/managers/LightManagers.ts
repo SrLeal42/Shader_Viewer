@@ -15,6 +15,14 @@ export class LightManager {
     private hemiTrueIntensity = LightConfigs.hemi.intensity;
     private pointTrueIntensity = LightConfigs.point.intensity;
 
+    private shCoeffs = {
+        x: new B.Color3(), y: new B.Color3(), z: new B.Color3(),
+        xx: new B.Color3(), yy: new B.Color3(), zz: new B.Color3(),
+        xy: new B.Color3(), yz: new B.Color3(), zx: new B.Color3(),
+    };
+    private shReady = false;
+
+
     // Animação
     private animObserver: B.Observer<B.Scene> | null = null;
     public animationType: PointAnimationType = LightConfigs.point.animationType;
@@ -109,6 +117,48 @@ export class LightManager {
         material.setColor3('u_pointColor', this._tempPointColor);
 
         this.isDirty = false;
+    }
+
+
+    // ─── Spherical Harmonics do Skybox ───
+
+    /** Extrai os coeficientes SH L2 do CubeTexture do ambiente */
+    public updateSHFromCubemap(cubemap: B.BaseTexture | null): void {
+        if (!cubemap || !(cubemap as B.CubeTexture).sphericalPolynomial) {
+            this.shReady = false;
+            // Zera todos os coeficientes
+            for (const key of Object.keys(this.shCoeffs) as (keyof typeof this.shCoeffs)[]) {
+                this.shCoeffs[key].set(0, 0, 0);
+            }
+            return;
+        }
+
+        const sp = (cubemap as B.CubeTexture).sphericalPolynomial!;
+        this.shCoeffs.x.copyFromFloats(sp.x.x, sp.x.y, sp.x.z);
+        this.shCoeffs.y.copyFromFloats(sp.y.x, sp.y.y, sp.y.z);
+        this.shCoeffs.z.copyFromFloats(sp.z.x, sp.z.y, sp.z.z);
+        this.shCoeffs.xx.copyFromFloats(sp.xx.x, sp.xx.y, sp.xx.z);
+        this.shCoeffs.yy.copyFromFloats(sp.yy.x, sp.yy.y, sp.yy.z);
+        this.shCoeffs.zz.copyFromFloats(sp.zz.x, sp.zz.y, sp.zz.z);
+        this.shCoeffs.xy.copyFromFloats(sp.xy.x, sp.xy.y, sp.xy.z);
+        this.shCoeffs.yz.copyFromFloats(sp.yz.x, sp.yz.y, sp.yz.z);
+        this.shCoeffs.zx.copyFromFloats(sp.zx.x, sp.zx.y, sp.zx.z);
+        this.shReady = true;
+        this.isDirty = true;
+    }
+
+
+    /** Injeta os coeficientes SH num ShaderMaterial (só para materiais com SharedInclude.LIGHTING) */
+    public injectSHUniforms(material: B.ShaderMaterial): void {
+        material.setColor3('u_shX', this.shCoeffs.x);
+        material.setColor3('u_shY', this.shCoeffs.y);
+        material.setColor3('u_shZ', this.shCoeffs.z);
+        material.setColor3('u_shXX', this.shCoeffs.xx);
+        material.setColor3('u_shYY', this.shCoeffs.yy);
+        material.setColor3('u_shZZ', this.shCoeffs.zz);
+        material.setColor3('u_shXY', this.shCoeffs.xy);
+        material.setColor3('u_shYZ', this.shCoeffs.yz);
+        material.setColor3('u_shZX', this.shCoeffs.zx);
     }
 
 

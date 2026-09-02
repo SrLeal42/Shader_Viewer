@@ -1,7 +1,7 @@
 import * as B from '@babylonjs/core';
-import type { MaterialShaderConfig } from '../../Types';
+import type { MaterialShaderConfig, MaterialCreateContext } from '../../Types';
+import { SharedInclude } from '../../shared/SharedIncludes';
 
-import vertexSource from './Chrome.vertex.glsl?raw';
 import fragmentSource from './Chrome.fragment.glsl?raw';
 
 export const ChromeConfig: MaterialShaderConfig = {
@@ -11,13 +11,14 @@ export const ChromeConfig: MaterialShaderConfig = {
     category: 'material',
     needsSceneTexture: true,
     needsEnvironmentCubemap: true,
+    sharedIncludes: [SharedInclude.LIGHTING, SharedInclude.SPECULAR, SharedInclude.NOISE],
 
-    create: (scene: B.Scene) => {
-        B.Effect.ShadersStore['chromeVertexShader'] = vertexSource;
+    create: (scene: B.Scene, ctx: MaterialCreateContext) => {
+        B.Effect.ShadersStore['chromeVertexShader'] = ctx.vertexSource;
         B.Effect.ShadersStore['chromeFragmentShader'] = fragmentSource;
 
         const material = new B.ShaderMaterial('chromeMat', scene, 'chrome', {
-            attributes: ['position', 'normal'],
+            attributes: ctx.attributes,
             uniforms: [
                 'worldViewProjection', 'world',
                 'u_time', 'u_cameraPos', 'u_screenSize',
@@ -25,7 +26,7 @@ export const ChromeConfig: MaterialShaderConfig = {
                 'u_noiseScale', 'u_noiseStrength', 'u_noiseSpeed',
                 'u_lumThreshold',
                 'u_hasEnvCubemap',
-                'u_hemiDir', 'u_hemiColor', 'u_pointPos', 'u_pointColor'
+                ...ctx.sharedUniforms
             ],
             samplers: ['u_sceneTexture', 'u_envCubemap']
         });

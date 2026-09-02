@@ -1,6 +1,8 @@
 #version 300 es
 precision highp float;
 
+#include<lighting>
+
 in vec3 vNormal;
 in vec3 vWorldPosition;
 out vec4 outColor;
@@ -26,42 +28,37 @@ uniform vec3 u_rimColor;
 uniform float u_time;
 uniform vec3 u_cameraPos;
 
-// Luzes
-uniform vec3 u_hemiDir;
-uniform vec3 u_hemiColor;
-uniform vec3 u_pointPos;
-uniform vec3 u_pointColor;
+// NOTA: u_hemiDir, u_hemiColor, u_pointPos, u_pointColor, SH
+// são declarados automaticamente pelo lighting.glsl (SharedInclude)
 
 void main() {
     vec3 normal = normalize(vNormal);
     vec3 viewDir = normalize(u_cameraPos - vWorldPosition);
 
-    // Cálculo das Luzes Base
+    // Cálculo das Luzes Base (usando funções do lighting.glsl)
     float hemiNdotL = dot(normal, normalize(u_hemiDir));
     vec3 hemiLight = max(hemiNdotL, 0.0) * u_hemiColor;
 
-    vec3 pointDir = normalize(u_pointPos - vWorldPosition);
-    float pointDist = length(u_pointPos - vWorldPosition);
-    float attenuation = 1.0 / (1.0 + 0.1 * pointDist * pointDist);
-    
-    float pointNdotL = dot(normal, pointDir);
-    vec3 pointLight = max(pointNdotL, 0.0) * u_pointColor * attenuation;
+    PointLightData pl = getPointLight(vWorldPosition);
+    float pointNdotL = dot(normal, pl.direction);
+    vec3 pointLight = max(pointNdotL, 0.0) * u_pointColor * pl.attenuation;
 
-    vec3 totalLight = hemiLight + pointLight;
+    // Iluminação ambiente do Skybox via Spherical Harmonics
+    vec3 ambientSH = evaluateSH(normal);
+
+    vec3 totalLight = hemiLight + pointLight + ambientSH;
     
     // Toon Diffuse (Quantização preservando a cor da luz)
-    float luminance = dot(totalLight, vec3(0.2126, 0.7152, 0.0722));
+    float luminance = getLuminance(totalLight);
     float quantized = floor(luminance * u_levels) / u_levels;
-    quantized = max(quantized, u_shadowMin); // Sombra base
+    quantized = max(quantized, u_shadowMin);
     
-    // Escala a cor da luz pela quantização
     float scale = quantized / max(luminance, 0.001);
     vec3 toonDiffuse = u_color * totalLight * scale;
 
     // Specular Toon (Brilho Estilizado)
-    vec3 halfDir = normalize(pointDir + viewDir);
+    vec3 halfDir = normalize(pl.direction + viewDir);
     float spec = pow(max(dot(normal, halfDir), 0.0), u_glossiness);
-    // Smoothstep bem curto para criar o "corte" do anime sem aliasing
     float toonSpec = smoothstep(u_specThreshold - 0.01, u_specThreshold, spec);
     vec3 specContrib = u_specColor * toonSpec * u_specIntensity;
 

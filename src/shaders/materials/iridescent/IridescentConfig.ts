@@ -1,7 +1,7 @@
 import * as B from '@babylonjs/core';
-import type { MaterialShaderConfig } from '../../Types';
+import type { MaterialShaderConfig, MaterialCreateContext } from '../../Types';
+import { SharedInclude } from '../../shared/SharedIncludes';
 
-import vertexSource from './Iridescent.vertex.glsl?raw';
 import fragmentSource from './Iridescent.fragment.glsl?raw';
 
 export const IridescentConfig: MaterialShaderConfig = {
@@ -11,18 +11,19 @@ export const IridescentConfig: MaterialShaderConfig = {
     category: 'material',
     needsSceneTexture: false,
     needsEnvironmentCubemap: false,
+    sharedIncludes: [SharedInclude.LIGHTING, SharedInclude.SPECULAR],
 
-    create: (scene: B.Scene) => {
-        B.Effect.ShadersStore['iridescentVertexShader'] = vertexSource;
+    create: (scene: B.Scene, ctx: MaterialCreateContext) => {
+        B.Effect.ShadersStore['iridescentVertexShader'] = ctx.vertexSource;
         B.Effect.ShadersStore['iridescentFragmentShader'] = fragmentSource;
 
         const material = new B.ShaderMaterial('iridescentMat', scene, 'iridescent', {
-            attributes: ['position', 'normal'],
+            attributes: ctx.attributes,
             uniforms: [
                 'worldViewProjection', 'world',
                 'u_cameraPos',
                 'u_baseColor', 'u_iridescenceStrength', 'u_iridescenceScale', 'u_shininess',
-                'u_hemiDir', 'u_hemiColor', 'u_pointPos', 'u_pointColor'
+                ...ctx.sharedUniforms
             ]
         });
 

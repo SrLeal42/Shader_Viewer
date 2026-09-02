@@ -554,11 +554,15 @@ export class SceneController {
                 new B.Color3(clearColor.r, clearColor.g, clearColor.b)
             );
 
+            this.lightManager.updateSHFromCubemap(null);
+
             return;
         }
 
         try {
             await this.environmentManager.setSkybox(id);
+            const cubemap = this.environmentManager.getCurrentCubemap();
+            this.lightManager.updateSHFromCubemap(cubemap);
         } catch (err) {
             console.error(`[SceneController] Falha ao carregar skybox '${id}':`, err);
         }
