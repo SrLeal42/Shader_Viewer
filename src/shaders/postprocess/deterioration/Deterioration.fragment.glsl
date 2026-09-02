@@ -19,6 +19,8 @@ uniform float u_chromaticAberration;
 // Linhas
 uniform float u_scanlineStrength;
 uniform float u_scanlineFrequency;
+uniform float u_scanlineSpeed;
+uniform float u_time;    
 
 // ─── Hash Noise (Ultra leve, sem texturas) ───
 float hash(vec2 p) {
@@ -66,7 +68,8 @@ void main(void) {
 
     // ─── Camada 5: Scanlines ───
     if (u_scanlineStrength > 0.0) {
-        float scanline = sin(vUV.y * u_scanlineFrequency) * 0.5 + 0.5;
+        float speed = u_time * u_scanlineSpeed * 10.0;
+        float scanline = sin(vUV.y * u_scanlineFrequency - speed) * 0.5 + 0.5;
         color *= 1.0 - u_scanlineStrength * (1.0 - scanline);
     }
 

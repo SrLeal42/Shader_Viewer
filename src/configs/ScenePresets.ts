@@ -155,6 +155,7 @@ export const ScenePresets: Record<string, ScenePreset> = {
                 "u_chromaticAberration": 0.002,
                 "u_scanlineStrength": 0.1,
                 "u_scanlineFrequency": 300.0,
+                "u_scanlineSpeed": 0.5,
             }
         },
         skyboxEffects: ['meteors']

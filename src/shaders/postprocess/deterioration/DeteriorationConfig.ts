@@ -18,7 +18,8 @@ export const DeteriorationConfig: PostProcessShaderConfig = {
                 'u_desaturation',
                 'u_vignetteStrength', 'u_vignetteRadius',
                 'u_chromaticAberration',
-                'u_scanlineStrength', 'u_scanlineFrequency'
+                'u_scanlineStrength', 'u_scanlineFrequency',
+                'u_scanlineSpeed', 'u_time'
             ],
             samplers: [],
             size: 1.0,
@@ -26,6 +27,12 @@ export const DeteriorationConfig: PostProcessShaderConfig = {
             samplingMode: B.Texture.BILINEAR_SAMPLINGMODE,
             engine: scene.getEngine(),
             reusable: false
+        });
+
+        let time = 0;
+        pp.onApplyObservable.add((effect) => {
+            time += scene.getEngine().getDeltaTime() / 1000.0;
+            effect.setFloat('u_time', time);
         });
 
         return pp;
@@ -130,6 +137,14 @@ export const DeteriorationConfig: PostProcessShaderConfig = {
                     type: 'float',
                     defaultValue: 300.0,
                     min: 50.0, max: 2000.0, step: 10.0
+                },
+                {
+                    uniform: 'u_scanlineSpeed',
+                    label: 'Velocidade',
+                    description: 'Velocidade do movimento das linhas (0 = parado).',
+                    type: 'float',
+                    defaultValue: 1.0,
+                    min: -5.0, max: 5.0, step: 0.1
                 }
             ]
         }
