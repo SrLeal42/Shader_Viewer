@@ -19,7 +19,11 @@ import { ScenePresets, ACTIVE_PRESET } from '../configs/ScenePresets';
 
 import type { ModelEntity } from './entities/ModelEntity';
 
-import { MaterialShaders, PostProcessShaders, type MaterialShaderId, type PostProcessShaderId, MAX_POST_PROCESSES } from '../shaders/Registry';
+import {
+    MaterialShaders, PostProcessShaders, VertexEffects,
+    type MaterialShaderId, type PostProcessShaderId, type VertexEffectId,
+    MAX_POST_PROCESSES
+} from '../shaders/Registry';
 
 import { FingerInteraction } from './interactions/FingerInteraction';
 import type { ValueUniform } from '../shaders/Types';
@@ -48,6 +52,7 @@ export class SceneController {
     private activeMaterialPostProcesses: PostProcessShaderId[] = [];
 
     private shaderParamsCache: Record<string, Record<string, unknown>> = {};
+    private vertexEffectParams: Record<string, unknown> = {};
 
     private interactionManager: InteractionManager;
 
@@ -100,8 +105,11 @@ export class SceneController {
         });
 
         this.uiManager.setupShaderControls(
-            (shaderId) => this.switchMaterialShader(shaderId),
-            (shaderId, enabled) => this.togglePostProcess(shaderId, enabled)
+            (shaderId) => this.switchMaterialShader(shaderId)
+        );
+
+        this.uiManager.setupVertexEffectControls(
+            (effectId) => this.switchVertexEffect(effectId)
         );
 
         this.uiManager.setupInteractionControls('finger', (id) => {
@@ -149,6 +157,9 @@ export class SceneController {
             }
         );
 
+        this.uiManager.setupPostProcessControls(
+            (shaderId, enabled) => this.togglePostProcess(shaderId, enabled)
+        );
 
         this.transformUI = this.uiManager.setupTransformControls(
             this.transformState,
@@ -481,6 +492,10 @@ export class SceneController {
             getCubemap: () => this.environmentManager.getCurrentCubemap()
         });
 
+        if (Object.keys(this.vertexEffectParams).length > 0) {
+            this.shaderManager.injectVertexEffectUniforms(this.vertexEffectParams);
+        }
+
         const config = MaterialShaders[shaderId];
         this.uiManager.buildShaderPanel(
             config.title,
@@ -497,6 +512,40 @@ export class SceneController {
                 this.shaderManager.enablePostProcess(id);
                 this.activeMaterialPostProcesses.push(id);
             });
+        }
+
+    }
+
+    private switchVertexEffect(effectId: VertexEffectId): void {
+
+        const entity = this.modelManager.currentEntity;
+        if (!entity) return;
+
+        this.vertexEffectParams = {};
+        this.uiManager.clearVertexEffectPanel();
+
+        this.shaderManager.setVertexEffect(effectId, entity.mesh, {
+            getAlbedo: (m) => entity.getOriginalAlbedoTexture(m),
+            getCubemap: () => this.environmentManager.getCurrentCubemap()
+        });
+
+        if (this.shaderManager.activeMaterialId) {
+            const matParams = this.shaderParamsCache[this.shaderManager.activeMaterialId];
+            if (matParams) {
+                this.shaderManager.injectMaterialUniforms(matParams);
+            }
+        }
+
+        const config = VertexEffects[effectId];
+        if (config.uniforms.length > 0) {
+            this.uiManager.buildVertexEffectPanel(
+                config.label,
+                config.uniforms,
+                this.vertexEffectParams,
+                (uniform, value) => {
+                    this.shaderManager.setMaterialUniform(uniform as ValueUniform, value);
+                }
+            );
         }
 
     }

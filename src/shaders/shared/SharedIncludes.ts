@@ -4,8 +4,8 @@ import lightingSource from './lighting.glsl?raw';
 import specularSource from './specular.glsl?raw';
 import noiseSource from './noise.glsl?raw';
 
-import vertexBaseSource from './vertex_base.glsl?raw';
-import vertexUVSource from './vertex_uv.glsl?raw';
+import vertexBaseSource from '../vertex/base/vertex_base.glsl?raw';
+import vertexUVSource from '../vertex/base/vertex_uv.glsl?raw';
 
 // ─── Constants: Snippets compartilhados para o Fragment Shader ───
 

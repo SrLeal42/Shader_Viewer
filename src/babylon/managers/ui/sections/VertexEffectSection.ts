@@ -1,18 +1,12 @@
 import type { FolderApi } from 'tweakpane';
 
 import { flattenUniforms, type ShaderUniform, type ValueUniform } from '../../../../shaders/Types';
-
-import { ScenePresets, ACTIVE_PRESET } from '../../../../configs/ScenePresets';
-
-import {
-    MaterialShaders,
-    type MaterialShaderId
-} from '../../../../shaders/Registry';
+import { VertexEffects, type VertexEffectId } from '../../../../shaders/Registry';
 
 
-export class ShaderSection {
+export class VertexEffectSection {
     private rootFolder: FolderApi;
-    private shaderFolder: FolderApi | null = null;
+    private effectFolder: FolderApi | null = null;
 
     constructor(root: FolderApi) {
         this.rootFolder = root;
@@ -20,31 +14,22 @@ export class ShaderSection {
 
 
     public setup(
-        onMaterialSelect: (id: MaterialShaderId | 'none') => void
+        onEffectChange: (id: VertexEffectId) => void
     ): void {
-        const materialOptions: Record<string, string> = { 'Nenhum': 'none' };
-        for (const [id, config] of Object.entries(MaterialShaders)) {
-            materialOptions[config.label] = id;
+        const options: Record<string, string> = {};
+        for (const [id, config] of Object.entries(VertexEffects)) {
+            options[config.label] = id;
         }
 
-        const shaderParams = { material: ScenePresets[ACTIVE_PRESET].material as string };
-        const materialBinding = this.rootFolder.addBinding(shaderParams, 'material', {
-            options: materialOptions,
-            label: 'Material Shader'
+        const params = { effect: 'none' as string };
+        const binding = this.rootFolder.addBinding(params, 'effect', {
+            options,
+            label: 'Efeito'
         }).on('change', (ev) => {
-            onMaterialSelect(ev.value as MaterialShaderId | 'none');
-
-            if (ev.value !== 'none') {
-                const cfg = MaterialShaders[ev.value as MaterialShaderId];
-                if (cfg && cfg.description) {
-                    materialBinding.element.title = cfg.description;
-                }
-            } else {
-                materialBinding.element.title = "Nenhum material customizado aplicado.";
-            }
+            onEffectChange(ev.value as VertexEffectId);
         });
 
-        materialBinding.element.title = "Selecione um Material Customizado para o modelo.";
+        binding.element.title = 'Selecione um efeito de deformação de vértice.';
     }
 
 
@@ -54,12 +39,11 @@ export class ShaderSection {
         targetProxy: Record<string, unknown>,
         onChange: (uniform: ShaderUniform, value: unknown) => void
     ): void {
-
         this.clearPanel();
         if (uniforms.length === 0) return;
 
-        this.shaderFolder = this.rootFolder.addFolder({ title });
-        this.buildUniformControls(this.shaderFolder, uniforms, targetProxy, onChange);
+        this.effectFolder = this.rootFolder.addFolder({ title });
+        this.buildUniformControls(this.effectFolder, uniforms, targetProxy, onChange);
     }
 
 
@@ -121,14 +105,12 @@ export class ShaderSection {
         }
     }
 
-
     public clearPanel(): void {
-        if (this.shaderFolder) {
-            this.shaderFolder.dispose();
-            this.shaderFolder = null;
+        if (this.effectFolder) {
+            this.effectFolder.dispose();
+            this.effectFolder = null;
         }
     }
-
 
     public dispose(): void {
         this.clearPanel();

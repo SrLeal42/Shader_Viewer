@@ -1,4 +1,4 @@
-import type { MaterialShaderConfig, PostProcessShaderConfig } from './Types';
+import type { MaterialShaderConfig, PostProcessShaderConfig, VertexEffectConfig } from './Types';
 
 // Material Shaders — mutuamente exclusivos
 import { ToonConfig } from './materials/toon/ToonConfig';
@@ -36,5 +36,19 @@ export const PostProcessShaders = {
     deterioration: DeteriorationConfig,
 } as const satisfies Record<string, PostProcessShaderConfig>;
 
+// Vertex Effects — mutuamente exclusivos
+import { NoneEffectConfig } from './vertex/effects/none/NoneConfig';
+import { WaveEffectConfig } from './vertex/effects/wave/WaveConfig';
+import { TwistEffectConfig } from './vertex/effects/twist/TwistConfig';
+import { InflateEffectConfig } from './vertex/effects/inflate/InflateConfig';
+
+export const VertexEffects = {
+    none: NoneEffectConfig,
+    wave: WaveEffectConfig,
+    twist: TwistEffectConfig,
+    inflate: InflateEffectConfig,
+} as const satisfies Record<string, VertexEffectConfig>;
+
 export type MaterialShaderId = keyof typeof MaterialShaders;
 export type PostProcessShaderId = keyof typeof PostProcessShaders;
+export type VertexEffectId = keyof typeof VertexEffects;

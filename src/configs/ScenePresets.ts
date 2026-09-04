@@ -1,8 +1,8 @@
 import type { ModelId } from './ModelConfigs';
 import type { SkyboxId } from './SkyboxConfigs';
-import type { SkyboxEffectId } from './SkyboxEffectsConfigs'; // 
+import type { SkyboxEffectId } from './SkyboxEffectsConfigs';
 
-import type { MaterialShaderId, PostProcessShaderId } from '../shaders/Registry';
+import type { MaterialShaderId, PostProcessShaderId, VertexEffectId } from '../shaders/Registry';
 
 export interface ScenePreset {
     model: ModelId;
@@ -20,6 +20,9 @@ export interface ScenePreset {
 
     // Define valores customizados para os sliders do Material
     materialParams?: Record<string, unknown>;
+
+    vertexEffect?: VertexEffectId;
+    vertexEffectParams?: Record<string, unknown>;
 
     // Liga Efeitos Post-Process e define seus parâmetros customizados
     postProcesses?: Partial<Record<PostProcessShaderId, Record<string, unknown>>>;

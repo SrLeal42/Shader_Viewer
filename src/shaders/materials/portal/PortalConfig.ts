@@ -22,7 +22,8 @@ export const PortalConfig: MaterialShaderConfig = {
                 'u_scrollSpeed', 'u_rotationSpeed', 'u_parallaxDepth',
                 'u_baseColor', 'u_accentColor', 'u_brightness',
                 'u_edgeGlow', 'u_edgeColor',
-                'u_hemiDir', 'u_hemiColor', 'u_pointPos', 'u_pointColor'
+                'u_hemiDir', 'u_hemiColor', 'u_pointPos', 'u_pointColor',
+                ...ctx.sharedUniforms
             ]
         });
     },

@@ -77,6 +77,14 @@ export interface MaterialApplyContext {
     getCubemap?: () => B.BaseTexture | null;
 }
 
+export interface VertexEffectConfig {
+    label: string;
+    description?: string;
+    source: string;
+    uniforms: ShaderUniform[];
+    extraUniforms: string[];
+}
+
 export interface PostProcessShaderConfig extends BaseShaderConfig {
     category: 'postprocess';
     create: (scene: B.Scene, camera: B.Camera, getUniforms: () => Record<string, unknown>) => B.PostProcess;

@@ -1,8 +1,8 @@
 import * as B from '@babylonjs/core';
 
 import {
-    MaterialShaders, PostProcessShaders,
-    type MaterialShaderId, type PostProcessShaderId
+    MaterialShaders, PostProcessShaders, VertexEffects,
+    type MaterialShaderId, type PostProcessShaderId, type VertexEffectId
 } from '../../shaders/Registry';
 
 import { registerSharedIncludesInBabylon, resolveSharedUniforms, resolveBaseVertex, SharedInclude } from '../../shaders/shared/SharedIncludes';
@@ -22,6 +22,9 @@ export class ShaderManager {
     private materialCache = new Map<MaterialShaderId, B.ShaderMaterial>();
 
     private _activeUniforms: string[] = [];
+
+    // Vertex Effect: mutuamente exclusivo
+    private _activeVertexEffectId: VertexEffectId = 'none';
 
     // Post-process: empilhável
     private activePostProcesses = new Map<PostProcessShaderId, B.PostProcess>();
@@ -51,6 +54,9 @@ export class ShaderManager {
 
         registerSharedIncludesInBabylon();
 
+        // Registra o efeito de vértice padrão (none)
+        B.Effect.IncludesShadersStore['vertexEffect'] = VertexEffects['none'].source;
+
         // Mantém os Uniforms de luzes sincronizados com as animações de Órbita/Pulso
         this.renderObserver = this.scene.onBeforeRenderObservable.add(() => {
             if (this.lightManager.isDirty && this._activeMaterialId) {
@@ -75,6 +81,10 @@ export class ShaderManager {
         return this._activeMaterialId;
     }
 
+    public get activeVertexEffectId(): VertexEffectId {
+        return this._activeVertexEffectId;
+    }
+
     public get activePostProcessIds(): PostProcessShaderId[] {
         return Array.from(this.activePostProcesses.keys());
     }
@@ -96,25 +106,28 @@ export class ShaderManager {
         const flatUniforms = flattenUniforms(config.uniforms);
 
         if (!this.materialCache.has(shaderId)) {
+
             // ─── Monta o MaterialCreateContext ───
             const sharedUniforms = resolveSharedUniforms(config.sharedIncludes);
 
-            let vertexDef;
-            if (config.vertexSource) {
-                vertexDef = { source: config.vertexSource, attributes: ['position', 'normal'] };
-            } else {
-                vertexDef = resolveBaseVertex(config.baseVertex);
-            }
+            // Uniforms do efeito de vértice ativo
+            const effectConfig = VertexEffects[this._activeVertexEffectId];
+            const effectUniforms = effectConfig.extraUniforms;
+
+            const vertexDef = resolveBaseVertex(config.baseVertex);
 
             const ctx: MaterialCreateContext = {
                 vertexSource: vertexDef.source,
-                sharedUniforms,
+                sharedUniforms: [...sharedUniforms, ...effectUniforms],
                 attributes: vertexDef.attributes,
             };
 
             const material = config.create(this.scene, ctx);
 
             flatUniforms.forEach(u => this.applyUniform(material, u, u.defaultValue));
+
+            const effectFlatUniforms = flattenUniforms(effectConfig.uniforms);
+            effectFlatUniforms.forEach(u => this.applyUniform(material, u, u.defaultValue));
 
             this.materialCache.set(shaderId, material);
         }
@@ -213,6 +226,30 @@ export class ShaderManager {
         }
 
     }
+
+
+    /** Troca o efeito de vértice ativo. Invalida o cache e re-aplica o material. */
+    public setVertexEffect(effectId: VertexEffectId, mesh?: B.AbstractMesh, context?: MaterialApplyContext): void {
+
+        if (effectId === this._activeVertexEffectId) return;
+
+        this._activeVertexEffectId = effectId;
+
+        // Registra o snippet do novo efeito
+        const effectConfig = VertexEffects[effectId];
+        B.Effect.IncludesShadersStore['vertexEffect'] = effectConfig.source;
+
+        // Invalida todo o cache (o vertex source mudou)
+        this.materialCache.forEach(mat => mat.dispose());
+        this.materialCache.clear();
+
+        // Re-aplica o material ativo se houver
+        if (this._activeMaterialId && mesh) {
+            this.applyMaterial(this._activeMaterialId, mesh, context);
+        }
+
+    }
+
 
     /** Remove o shader ativo (a restauração do material original é responsabilidade do ModelManager) */
     public clearActiveMaterial(): void {
@@ -375,6 +412,24 @@ export class ShaderManager {
         flattenUniforms(config.uniforms).forEach(u => {
             if (proxy[u.uniform] !== undefined) {
                 this.setMaterialUniform(u, proxy[u.uniform]);
+            }
+        });
+
+    }
+
+    /** Injeta os uniforms do efeito de vértice no material ativo */
+    public injectVertexEffectUniforms(proxy: Record<string, unknown>): void {
+
+        if (!this._activeMaterialId) return;
+
+        const mat = this.materialCache.get(this._activeMaterialId);
+
+        if (!mat) return;
+
+        const effectConfig = VertexEffects[this._activeVertexEffectId];
+        flattenUniforms(effectConfig.uniforms).forEach(u => {
+            if (proxy[u.uniform] !== undefined) {
+                this.applyUniform(mat, u, proxy[u.uniform]);
             }
         });
 

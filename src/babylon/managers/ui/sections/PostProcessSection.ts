@@ -1,65 +1,74 @@
-import type { FolderApi } from 'tweakpane';
+import type { Pane, FolderApi } from 'tweakpane';
 
 import { flattenUniforms, type ShaderUniform, type ValueUniform } from '../../../../shaders/Types';
 
 import { ScenePresets, ACTIVE_PRESET } from '../../../../configs/ScenePresets';
 
 import {
-    MaterialShaders,
-    type MaterialShaderId
+    PostProcessShaders,
+    type PostProcessShaderId,
+    MAX_POST_PROCESSES
 } from '../../../../shaders/Registry';
 
 
-export class ShaderSection {
-    private rootFolder: FolderApi;
-    private shaderFolder: FolderApi | null = null;
+export class PostProcessSection {
+    private pane: Pane;
+    private rootFolder!: FolderApi;
 
-    constructor(root: FolderApi) {
-        this.rootFolder = root;
+    private ppFolders = new Map<string, FolderApi>();
+    private ppBindings = new Map<string, { params: any, binding: any }>();
+
+    constructor(pane: Pane) {
+        this.pane = pane;
     }
 
 
     public setup(
-        onMaterialSelect: (id: MaterialShaderId | 'none') => void
+        onPostProcessToggle: (id: PostProcessShaderId, enabled: boolean) => void
     ): void {
-        const materialOptions: Record<string, string> = { 'Nenhum': 'none' };
-        for (const [id, config] of Object.entries(MaterialShaders)) {
-            materialOptions[config.label] = id;
-        }
 
-        const shaderParams = { material: ScenePresets[ACTIVE_PRESET].material as string };
-        const materialBinding = this.rootFolder.addBinding(shaderParams, 'material', {
-            options: materialOptions,
-            label: 'Material Shader'
-        }).on('change', (ev) => {
-            onMaterialSelect(ev.value as MaterialShaderId | 'none');
+        this.rootFolder = this.pane.addFolder({ title: `Pós-Processamentos MAX(${MAX_POST_PROCESSES})` });
 
-            if (ev.value !== 'none') {
-                const cfg = MaterialShaders[ev.value as MaterialShaderId];
-                if (cfg && cfg.description) {
-                    materialBinding.element.title = cfg.description;
-                }
-            } else {
-                materialBinding.element.title = "Nenhum material customizado aplicado.";
+        for (const [id, config] of Object.entries(PostProcessShaders)) {
+
+            if (config.hidden) continue;
+
+            const isActive = ScenePresets[ACTIVE_PRESET].postProcesses !== undefined &&
+                ScenePresets[ACTIVE_PRESET].postProcesses[id as PostProcessShaderId] !== undefined;
+
+            const ppParams = { [id]: isActive };
+            const ppBinding = this.rootFolder.addBinding(ppParams, id, {
+                label: config.label,
+            }).on('change', (ev) => {
+                onPostProcessToggle(id as PostProcessShaderId, ev.value as boolean);
+            });
+
+            if (config.description) {
+                ppBinding.element.title = config.description;
             }
-        });
 
-        materialBinding.element.title = "Selecione um Material Customizado para o modelo.";
+            this.ppBindings.set(id, { params: ppParams, binding: ppBinding });
+        }
     }
 
 
     public buildPanel(
+        id: string,
         title: string,
         uniforms: ShaderUniform[],
         targetProxy: Record<string, unknown>,
         onChange: (uniform: ShaderUniform, value: unknown) => void
     ): void {
 
-        this.clearPanel();
+        this.clearPanel(id);
+
         if (uniforms.length === 0) return;
 
-        this.shaderFolder = this.rootFolder.addFolder({ title });
-        this.buildUniformControls(this.shaderFolder, uniforms, targetProxy, onChange);
+        const folder = this.rootFolder.addFolder({ title });
+
+        this.ppFolders.set(id, folder);
+
+        this.buildUniformControls(folder, uniforms, targetProxy, onChange);
     }
 
 
@@ -121,16 +130,25 @@ export class ShaderSection {
         }
     }
 
-
-    public clearPanel(): void {
-        if (this.shaderFolder) {
-            this.shaderFolder.dispose();
-            this.shaderFolder = null;
+    public forceUncheck(id: string): void {
+        const item = this.ppBindings.get(id);
+        if (item) {
+            item.params[id] = false;
+            item.binding.refresh();
         }
     }
 
+    public clearPanel(id: string): void {
+        const folder = this.ppFolders.get(id);
+        if (folder) {
+            folder.dispose();
+            this.ppFolders.delete(id);
+        }
+    }
 
     public dispose(): void {
-        this.clearPanel();
+        for (const id of this.ppFolders.keys()) {
+            this.clearPanel(id);
+        }
     }
 }
