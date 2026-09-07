@@ -8,12 +8,17 @@ import {
 import { registerSharedIncludesInBabylon, resolveSharedUniforms, resolveBaseVertex, SharedInclude } from '../../shaders/shared/SharedIncludes';
 import { flattenUniforms, type ValueUniform, type MaterialApplyContext, type MaterialCreateContext } from '../../shaders/Types';
 
+import { VertexEffectPluginManager } from './VertexEffectPluginManager';
+import { createDepthEffectMaterial } from './DepthEffectMaterial';
 import type { LightManager } from './LightManagers';
 
 
 export class ShaderManager {
     private scene: B.Scene;
     private camera: B.Camera;
+
+    // Plugin de efeito de vértice para materiais nativos
+    private vertexEffectPluginManager = new VertexEffectPluginManager();
 
     private lightManager: LightManager;
 
@@ -37,6 +42,8 @@ export class ShaderManager {
     // Screen-space refraction (RTT)
     private sceneRTT: B.RenderTargetTexture | null = null;
     // private sceneRTTMesh: B.AbstractMesh | null = null;
+
+    private depthEffectMaterial: B.ShaderMaterial | null = null;
 
     private renderObserver: B.Observer<B.Scene> | null = null;
 
@@ -91,6 +98,10 @@ export class ShaderManager {
 
     public get activePostProcessCount(): number {
         return this.activePostProcesses.size;
+    }
+
+    public get vertexPluginManager(): VertexEffectPluginManager {
+        return this.vertexEffectPluginManager;
     }
 
     // ─── Material Shaders ───
@@ -235,13 +246,16 @@ export class ShaderManager {
 
         this._activeVertexEffectId = effectId;
 
-        // Registra o snippet do novo efeito
+        // Registra o snippet do novo efeito (para nossos ShaderMaterials)
         const effectConfig = VertexEffects[effectId];
         B.Effect.IncludesShadersStore['vertexEffect'] = effectConfig.source;
 
         // Invalida todo o cache (o vertex source mudou)
         this.materialCache.forEach(mat => mat.dispose());
         this.materialCache.clear();
+
+        // Atualiza o plugin nos materiais nativos (PBR/Standard)
+        this.vertexEffectPluginManager.setEffect(effectId);
 
         // Re-aplica o material ativo se houver
         if (this._activeMaterialId && mesh) {
@@ -378,6 +392,15 @@ export class ShaderManager {
             }
         }
 
+        // Atualiza o tempo no plugin dos materiais nativos
+        this.vertexEffectPluginManager.updateTime(time);
+
+        // Atualiza o tempo no material de profundidade
+        if (this.depthEffectMaterial) {
+            this.depthEffectMaterial.setFloat('u_time', time);
+        }
+
+
     }
 
     // ─── Helpers internos ───
@@ -469,6 +492,49 @@ export class ShaderManager {
         );
     }
 
+
+    /**
+     * Quando um ShaderMaterial customizado está ativo E um vertex effect != 'none',
+     * o DepthRenderer não sabe deformar a geometria. Aqui associamos um material
+     * customizado de profundidade que replica a deformação.
+     */
+    public syncDepthRenderers(mesh: B.AbstractMesh): void {
+        // Só atua se o Edge Detection (ou similar) criou um DepthRenderer
+        const depthRenderer = this.scene._depthRenderer?.[this.camera.id];
+        if (!depthRenderer) return;
+        if (this._activeVertexEffectId === 'none') {
+            // Sem efeito: deixa o Babylon usar o padrão
+            depthRenderer.setMaterialForRendering(mesh, undefined as any);
+            for (const child of mesh.getChildMeshes()) {
+                depthRenderer.setMaterialForRendering(child, undefined as any);
+            }
+            if (this.depthEffectMaterial) {
+                this.depthEffectMaterial.dispose();
+                this.depthEffectMaterial = null;
+            }
+            return;
+        }
+        // Cria ou reutiliza o material de profundidade com vertex effect
+        if (!this.depthEffectMaterial) {
+            this.depthEffectMaterial = createDepthEffectMaterial(this.scene);
+        }
+        depthRenderer.setMaterialForRendering(mesh, this.depthEffectMaterial);
+        for (const child of mesh.getChildMeshes()) {
+            depthRenderer.setMaterialForRendering(child, this.depthEffectMaterial);
+        }
+    }
+
+    /** Injeta os uniforms do vertex effect no material de profundidade */
+    public syncDepthEffectUniforms(proxy: Record<string, unknown>): void {
+        if (!this.depthEffectMaterial) return;
+        const effectConfig = VertexEffects[this._activeVertexEffectId];
+        for (const uName of effectConfig.extraUniforms) {
+            if (proxy[uName] !== undefined) {
+                this.depthEffectMaterial.setFloat(uName, proxy[uName] as number);
+            }
+        }
+    }
+
     // ─── Cleanup ───
 
     private disposeSceneRTT(): void {
@@ -501,11 +567,19 @@ export class ShaderManager {
 
         this.disposeSceneRTT();
 
+        this.vertexEffectPluginManager.dispose();
+
         this._activeMaterialId = null;
 
         this.fallbackTexture.dispose();
 
         this.fallbackCubemap.dispose();
+
+        if (this.depthEffectMaterial) {
+            this.depthEffectMaterial.dispose();
+            this.depthEffectMaterial = null;
+        }
+
     }
 
 }
