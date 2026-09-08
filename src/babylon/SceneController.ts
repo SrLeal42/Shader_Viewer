@@ -406,14 +406,6 @@ export class SceneController {
                     getCubemap: () => this.environmentManager.getCurrentCubemap()
                 }
             );
-
-        } else {
-
-            this.shaderManager.vertexPluginManager.attachToMesh(entity.mesh);
-            if (Object.keys(this.vertexEffectParams).length > 0) {
-                this.shaderManager.vertexPluginManager.injectUniforms(this.vertexEffectParams);
-            }
-
         }
 
     }
@@ -487,15 +479,6 @@ export class SceneController {
         if (shaderId === 'none') {
             this.shaderManager.clearActiveMaterial();
             this.uiManager.clearShaderPanel();
-
-            this.shaderManager.vertexPluginManager.attachToMesh(entity.mesh);
-            if (Object.keys(this.vertexEffectParams).length > 0) {
-                this.shaderManager.vertexPluginManager.injectUniforms(this.vertexEffectParams);
-            }
-
-            // Sincroniza o DepthRenderer para Edge Detection
-            this.shaderManager.syncDepthRenderers(entity.mesh);
-
             return;
         }
 
@@ -553,10 +536,6 @@ export class SceneController {
             }
         }
 
-        if (!this.shaderManager.activeMaterialId) {
-            this.shaderManager.vertexPluginManager.attachToMesh(entity.mesh);
-        }
-
         const config = VertexEffects[effectId];
         if (config.uniforms.length > 0) {
             this.uiManager.buildVertexEffectPanel(
@@ -564,19 +543,10 @@ export class SceneController {
                 config.uniforms,
                 this.vertexEffectParams,
                 (uniform, value) => {
-                    // Para ShaderMaterials customizados
                     this.shaderManager.setMaterialUniform(uniform as ValueUniform, value);
-                    // Para materiais nativos (PBR/Standard) via plugin
-                    this.shaderManager.vertexPluginManager.setUniform(
-                        (uniform as ValueUniform).uniform, value as number
-                    );
-                    this.shaderManager.syncDepthEffectUniforms(this.vertexEffectParams);
                 }
             );
         }
-
-        // Sincroniza o DepthRenderer para Edge Detection
-        this.shaderManager.syncDepthRenderers(entity.mesh);
 
     }
 
