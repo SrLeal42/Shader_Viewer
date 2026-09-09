@@ -87,7 +87,13 @@ export interface VertexEffectConfig {
 
 export interface PostProcessShaderConfig extends BaseShaderConfig {
     category: 'postprocess';
-    create: (scene: B.Scene, camera: B.Camera, getUniforms: () => Record<string, unknown>) => B.PostProcess;
+    create: (
+        scene: B.Scene,
+        camera: B.Camera,
+        getUniforms: () => Record<string, unknown>,
+        customDepthTexture?: B.RenderTargetTexture,
+        customNormalTexture?: B.RenderTargetTexture
+    ) => B.PostProcess;
     hidden?: boolean;
 }
 

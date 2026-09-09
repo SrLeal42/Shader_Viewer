@@ -10,6 +10,7 @@ import { SkyboxEffectManager } from './managers/SkyboxEffectManager';
 import { InteractionManager } from './managers/InteractionManager';
 import { LightManager } from './managers/LightManagers';
 import { WeatherManager } from './managers/WeatherManager';
+import { DepthNormalManager } from './managers/DepthNormalManager';
 
 
 import { ModelConfigs, type ModelConfig, type ModelId } from '../configs/ModelConfigs';
@@ -51,6 +52,8 @@ export class SceneController {
     private ppParams = new Map<PostProcessShaderId, Record<string, unknown>>();
     private activeMaterialPostProcesses: PostProcessShaderId[] = [];
 
+    private depthNormalManager: DepthNormalManager;
+
     private shaderParamsCache: Record<string, Record<string, unknown>> = {};
     private vertexEffectParams: Record<string, unknown> = {};
 
@@ -90,7 +93,8 @@ export class SceneController {
         this.skyboxEffectManager = new SkyboxEffectManager(this.environmentManager.activeSkyboxMaterial);
         this.weatherManager = new WeatherManager(this.scene, this.cameraManager.camera);
         this.lightManager = new LightManager(this.scene);
-        this.shaderManager = new ShaderManager(this.scene, this.cameraManager.camera, this.lightManager);
+        this.depthNormalManager = new DepthNormalManager(this.scene);
+        this.shaderManager = new ShaderManager(this.scene, this.cameraManager.camera, this.lightManager, this.depthNormalManager);
         this.interactionManager = new InteractionManager(
             this.scene,
             this.cameraManager.camera,
@@ -226,16 +230,15 @@ export class SceneController {
         await controller.switchSkybox(preset.skybox);
 
         // Aplica o Shader e seus Parâmetros
-        if (preset.material !== 'none') {
-            if (preset.materialParams) {
-                // Injeta na memória antes do shader compilar a UI
-                controller.shaderParamsCache[preset.material] = { ...preset.materialParams };
-            }
+        if (preset.materialParams) {
+            // Injeta na memória antes do shader compilar a UI
+            controller.shaderParamsCache[preset.material] = { ...preset.materialParams };
+        }
 
-            controller.switchMaterialShader(preset.material);
+        controller.switchMaterialShader(preset.material);
 
+        if (preset.materialParams) {
             controller.shaderManager.injectMaterialUniforms(controller.shaderParamsCache[preset.material]);
-
         }
 
         // Liga Efeitos de Pós-Processamento e injeta valores customizados
@@ -274,7 +277,7 @@ export class SceneController {
 
             document.title = `Shader Viewer | FPS: ${this.engine.getFps().toFixed(0)}`;
 
-            this.shaderManager.updateTime(elapsed);
+            this.shaderManager.updateTime(elapsed, this.vertexEffectParams);
             this.skyboxEffectManager.updateTime(elapsed);
             this.weatherManager.update(elapsed);
 
@@ -386,6 +389,8 @@ export class SceneController {
             return;
         }
 
+        this.depthNormalManager.setTargetMesh(entity.mesh);
+
         // Aplica defaults do modelo
         config.parameters.forEach(param => {
             if (param.onApply) {
@@ -465,7 +470,7 @@ export class SceneController {
 
     // ─── Shaders ───
 
-    private switchMaterialShader(shaderId: MaterialShaderId | 'none') {
+    private switchMaterialShader(shaderId: MaterialShaderId) {
         const entity = this.modelManager.currentEntity;
         if (!entity) return;
 
@@ -474,17 +479,10 @@ export class SceneController {
         });
         this.activeMaterialPostProcesses = [];
 
-        entity.restoreOriginalMaterials();
-
-        if (shaderId === 'none') {
-            this.shaderManager.clearActiveMaterial();
-            this.uiManager.clearShaderPanel();
-            return;
-        }
-
         if (!this.shaderParamsCache[shaderId]) {
             this.shaderParamsCache[shaderId] = {};
         }
+
         const currentParams = this.shaderParamsCache[shaderId];
 
         this.shaderManager.applyMaterial(shaderId, entity.mesh, {
@@ -497,6 +495,10 @@ export class SceneController {
         }
 
         const config = MaterialShaders[shaderId];
+
+        // Limpa o painel primeiro
+        this.uiManager.clearShaderPanel();
+
         this.uiManager.buildShaderPanel(
             config.title,
             config.uniforms,

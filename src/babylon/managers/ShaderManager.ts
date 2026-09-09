@@ -9,13 +9,15 @@ import { registerSharedIncludesInBabylon, resolveSharedUniforms, resolveBaseVert
 import { flattenUniforms, type ValueUniform, type MaterialApplyContext, type MaterialCreateContext } from '../../shaders/Types';
 
 import type { LightManager } from './LightManagers';
-
+import type { DepthNormalManager } from './DepthNormalManager';
 
 export class ShaderManager {
     private scene: B.Scene;
     private camera: B.Camera;
 
     private lightManager: LightManager;
+
+    private depthNormalManager?: DepthNormalManager;
 
     // Material: mutuamente exclusivo
     private _activeMaterialId: MaterialShaderId | null = null;
@@ -44,11 +46,18 @@ export class ShaderManager {
     private getCubemapCallback: (() => B.BaseTexture | null) | null = null;
 
 
-    constructor(scene: B.Scene, camera: B.Camera, lightManager: LightManager) {
+    constructor(
+        scene: B.Scene,
+        camera: B.Camera,
+        lightManager: LightManager,
+        depthNormalManager?: DepthNormalManager
+    ) {
         this.scene = scene;
         this.camera = camera;
 
         this.lightManager = lightManager;
+
+        this.depthNormalManager = depthNormalManager;
 
         this.createFallbackTextures();
 
@@ -235,6 +244,10 @@ export class ShaderManager {
 
         this._activeVertexEffectId = effectId;
 
+        if (this.depthNormalManager) {
+            this.depthNormalManager.rebuildMaterials(effectId);
+        }
+
         // Registra o snippet do novo efeito
         const effectConfig = VertexEffects[effectId];
         B.Effect.IncludesShadersStore['vertexEffect'] = effectConfig.source;
@@ -284,7 +297,13 @@ export class ShaderManager {
 
         this.ppUniformValues.set(shaderId, values);
 
-        const pp = config.create(this.scene, this.camera, () => this.ppUniformValues.get(shaderId)!);
+        const pp = config.create(
+            this.scene,
+            this.camera,
+            () => this.ppUniformValues.get(shaderId)!,
+            this.depthNormalManager?.getDepthTexture(),
+            this.depthNormalManager?.getNormalTexture()
+        );
 
         // onApply lê do map de valores atuais
         pp.onApplyObservable.add((effect) => {
@@ -340,7 +359,12 @@ export class ShaderManager {
 
 
     /** Atualiza u_time apenas nos shaders ativos (chamado no render loop) */
-    public updateTime(time: number): void {
+    public updateTime(time: number, vertexEffectParams?: Record<string, unknown>): void {
+
+        // Envia o tempo e os uniforms de deformação para as texturas de profundidade/normal
+        if (this.depthNormalManager) {
+            this.depthNormalManager.updateTime(time, vertexEffectParams || {});
+        }
 
         if (this._activeMaterialId) {
 

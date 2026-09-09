@@ -20,9 +20,9 @@ export class ShaderSection {
 
 
     public setup(
-        onMaterialSelect: (id: MaterialShaderId | 'none') => void
+        onMaterialSelect: (id: MaterialShaderId) => void
     ): void {
-        const materialOptions: Record<string, string> = { 'Nenhum': 'none' };
+        const materialOptions: Record<string, string> = { 'Nenhum': 'standard' };
         for (const [id, config] of Object.entries(MaterialShaders)) {
             materialOptions[config.label] = id;
         }
@@ -32,9 +32,9 @@ export class ShaderSection {
             options: materialOptions,
             label: 'Material Shader'
         }).on('change', (ev) => {
-            onMaterialSelect(ev.value as MaterialShaderId | 'none');
+            onMaterialSelect(ev.value as MaterialShaderId);
 
-            if (ev.value !== 'none') {
+            if (ev.value !== 'standard') {
                 const cfg = MaterialShaders[ev.value as MaterialShaderId];
                 if (cfg && cfg.description) {
                     materialBinding.element.title = cfg.description;

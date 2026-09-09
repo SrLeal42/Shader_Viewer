@@ -9,6 +9,8 @@ export const ENVIRONMENT_WALLS = [
     'back'
 ];
 
+export const STANDARD_DEFAULT_COLOR = { r: 0.75, g: 0.75, b: 0.75 };
+
 export const SKYBOX_UNIFORMS = {
     MIX: 'u_mix',
 
@@ -80,7 +82,7 @@ export const TOON_OUTLINE_UNIFORMS: ShaderUniform[] = [
         description: 'Sensibilidade para detectar a borda externa.',
         targetPostProcess: 'toon_edge',
         type: 'float',
-        defaultValue: 0.03,
-        min: 0.001, max: 0.5, step: 0.001,
+        defaultValue: 0.05,
+        min: 0.001, max: 0.1, step: 0.001,
     }
 ];

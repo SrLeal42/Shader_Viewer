@@ -5,7 +5,7 @@ export const LightConfigs = {
     defaultMode: 'hemi' as LightModeId,
 
     hemi: {
-        direction: { x: 0, y: 1, z: 0 },
+        direction: { x: 0, y: 1, z: 1 },
         color: { r: 1, g: 1, b: 1 },
         intensity: 1.0
     },

@@ -7,7 +7,7 @@ import type { MaterialShaderId, PostProcessShaderId, VertexEffectId } from '../s
 export interface ScenePreset {
     model: ModelId;
     skybox: SkyboxId | 'color';
-    material: MaterialShaderId | 'none';
+    material: MaterialShaderId;
 
     // Modifica escala, posição e rotação inicial do modelo
     transform?: {
@@ -36,7 +36,7 @@ export const ScenePresets: Record<string, ScenePreset> = {
     default: {
         model: 'sphere',
         skybox: 'color',
-        material: 'none',
+        material: 'standard',
     },
 
     cosmic_monkey: {

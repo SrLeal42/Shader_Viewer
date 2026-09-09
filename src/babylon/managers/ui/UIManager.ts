@@ -74,7 +74,7 @@ export class UIManager {
     }
 
     public setupShaderControls(
-        onMaterialSelect: (id: MaterialShaderId | 'none') => void
+        onMaterialSelect: (id: MaterialShaderId) => void
     ): void {
         this.shaderSection.setup(onMaterialSelect);
     }

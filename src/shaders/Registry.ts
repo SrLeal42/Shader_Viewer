@@ -1,6 +1,7 @@
 import type { MaterialShaderConfig, PostProcessShaderConfig, VertexEffectConfig } from './Types';
 
 // Material Shaders — mutuamente exclusivos
+import { StandardConfig } from './materials/standard/StandardConfig';
 import { ToonConfig } from './materials/toon/ToonConfig';
 import { PixelArtConfig } from './materials/pixelart/PixelArtConfig';
 import { GlassConfig } from './materials/glass/GlassConfig';
@@ -9,6 +10,7 @@ import { ChromeConfig } from './materials/chrome/ChromeConfig';
 import { IridescentConfig } from './materials/iridescent/IridescentConfig';
 
 export const MaterialShaders = {
+    standard: StandardConfig,
     toon: ToonConfig,
     pixelart: PixelArtConfig,
     glass: GlassConfig,
