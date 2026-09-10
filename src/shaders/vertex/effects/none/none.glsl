@@ -1,3 +1,3 @@
-vec3 applyVertexEffect(vec3 pos, vec3 normal, float time) {
-    return pos;
+void applyVertexEffect(inout vec3 pos, inout vec3 norm, float time) {
+    // Nenhuma deformação aplicada
 }

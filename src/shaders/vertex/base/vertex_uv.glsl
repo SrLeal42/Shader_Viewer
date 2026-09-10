@@ -16,9 +16,18 @@ out vec3 vWorldPosition;
 out vec2 vUV;
 
 void main() {
-    vec3 deformed = applyVertexEffect(position, normal, u_time);
-    vNormal = normalize(mat3(world) * normal);
-    vWorldPosition = (world * vec4(deformed, 1.0)).xyz;
+    // Criamos variáveis mutáveis a partir dos atributos originais
+    vec3 deformedPos = position;
+    vec3 deformedNormal = normal;
+    
+    // O hook agora modifica as duas variáveis por referência (inout)
+    applyVertexEffect(deformedPos, deformedNormal, u_time);
+    
+    // Passamos os dados deformados adiante
+    vNormal = normalize(mat3(world) * deformedNormal);
+    vWorldPosition = (world * vec4(deformedPos, 1.0)).xyz;
+    
     vUV = uv;
-    gl_Position = worldViewProjection * vec4(deformed, 1.0);
+
+    gl_Position = worldViewProjection * vec4(deformedPos, 1.0);
 }
