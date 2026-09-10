@@ -43,12 +43,18 @@ import { NoneEffectConfig } from './vertex/effects/none/NoneConfig';
 import { WaveEffectConfig } from './vertex/effects/wave/WaveConfig';
 import { TwistEffectConfig } from './vertex/effects/twist/TwistConfig';
 import { InflateEffectConfig } from './vertex/effects/inflate/InflateConfig';
+import { LevitationEffectConfig } from './vertex/effects/levitation/LevitationConfig';
+import { HeartbeatEffectConfig } from './vertex/effects/heartbeat/HeartbeatConfig';
+import { GlitchEffectConfig } from './vertex/effects/glitch/GlitchConfig';
 
 export const VertexEffects = {
     none: NoneEffectConfig,
     wave: WaveEffectConfig,
     twist: TwistEffectConfig,
     inflate: InflateEffectConfig,
+    levitation: LevitationEffectConfig,
+    heartbeat: HeartbeatEffectConfig,
+    glitch: GlitchEffectConfig
 } as const satisfies Record<string, VertexEffectConfig>;
 
 export type MaterialShaderId = keyof typeof MaterialShaders;
