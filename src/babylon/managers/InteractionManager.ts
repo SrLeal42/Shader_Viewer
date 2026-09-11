@@ -1,5 +1,8 @@
 import * as B from '@babylonjs/core';
+
 import type { IInteraction, InteractionContext } from '../interactions/IInteraction';
+import { AvailableInteractions } from '../interactions/effects/InteractionRegistry';
+
 import type { ModelEntity } from '../entities/ModelEntity';
 
 export class InteractionManager {
@@ -36,6 +39,9 @@ export class InteractionManager {
                 this.activeInteraction.onBeforeRender(this.getContext());
             }
         });
+
+        // Auto-registro de todas as interações do sistema
+        AvailableInteractions.forEach(interaction => this.register(interaction));
     }
 
     public register(interaction: IInteraction) {

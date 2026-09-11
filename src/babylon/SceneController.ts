@@ -26,7 +26,6 @@ import {
     MAX_POST_PROCESSES
 } from '../shaders/Registry';
 
-import { FingerInteraction } from './interactions/FingerInteraction';
 import type { ValueUniform } from '../shaders/Types';
 
 
@@ -100,8 +99,6 @@ export class SceneController {
             this.cameraManager.camera,
             () => this.modelManager.currentEntity
         );
-
-        this.interactionManager.register(new FingerInteraction());
         this.interactionManager.setActive('finger');
 
         this.uiManager.setupGlobalControls((id) => {

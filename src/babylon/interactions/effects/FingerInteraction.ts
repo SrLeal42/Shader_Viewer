@@ -1,6 +1,6 @@
 import * as B from '@babylonjs/core';
-import type { IInteraction, InteractionContext } from './IInteraction';
-import { InteractionConfigs } from '../../configs/InteractionConfigs'; // Importando o novo config
+import type { IInteraction, InteractionContext } from '../IInteraction';
+import { InteractionConfigs } from '../../../configs/InteractionConfigs'; // Importando o novo config
 
 export class FingerInteraction implements IInteraction {
     public readonly id = 'finger';
