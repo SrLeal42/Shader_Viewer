@@ -1,7 +1,7 @@
 import * as B from '@babylonjs/core';
 
 import type { IInteraction, InteractionContext } from '../interactions/IInteraction';
-import { AvailableInteractions } from '../interactions/effects/InteractionRegistry';
+import { AvailableInteractions } from '../interactions/InteractionRegistry';
 
 import type { ModelEntity } from '../entities/ModelEntity';
 

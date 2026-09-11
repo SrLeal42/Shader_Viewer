@@ -1,6 +1,6 @@
 import * as B from '@babylonjs/core';
-import type { IInteraction, InteractionContext } from './IInteraction';
-import { InteractionConfigs } from '../../configs/InteractionConfigs';
+import type { IInteraction, InteractionContext } from '../IInteraction';
+import { InteractionConfigs } from '../../../configs/InteractionConfigs';
 
 export class MagnetInteraction implements IInteraction {
     public readonly id = 'magnet';
