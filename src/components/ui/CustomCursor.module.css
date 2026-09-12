@@ -7,6 +7,7 @@
     pointer-events: none;
     z-index: 9999;
     will-change: transform;
+    transition: color 0.3s ease;
 }
 
 
@@ -26,37 +27,48 @@
 
 .ring {
     fill: transparent;
-    stroke-width: 4px;
+    stroke: url(#ringGradient);
+    stroke-width: 7px;
     transform-origin: 32px 32px;
-    /* ATUALIZADO: Agora o anel pulsa em volta da ponta da seta! */
-    transition: stroke 0.3s ease,
-        transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
-        stroke-width 0.3s ease;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), stroke-width 0.3s ease;
 }
 
 /* --- ESTADOS --- */
 
+.idle {
+    color: rgba(255, 255, 255, 0.5);
+    /* A cor fica no estado "Pai" */
+}
+
 .idle .ring {
-    stroke: rgba(255, 255, 255, 0.5);
     transform: scale(1);
 }
 
+.finger_down {
+    color: #ffdd00;
+}
+
 .finger_down .ring {
-    stroke: #ffdd00;
-    /* Amarelo */
-    transform: scale(0.7);
-    /* Contrai (soco) */
-    stroke-width: 3px;
+    transform: scale(0.8);
+    stroke-width: 6px;
+}
+
+.magnet_attract {
+    color: #ff1a1a;
 }
 
 .magnet_attract .ring {
-    stroke: #ff1a1a;
     transform: scale(0.8);
-    filter: drop-shadow(0 0 4px #ff1b1b);
+    /* stroke-width: 8px; */
+    filter: drop-shadow(0 0 6px #ff1b1b);
+}
+
+.magnet_repel {
+    color: #2a94ff;
 }
 
 .magnet_repel .ring {
-    stroke: #2a94ff;
     transform: scale(1.2);
-    filter: drop-shadow(0 0 4px #2c95ff);
+    /* stroke-width: 6px; */
+    filter: drop-shadow(0 0 6px #2c95ff);
 }
