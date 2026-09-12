@@ -72,3 +72,90 @@
     /* stroke-width: 6px; */
     filter: drop-shadow(0 0 6px #2c95ff);
 }
+
+
+
+
+/* --- ONDAS / RIPPLES (IMÃ) --- */
+
+.ripple {
+    fill: transparent;
+    stroke: white;
+    stroke-width: 1.5px;
+    transform-origin: 32px 32px;
+    opacity: 0;
+}
+
+/* Dividimos o tempo em 3 partes perfeitas para dar o efeito de onda contínua */
+.ripple1 {
+    animation-delay: 0s !important;
+}
+
+.ripple2 {
+    animation-delay: 0.4s !important;
+}
+
+.ripple3 {
+    animation-delay: 0.8s !important;
+}
+
+/* Animação: Nasce invisível, e diminui até ser sugado pelo anel */
+@keyframes attractRipple {
+    0% {
+        transform: scale(3.0);
+        opacity: 0;
+    }
+
+    30% {
+        opacity: 0.6;
+    }
+
+    100% {
+        transform: scale(0.2);
+        opacity: 0;
+    }
+}
+
+/* Animação: Nasce minúsculo e explode para fora */
+@keyframes repelRipple {
+    0% {
+        transform: scale(0.5);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(3.0);
+        opacity: 0;
+    }
+}
+
+/* Ativando a Animação Mágica dependendo do estado! */
+.magnet_attract .ripple {
+    animation: attractRipple 1.2s ease-in infinite;
+}
+
+.magnet_repel .ripple {
+    animation: repelRipple 1.2s ease-out infinite;
+}
+
+
+/* --- ONDA DE CHOQUE (DEDO) --- */
+@keyframes shockwave {
+    0% {
+        transform: scale(0.5);
+        opacity: 1;
+        stroke: #ffdd00;
+        stroke-width: 4px;
+    }
+
+    100% {
+        transform: scale(2.5);
+        opacity: 0;
+        stroke-width: 0px;
+    }
+}
+
+/* Quando clica, dispara apenas a Onda 1 de forma explosiva e única (sem infinite) */
+.finger_down .ripple1 {
+    animation: shockwave 0.4s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+}

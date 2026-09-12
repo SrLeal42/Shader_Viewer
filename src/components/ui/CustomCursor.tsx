@@ -60,6 +60,11 @@ export function CustomCursor({ isHidden = false }: { isHidden?: boolean }) {
                     </radialGradient>
                 </defs>
 
+                {/* Ondas Brancas (Ripples do Imã) */}
+                <circle cx="32" cy="32" r="8" className={`${styles.ripple} ${styles.ripple1}`} />
+                <circle cx="32" cy="32" r="8" className={`${styles.ripple} ${styles.ripple2}`} />
+                <circle cx="32" cy="32" r="8" className={`${styles.ripple} ${styles.ripple3}`} />
+
                 {/* Anel na base da Seta */}
                 <circle cx="32" cy="32" r="8" className={styles.ring} />
 
