@@ -1,6 +1,6 @@
 import * as B from '@babylonjs/core';
 import type { IInteraction, InteractionContext } from '../IInteraction';
-import { InteractionConfigs } from '../../../configs/InteractionConfigs'; // Importando o novo config
+import { InteractionConfigs } from '../../../configs/InteractionConfigs';
 
 export class FingerInteraction implements IInteraction {
     public readonly id = 'finger';
@@ -10,7 +10,14 @@ export class FingerInteraction implements IInteraction {
     private readonly impulseForce = 1.5;
 
     public onPointerEvent(pointerInfo: B.PointerInfo, context: InteractionContext): void {
+        if (pointerInfo.type === B.PointerEventTypes.POINTERUP) {
+            window.dispatchEvent(new CustomEvent('cursor_action', { detail: 'idle' }));
+            return;
+        }
+
         if (pointerInfo.type !== B.PointerEventTypes.POINTERDOWN) return;
+
+        window.dispatchEvent(new CustomEvent('cursor_action', { detail: 'finger_down' }));
 
         const pickInfo = pointerInfo.pickInfo;
         if (!pickInfo?.hit || !pickInfo.pickedPoint || !pickInfo.pickedMesh) return;

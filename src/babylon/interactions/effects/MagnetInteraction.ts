@@ -16,12 +16,24 @@ export class MagnetInteraction implements IInteraction {
         const button = pointerInfo.event.button;
 
         if (type === B.PointerEventTypes.POINTERDOWN) {
-            if (button === 0) this.isAttracting = true; // Clique Esquerdo
-            if (button === 2) this.isRepelling = true;  // Clique Direito
+
+            if (button === 0) {
+                this.isAttracting = true;
+                window.dispatchEvent(new CustomEvent('cursor_action', { detail: 'magnet_attract' }));
+            }
+
+            if (button === 2) {
+                this.isRepelling = true;
+                window.dispatchEvent(new CustomEvent('cursor_action', { detail: 'magnet_repel' }));
+            }
+
         }
         else if (type === B.PointerEventTypes.POINTERUP) {
+
             if (button === 0) this.isAttracting = false;
             if (button === 2) this.isRepelling = false;
+
+            window.dispatchEvent(new CustomEvent('cursor_action', { detail: 'idle' }));
         }
 
     }

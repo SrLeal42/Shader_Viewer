@@ -1,0 +1,62 @@
+.cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 32px;
+    height: 32px;
+    pointer-events: none;
+    z-index: 9999;
+    will-change: transform;
+}
+
+
+/* O SVG interno e seus componentes */
+.cursor svg {
+    overflow: visible;
+}
+
+.arrow {
+    fill: white;
+    stroke: #222222;
+    /* Preto suave da sua referência */
+    stroke-width: 1.5px;
+    stroke-linejoin: round;
+    /* Deixa as pontas da seta mais polidas */
+}
+
+.ring {
+    fill: transparent;
+    stroke-width: 4px;
+    transform-origin: 32px 32px;
+    /* ATUALIZADO: Agora o anel pulsa em volta da ponta da seta! */
+    transition: stroke 0.3s ease,
+        transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+        stroke-width 0.3s ease;
+}
+
+/* --- ESTADOS --- */
+
+.idle .ring {
+    stroke: rgba(255, 255, 255, 0.5);
+    transform: scale(1);
+}
+
+.finger_down .ring {
+    stroke: #ffdd00;
+    /* Amarelo */
+    transform: scale(0.7);
+    /* Contrai (soco) */
+    stroke-width: 3px;
+}
+
+.magnet_attract .ring {
+    stroke: #ff1a1a;
+    transform: scale(0.8);
+    filter: drop-shadow(0 0 4px #ff1b1b);
+}
+
+.magnet_repel .ring {
+    stroke: #2a94ff;
+    transform: scale(1.2);
+    filter: drop-shadow(0 0 4px #2c95ff);
+}

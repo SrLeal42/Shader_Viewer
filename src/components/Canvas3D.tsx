@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+
 import { SceneController } from '../babylon/SceneController';
+import { CustomCursor } from './ui/CustomCursor';
 
 import styles from './Canvas3D.module.css';
 
@@ -103,7 +105,10 @@ export function Canvas3D() {
     }, []);
 
     return (
+
         <div className={`${styles.container} ${isIdle ? styles.idle : ''}`}>
+
+            <CustomCursor isHidden={isIdle} />
 
             <canvas ref={canvasRef}
                 className={styles.canvas}
