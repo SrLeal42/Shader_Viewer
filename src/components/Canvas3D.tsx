@@ -39,16 +39,16 @@ export function Canvas3D() {
         };
 
         // Escuta qualquer atividade humana na janela
-        window.addEventListener('mousemove', handleActivity);
-        window.addEventListener('mousedown', handleActivity);
+        window.addEventListener('pointermove', handleActivity);
+        window.addEventListener('pointerdown', handleActivity);
         window.addEventListener('keydown', handleActivity);
 
         handleActivity(); // Inicializa o timer
 
         return () => {
             clearTimeout(timeoutId);
-            window.removeEventListener('mousemove', handleActivity);
-            window.removeEventListener('mousedown', handleActivity);
+            window.removeEventListener('pointermove', handleActivity);
+            window.removeEventListener('pointerdown', handleActivity);
             window.removeEventListener('keydown', handleActivity);
         };
     }, [isUIVisible]);
