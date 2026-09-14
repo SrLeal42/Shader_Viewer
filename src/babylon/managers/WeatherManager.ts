@@ -4,10 +4,12 @@ import fogFragmentSource from '../../shaders/weather/FogOverlay.fragment.glsl?ra
 
 import { WeatherPresets, type WeatherPresetId } from '../../configs/weather/WeatherRegistry';
 import type { WeatherPresetConfig, ParticleLayerConfig, FogConfig } from '../../configs/weather/WeatherTypes';
+import { DepthNormalManager } from './DepthNormalManager';
 
 export class WeatherManager {
     private scene: B.Scene;
     private camera: B.Camera;
+    private depthNormalManager: DepthNormalManager;
 
     private _activePresetId: WeatherPresetId | null = null;
 
@@ -19,9 +21,10 @@ export class WeatherManager {
 
     private currentTime = 0;
 
-    constructor(scene: B.Scene, camera: B.Camera) {
+    constructor(scene: B.Scene, camera: B.Camera, depthNormalManager: DepthNormalManager) {
         this.scene = scene;
         this.camera = camera;
+        this.depthNormalManager = depthNormalManager;
     }
 
     // ─── Getters ───
@@ -199,7 +202,6 @@ export class WeatherManager {
 
         B.Effect.ShadersStore[`${shaderName}FragmentShader`] = fogFragmentSource;
 
-        const depthRenderer = this.scene.enableDepthRenderer(this.camera, false);
         this.fogPostProcess = new B.PostProcess(
             'weatherFog',
             shaderName,
@@ -223,7 +225,7 @@ export class WeatherManager {
             effect.setFloat('u_cameraMinZ', this.camera.minZ);
             effect.setFloat('u_cameraMaxZ', this.camera.maxZ);
 
-            effect.setTexture('depthSampler', depthRenderer.getDepthMap());
+            effect.setTexture('depthSampler', this.depthNormalManager.getDepthTexture());
         });
     }
 

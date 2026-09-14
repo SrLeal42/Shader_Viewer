@@ -23,7 +23,7 @@ export class DepthNormalManager {
         const width = engine.getRenderWidth();
         const height = engine.getRenderHeight();
 
-        // 1. Cria a RTT de Profundidade
+        // Cria a RTT de Profundidade
         this.depthRTT = new B.RenderTargetTexture(
             'customDepthRTT',
             { width, height },
@@ -39,8 +39,9 @@ export class DepthNormalManager {
             B.Constants.TEXTUREFORMAT_R // Só precisamos de 1 canal para depth
         );
         this.depthRTT.clearColor = new B.Color4(1.0, 1.0, 1.0, 1.0); // Fundo infinito (profundidade 1.0)
+        this.depthRTT.renderParticles = false;
 
-        // 2. Cria a RTT de Normais
+        // Cria a RTT de Normais
         this.normalRTT = new B.RenderTargetTexture(
             'customNormalRTT',
             { width, height },
@@ -58,6 +59,7 @@ export class DepthNormalManager {
 
         // Fundo neutro. Uma normal [0,0,1] remapeada fica [0.5, 0.5, 1.0]
         this.normalRTT.clearColor = new B.Color4(0.5, 0.5, 1.0, 1.0);
+        this.normalRTT.renderParticles = false;
 
         // Render List Dinâmica: Ocultar Céu e Paredes invisíveis
         const ignoredMeshes = ['skybox', ...ENVIRONMENT_WALLS];

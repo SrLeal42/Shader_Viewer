@@ -19,8 +19,9 @@ void main() {
     vec3 sceneColor = texture(textureSampler, vUV).rgb;
     float depthVal = texture(depthSampler, vUV).r;
     
-    // Calcula a distância real do pixel
-    float distance = u_cameraMinZ + (depthVal * (u_cameraMaxZ - u_cameraMinZ));
+    float z_ndc = depthVal * 2.0 - 1.0; // Converte para Espaço de Dispositivo Normalizado
+    
+    float distance = (2.0 * u_cameraMinZ * u_cameraMaxZ) / (u_cameraMaxZ + u_cameraMinZ - z_ndc * (u_cameraMaxZ - u_cameraMinZ));
     
     float effectiveDistance = max(distance - u_fogStart, 0.0);
 

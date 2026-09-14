@@ -90,9 +90,9 @@ export class SceneController {
         this.modelManager = new ModelManager(this.scene);
         this.environmentManager = new EnvironmentManager(this.scene);
         this.skyboxEffectManager = new SkyboxEffectManager(this.environmentManager.activeSkyboxMaterial);
-        this.weatherManager = new WeatherManager(this.scene, this.cameraManager.camera);
         this.lightManager = new LightManager(this.scene);
         this.depthNormalManager = new DepthNormalManager(this.scene);
+        this.weatherManager = new WeatherManager(this.scene, this.cameraManager.camera, this.depthNormalManager);
         this.shaderManager = new ShaderManager(this.scene, this.cameraManager.camera, this.lightManager, this.depthNormalManager);
         this.interactionManager = new InteractionManager(
             this.scene,
