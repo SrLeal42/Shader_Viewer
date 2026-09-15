@@ -39,6 +39,9 @@ export const SKYBOX_UNIFORMS = {
     ENABLE_METEORS: 'u_enableMeteors',
     ENABLE_AURORA: 'u_enableAurora',
     ENABLE_BLACKHOLE: 'u_enableBlackhole',
+    ENABLE_CLOUDS: 'u_enableClouds',
+    ENABLE_LIGHTNING: 'u_enableLightning',
+    ENABLE_FIREWORKS: 'u_enableFireworks',
 
     WARP_SPEED: 'u_warpSpeed',
     WARP_INTENSITY: 'u_warpIntensity',
@@ -54,7 +57,21 @@ export const SKYBOX_UNIFORMS = {
     AURORA_THRESHOLD: 'u_auroraThreshold',
 
     BH_MASS: 'u_bhMass',
-    BH_RADIUS: 'u_bhRadius'
+    BH_RADIUS: 'u_bhRadius',
+
+    CLOUD_SPEED: 'u_cloudSpeed',
+    CLOUD_LATERAL_SPEED: 'u_cloudLateralSpeed',
+    CLOUD_DENSITY: 'u_cloudDensity',
+    CLOUD_COLOR: 'u_cloudColor',
+    CLOUD_HEIGHT: 'u_cloudHeight',
+
+    LIGHTNING_FREQUENCY: 'u_lightningFrequency',
+    LIGHTNING_INTENSITY: 'u_lightningIntensity',
+
+    FIREWORK_FREQUENCY: 'u_fireworkFrequency',
+    FIREWORK_INTENSITY: 'u_fireworkIntensity',
+    FIREWORK_SPEED: 'u_fireworkSpeed',
+    FIREWORK_WOBBLE: 'u_fireworkWobble',
 };
 
 
