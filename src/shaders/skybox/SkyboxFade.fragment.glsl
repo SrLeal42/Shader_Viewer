@@ -60,6 +60,13 @@ void main() {
         finalBackground += applyFireworks(dir, u_time);
     }
 
+    if (u_enableRainbow > 0.5) {
+        finalBackground += applyRainbow(dir, u_time);
+    }
+    
+    if (u_enableSunFlare > 0.5) {
+        finalBackground = applySunFlare(dir, u_time, finalBackground);
+    }
 
     if (u_enableLightning > 0.5) {
         finalBackground = applyLightning(u_time, finalBackground);

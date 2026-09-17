@@ -42,6 +42,8 @@ export const SKYBOX_UNIFORMS = {
     ENABLE_CLOUDS: 'u_enableClouds',
     ENABLE_LIGHTNING: 'u_enableLightning',
     ENABLE_FIREWORKS: 'u_enableFireworks',
+    ENABLE_RAINBOW: 'u_enableRainbow',
+    ENABLE_SUN_FLARE: 'u_enableSunFlare',
 
     WARP_SPEED: 'u_warpSpeed',
     WARP_INTENSITY: 'u_warpIntensity',
@@ -72,6 +74,22 @@ export const SKYBOX_UNIFORMS = {
     FIREWORK_INTENSITY: 'u_fireworkIntensity',
     FIREWORK_SPEED: 'u_fireworkSpeed',
     FIREWORK_WOBBLE: 'u_fireworkWobble',
+
+    RAINBOW_SPEED: 'u_rainbowSpeed',
+    RAINBOW_INTENSITY: 'u_rainbowIntensity',
+    RAINBOW_WIDTH: 'u_rainbowWidth',
+    RAINBOW_RADIUS: 'u_rainbowRadius',
+
+    SUN_SIZE: 'u_sunSize',
+    SUN_INTENSITY: 'u_sunIntensity',
+    SUN_SPEED: 'u_sunSpeed',
+    SUN_COLOR: 'u_sunColor',
+    SUN_RAYS: 'u_sunRays',
+    SUN_PROMINENCE_SCALE: 'u_sunProminenceScale',
+    SUN_PROMINENCE_FREQ: 'u_sunProminenceFreq',
+    SUN_POSITION_ANGLE: 'u_sunPositionAngle',
+    SUN_POSITION_HEIGHT: 'u_sunPositionHeight',
+
 };
 
 

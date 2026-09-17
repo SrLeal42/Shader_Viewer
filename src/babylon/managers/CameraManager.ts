@@ -22,6 +22,8 @@ export class CameraManager {
 
         this.camera.position = EnvironmentConfigs.camera.initialPosition;
         this.camera.fov = EnvironmentConfigs.camera.fov;
+
+        // this.camera.attachControl(true);
     }
 
     /** Enquadra a câmera automaticamente ao redor de um mesh */

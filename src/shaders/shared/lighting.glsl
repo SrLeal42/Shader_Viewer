@@ -7,6 +7,11 @@ uniform vec3 u_hemiColor;
 uniform vec3 u_pointPos;
 uniform vec3 u_pointColor;
 
+// ─── Sun Flare ───
+uniform float u_enableSunFlare;
+uniform vec3 u_sunFlareDir;
+uniform vec3 u_sunFlareColor;
+
 // ─── Spherical Harmonics L2 (iluminação difusa do Skybox) ───
 uniform vec3 u_shX;
 uniform vec3 u_shY;
@@ -20,12 +25,19 @@ uniform vec3 u_shZX;
 
 // Avalia a irradiância do ambiente para uma dada normal
 vec3 evaluateSH(vec3 n) {
-    return max(
+    vec3 shLight = max(
         u_shX * n.x + u_shY * n.y + u_shZ * n.z +
         u_shXX * (n.x * n.x) + u_shYY * (n.y * n.y) + u_shZZ * (n.z * n.z) +
         u_shXY * (n.x * n.y) + u_shYZ * (n.y * n.z) + u_shZX * (n.z * n.x),
         vec3(0.0)
     );
+    
+    if (u_enableSunFlare > 0.5) {
+        // Iluminação direcional (Lambert simples) adicionada ao ambiente
+        shLight += u_sunFlareColor * max(dot(n, normalize(u_sunFlareDir)), 0.0);
+    }
+    
+    return shLight;
 }
 
 // Estrutura de resultado de um ponto de luz

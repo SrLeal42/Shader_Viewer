@@ -16,6 +16,7 @@ import { DepthNormalManager } from './managers/DepthNormalManager';
 import { ModelConfigs, type ModelConfig, type ModelId } from '../configs/ModelConfigs';
 import { PhysicsConfigs } from '../configs/PhysicsConfigs';
 import type { SkyboxId } from '../configs/SkyboxConfigs';
+import { SkyboxEffectsConfigs } from '../configs/SkyboxEffectsConfigs';
 import { ScenePresets, ACTIVE_PRESET } from '../configs/ScenePresets';
 
 import type { ModelEntity } from './entities/ModelEntity';
@@ -125,7 +126,23 @@ export class SceneController {
         );
 
         this.uiManager.setupSkyboxEffectsControls(
-            (id, enabled) => this.skyboxEffectManager.setEffect(id, enabled),
+            (id, enabled) => {
+                this.skyboxEffectManager.setEffect(id, enabled);
+
+                // Se for a estrela, notifica o LightManager para aplicar nos modelos
+                if (id === 'sunFlare') {
+                    const config = SkyboxEffectsConfigs.sunFlare.uniforms;
+                    this.lightManager.setSunFlare(
+                        enabled,
+                        config.u_sunPositionAngle as number,
+                        config.u_sunPositionHeight as number,
+                        config.u_sunColor as readonly number[],
+                        config.u_sunIntensity as number
+                    );
+                    // Força o ShaderManager a atualizar os materiais
+                    this.shaderManager.reinjectLightUniforms();
+                }
+            },
             (callback) => { this.skyboxEffectManager.onEffectForcedOff = callback; }
         );
 

@@ -78,8 +78,36 @@ export const SkyboxEffectsConfigs = {
             "u_fireworkIntensity": 0.5,
             "u_fireworkSpeed": 0.2,
             "u_fireworkWobble": 0.002
+        },
+    },
+    rainbow: {
+        id: 'rainbow',
+        title: 'Arco-Íris',
+        description: 'Arco-íris dinâmicos que aparecem e desaparecem em diferentes posições do céu.',
+        uniforms: {
+            "u_rainbowSpeed": 0.4,
+            "u_rainbowIntensity": 0.2,
+            "u_rainbowWidth": 0.09,
+            "u_rainbowRadius": 0.9
         }
-    }
+    },
+    sunFlare: {
+        id: 'sunFlare',
+        title: 'Estrela',
+        description: 'Estrela com superfície de plasmatica, proeminências, corona e raios de luz.',
+        uniforms: {
+            "u_sunSize": 0.25,
+            "u_sunIntensity": 1.5,
+            "u_sunSpeed": 0.1,
+            "u_sunColor": [1.0, 0.6, 0.1],
+            "u_sunRays": 0.5,
+            "u_sunProminenceScale": 0.04,
+            "u_sunProminenceFreq": 4.0,
+            "u_sunPositionAngle": 3.14,
+            "u_sunPositionHeight": 0.25
+        }
+    },
+
 } as const satisfies Record<string, SkyboxEffectConfig>;
 
 export type SkyboxEffectId = keyof typeof SkyboxEffectsConfigs;

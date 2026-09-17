@@ -15,6 +15,11 @@ export class LightManager {
     private hemiTrueIntensity = LightConfigs.hemi.intensity;
     private pointTrueIntensity = LightConfigs.point.intensity;
 
+    // ─── Sun Flare Estático ───
+    public isSunFlareEnabled = false;
+    public sunFlareDir = new B.Vector3(0, 1, 0);
+    public sunFlareColor = new B.Color3(1, 1, 1);
+
     private shCoeffs = {
         x: new B.Color3(), y: new B.Color3(), z: new B.Color3(),
         xx: new B.Color3(), yy: new B.Color3(), zz: new B.Color3(),
@@ -103,6 +108,24 @@ export class LightManager {
         this.isDirty = true;
     }
 
+
+    public setSunFlare(
+        enabled: boolean,
+        angle: number,
+        height: number,
+        color: readonly number[],
+        intensity: number
+    ) {
+        this.isSunFlareEnabled = enabled;
+
+        if (enabled) {
+            this.sunFlareDir.set(Math.sin(angle), height, Math.cos(angle)).normalize();
+            this.sunFlareColor.set(color[0], color[1], color[2]).scaleInPlace(intensity);
+        }
+
+        this.isDirty = true;
+    }
+
     // ─── Contrato com os Shaders Customizados ───
 
     public injectLightUniforms(material: B.ShaderMaterial) {
@@ -115,6 +138,11 @@ export class LightManager {
         this.pointLight.diffuse.scaleToRef(this.pointLight.intensity, this._tempPointColor);
         material.setVector3('u_pointPos', this.pointLight.position);
         material.setColor3('u_pointColor', this._tempPointColor);
+
+        // Sun Flare
+        material.setFloat('u_enableSunFlare', this.isSunFlareEnabled ? 1.0 : 0.0);
+        material.setVector3('u_sunFlareDir', this.sunFlareDir);
+        material.setColor3('u_sunFlareColor', this.sunFlareColor);
 
         this.isDirty = false;
     }

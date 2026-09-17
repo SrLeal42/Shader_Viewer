@@ -1,19 +1,6 @@
 #ifndef CLOUDS_GLSL
 #define CLOUDS_GLSL
 
-// FBM (Fractal Brownian Motion) — 5 oitavas para nuvens volumétricas
-float fbm(vec3 p) {
-    float value = 0.0;
-    float amplitude = 0.5;
-    float frequency = 1.0;
-    for (int i = 0; i < 5; i++) {
-        value += amplitude * noise(p * frequency);
-        frequency *= 2.0;
-        amplitude *= 0.5;
-    }
-    return value;
-}
-
 vec3 applyClouds(vec3 dir, float time, vec3 background) {
     // Confina as nuvens a uma faixa vertical no céu
     float heightMask = smoothstep(u_cloudHeight - 0.4, u_cloudHeight, dir.y) 

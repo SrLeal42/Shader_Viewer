@@ -14,6 +14,10 @@ import blackholeSource from './effects/blackhole.glsl?raw';
 import cloudsSource from './effects/clouds.glsl?raw';
 import lightningSource from './effects/lightning.glsl?raw';
 import fireworksSource from './effects/fireworks.glsl?raw';
+import fbmSource from '../shared/fbm.glsl?raw';
+import rainbowSource from './effects/rainbow.glsl?raw';
+import sunflareSource from './effects/sunflare.glsl?raw';
+
 
 import { SKYBOX_UNIFORMS } from '../../configs/Constants';
 
@@ -24,6 +28,7 @@ const fragmentSource = [
     headerSource,
     hashSource,
     skyboxNoiseSource,
+    fbmSource,
     warpSource,
     meteorsSource,
     auroraSource,
@@ -31,6 +36,8 @@ const fragmentSource = [
     cloudsSource,
     lightningSource,
     fireworksSource,
+    rainbowSource,
+    sunflareSource,
     mainSource,
 ].join('\n');
 
@@ -68,6 +75,16 @@ export function createSkyboxFadeMaterial(name: string, scene: B.Scene): B.Shader
                 SKYBOX_UNIFORMS.LIGHTNING_FREQUENCY, SKYBOX_UNIFORMS.LIGHTNING_INTENSITY,
                 SKYBOX_UNIFORMS.FIREWORK_FREQUENCY, SKYBOX_UNIFORMS.FIREWORK_INTENSITY,
                 SKYBOX_UNIFORMS.FIREWORK_SPEED, SKYBOX_UNIFORMS.FIREWORK_WOBBLE,
+                SKYBOX_UNIFORMS.ENABLE_RAINBOW,
+                SKYBOX_UNIFORMS.RAINBOW_SPEED, SKYBOX_UNIFORMS.RAINBOW_INTENSITY,
+                SKYBOX_UNIFORMS.RAINBOW_WIDTH, SKYBOX_UNIFORMS.RAINBOW_RADIUS,
+                SKYBOX_UNIFORMS.ENABLE_SUN_FLARE,
+                SKYBOX_UNIFORMS.SUN_SIZE, SKYBOX_UNIFORMS.SUN_INTENSITY,
+                SKYBOX_UNIFORMS.SUN_SPEED, SKYBOX_UNIFORMS.SUN_COLOR,
+                SKYBOX_UNIFORMS.SUN_RAYS, SKYBOX_UNIFORMS.SUN_PROMINENCE_SCALE,
+                SKYBOX_UNIFORMS.SUN_PROMINENCE_FREQ,
+                SKYBOX_UNIFORMS.SUN_POSITION_ANGLE, SKYBOX_UNIFORMS.SUN_POSITION_HEIGHT,
+
             ],
             samplers: ["texture1", "texture2"]
         }
@@ -98,6 +115,8 @@ export function createSkyboxFadeMaterial(name: string, scene: B.Scene): B.Shader
     material.setFloat(SKYBOX_UNIFORMS.ENABLE_CLOUDS, 0.0);
     material.setFloat(SKYBOX_UNIFORMS.ENABLE_LIGHTNING, 0.0);
     material.setFloat(SKYBOX_UNIFORMS.ENABLE_FIREWORKS, 0.0);
+    material.setFloat(SKYBOX_UNIFORMS.ENABLE_RAINBOW, 0.0);
+    material.setFloat(SKYBOX_UNIFORMS.ENABLE_SUN_FLARE, 0.0);
 
     // ─── Parâmetros Iniciais Seguros ───
     material.setFloat(SKYBOX_UNIFORMS.WARP_SPEED, 0.15);
@@ -123,6 +142,20 @@ export function createSkyboxFadeMaterial(name: string, scene: B.Scene): B.Shader
     material.setFloat(SKYBOX_UNIFORMS.FIREWORK_INTENSITY, 1.5);
     material.setFloat(SKYBOX_UNIFORMS.FIREWORK_SPEED, 1.0);
     material.setFloat(SKYBOX_UNIFORMS.FIREWORK_WOBBLE, 0.015);
+    material.setFloat(SKYBOX_UNIFORMS.RAINBOW_SPEED, 0.5);
+    material.setFloat(SKYBOX_UNIFORMS.RAINBOW_INTENSITY, 0.6);
+    material.setFloat(SKYBOX_UNIFORMS.RAINBOW_WIDTH, 0.08);
+    material.setFloat(SKYBOX_UNIFORMS.RAINBOW_RADIUS, 0.7);
+    material.setFloat(SKYBOX_UNIFORMS.SUN_SIZE, 0.08);
+    material.setFloat(SKYBOX_UNIFORMS.SUN_INTENSITY, 1.5);
+    material.setFloat(SKYBOX_UNIFORMS.SUN_SPEED, 0.3);
+    material.setColor3(SKYBOX_UNIFORMS.SUN_COLOR, new B.Color3(1.0, 0.6, 0.1));
+    material.setFloat(SKYBOX_UNIFORMS.SUN_RAYS, 0.5);
+    material.setFloat(SKYBOX_UNIFORMS.SUN_PROMINENCE_SCALE, 0.04);
+    material.setFloat(SKYBOX_UNIFORMS.SUN_PROMINENCE_FREQ, 4.0);
+    material.setFloat(SKYBOX_UNIFORMS.SUN_POSITION_ANGLE, 0.0);
+    material.setFloat(SKYBOX_UNIFORMS.SUN_POSITION_HEIGHT, 0.5);
+
 
     return material;
 }

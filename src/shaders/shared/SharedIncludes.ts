@@ -27,6 +27,7 @@ export const SHARED_INCLUDE_REGISTRY: Record<SharedInclude, SharedIncludeDefinit
         source: lightingSource,
         uniforms: [
             'u_hemiDir', 'u_hemiColor', 'u_pointPos', 'u_pointColor',
+            'u_enableSunFlare', 'u_sunFlareDir', 'u_sunFlareColor',
             'u_shX', 'u_shY', 'u_shZ',
             'u_shXX', 'u_shYY', 'u_shZZ',
             'u_shXY', 'u_shYZ', 'u_shZX',
