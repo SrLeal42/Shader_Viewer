@@ -74,7 +74,7 @@ export const SkyboxEffectsConfigs = {
         title: 'Fogos de Artifício',
         description: 'Explosões coloridas de luz surgindo em posições aleatórias no céu.',
         uniforms: {
-            "u_fireworkFrequency": 1.2,
+            "u_fireworkFrequency": 1.5,
             "u_fireworkIntensity": 0.5,
             "u_fireworkSpeed": 0.2,
             "u_fireworkWobble": 0.002
