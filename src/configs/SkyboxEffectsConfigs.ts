@@ -22,9 +22,9 @@ export const SkyboxEffectsConfigs = {
         title: 'Chuva de Meteoros',
         description: 'Adiciona estrelas cadentes brilhantes cruzando o céu de forma aleatória.',
         uniforms: {
-            "u_meteorSpeedBase": 0.3,
+            "u_meteorSpeedBase": 0.2,
             "u_meteorDensity": 10.0,
-            "u_meteorAngle": 0.5
+            "u_meteorAngle": -0.5
         }
     },
     aurora: {
