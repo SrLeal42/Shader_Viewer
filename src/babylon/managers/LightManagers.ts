@@ -20,6 +20,12 @@ export class LightManager {
     public sunFlareDir = new B.Vector3(0, 1, 0);
     public sunFlareColor = new B.Color3(1, 1, 1);
 
+    // ─── Lightning Estático ───
+    public isLightningEnabled = false;
+    public lightningFrequency = 1.5;
+    public lightningIntensity = 2.0;
+    public lightningColor = new B.Color3(1, 1, 1);
+
     private shCoeffs = {
         x: new B.Color3(), y: new B.Color3(), z: new B.Color3(),
         xx: new B.Color3(), yy: new B.Color3(), zz: new B.Color3(),
@@ -109,18 +115,24 @@ export class LightManager {
     }
 
 
-    public setSunFlare(
-        enabled: boolean,
-        angle: number,
-        height: number,
-        color: readonly number[],
-        intensity: number
-    ) {
+    public setSunFlare(enabled: boolean, angle: number, height: number, color: readonly number[], intensity: number) {
         this.isSunFlareEnabled = enabled;
 
         if (enabled) {
             this.sunFlareDir.set(Math.sin(angle), height, Math.cos(angle)).normalize();
             this.sunFlareColor.set(color[0], color[1], color[2]).scaleInPlace(intensity);
+        }
+
+        this.isDirty = true;
+    }
+
+    public setLightning(enabled: boolean, frequency: number, intensity: number, color: readonly number[]) {
+        this.isLightningEnabled = enabled;
+
+        if (enabled) {
+            this.lightningFrequency = frequency;
+            this.lightningIntensity = intensity;
+            this.lightningColor.set(color[0], color[1], color[2]);
         }
 
         this.isDirty = true;
@@ -143,6 +155,12 @@ export class LightManager {
         material.setFloat('u_enableSunFlare', this.isSunFlareEnabled ? 1.0 : 0.0);
         material.setVector3('u_sunFlareDir', this.sunFlareDir);
         material.setColor3('u_sunFlareColor', this.sunFlareColor);
+
+        // Lightning
+        material.setFloat('u_enableLightning', this.isLightningEnabled ? 1.0 : 0.0);
+        material.setFloat('u_lightningFrequency', this.lightningFrequency);
+        material.setFloat('u_lightningIntensity', this.lightningIntensity);
+        material.setColor3('u_lightningColor', this.lightningColor);
 
         this.isDirty = false;
     }

@@ -23,8 +23,14 @@ uniform vec3 u_shXY;
 uniform vec3 u_shYZ;
 uniform vec3 u_shZX;
 
+// ─── Lightning ───
+uniform float u_enableLightning;
+uniform float u_lightningFrequency;
+uniform float u_lightningIntensity;
+uniform vec3 u_lightningColor;
+
 // Avalia a irradiância do ambiente para uma dada normal
-vec3 evaluateSH(vec3 n) {
+vec3 evaluateSH(vec3 n, float time) {
     vec3 shLight = max(
         u_shX * n.x + u_shY * n.y + u_shZ * n.z +
         u_shXX * (n.x * n.x) + u_shYY * (n.y * n.y) + u_shZZ * (n.z * n.z) +
@@ -35,6 +41,27 @@ vec3 evaluateSH(vec3 n) {
     if (u_enableSunFlare > 0.5) {
         // Iluminação direcional (Lambert simples) adicionada ao ambiente
         shLight += u_sunFlareColor * max(dot(n, normalize(u_sunFlareDir)), 0.0);
+    }
+    
+    if (u_enableLightning > 0.5) {
+        float slot = floor(time * u_lightningFrequency);
+        float t = fract(time * u_lightningFrequency);
+        
+        // Hash simples para sincronizar com o relâmpago do skybox
+        float trigger = fract(sin(slot * 127.1) * 43758.5453);
+        
+        if (trigger <= 0.20) {
+            bool isStrike = trigger >= 0.05;
+            float flash = exp(-t * (isStrike ? 5.0 : 8.0));
+            
+            // Trovão pisca na cena inteira
+            float intensity = isStrike ? 1.0 : 0.15; 
+            
+            // Opcional: tremulação
+            float flicker = isStrike ? (0.5 + 0.5 * sin(time * 150.0)) : 1.0;
+            
+            shLight += u_lightningColor * flash * flicker * intensity * u_lightningIntensity;
+        }
     }
     
     return shLight;

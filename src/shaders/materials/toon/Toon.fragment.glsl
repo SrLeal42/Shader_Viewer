@@ -44,7 +44,7 @@ void main() {
     vec3 pointLight = max(pointNdotL, 0.0) * u_pointColor * pl.attenuation;
 
     // Iluminação ambiente do Skybox via Spherical Harmonics
-    vec3 ambientSH = evaluateSH(normal);
+    vec3 ambientSH = evaluateSH(normal, u_time);
 
     vec3 totalLight = hemiLight + pointLight + ambientSH;
     

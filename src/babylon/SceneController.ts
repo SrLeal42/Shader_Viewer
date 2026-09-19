@@ -141,6 +141,15 @@ export class SceneController {
                     );
                     // Força o ShaderManager a atualizar os materiais
                     this.shaderManager.reinjectLightUniforms();
+                } else if (id === 'lightning') {
+                    const config = SkyboxEffectsConfigs.lightning.uniforms;
+                    this.lightManager.setLightning(
+                        enabled,
+                        config.u_lightningFrequency as number,
+                        config.u_lightningIntensity as number,
+                        config.u_lightningColor as readonly number[]
+                    );
+                    this.shaderManager.reinjectLightUniforms();
                 }
             },
             (callback) => { this.skyboxEffectManager.onEffectForcedOff = callback; }

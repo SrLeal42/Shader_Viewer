@@ -63,10 +63,13 @@ export const SkyboxEffectsConfigs = {
     lightning: {
         id: 'lightning',
         title: 'Relâmpagos',
-        description: 'Flashes elétricos que iluminam o céu inteiro de forma intermitente.',
+        description: 'Tempestades com iluminação interna nas nuvens e raios ramificados caindo.',
         uniforms: {
-            "u_lightningFrequency": 1.5,
-            "u_lightningIntensity": 2.0
+            "u_lightningFrequency": 1.8,
+            "u_lightningIntensity": 2.0,
+            "u_lightningColor": [0.7, 0.85, 1.0],
+            "u_lightningThickness": 0.005,
+            "u_lightningCloudDensity": 1.5
         }
     },
     fireworks: {

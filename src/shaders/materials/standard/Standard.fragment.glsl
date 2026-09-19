@@ -13,6 +13,7 @@ uniform sampler2D u_albedo;
 uniform float u_hasAlbedo;
 uniform vec3 u_cameraPos;
 uniform vec3 u_defaultColor;
+uniform float u_time;
 
 void main() {
     vec3 normal = normalize(vNormal);
@@ -27,7 +28,7 @@ void main() {
     vec3 hemiLight = max(dot(normal, normalize(u_hemiDir)), 0.0) * u_hemiColor;
     PointLightData pl = getPointLight(vWorldPosition);
     vec3 pointLight = max(dot(normal, pl.direction), 0.0) * u_pointColor * pl.attenuation;
-    vec3 ambientSH = evaluateSH(normal);
+    vec3 ambientSH = evaluateSH(normal, u_time);
 
     vec3 totalLight = hemiLight + pointLight + ambientSH;
     vec3 diffuse = baseColor * totalLight;

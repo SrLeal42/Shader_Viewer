@@ -69,6 +69,9 @@ export const SKYBOX_UNIFORMS = {
 
     LIGHTNING_FREQUENCY: 'u_lightningFrequency',
     LIGHTNING_INTENSITY: 'u_lightningIntensity',
+    LIGHTNING_COLOR: 'u_lightningColor',
+    LIGHTNING_THICKNESS: 'u_lightningThickness',
+    LIGHTNING_CLOUD_DENSITY: 'u_lightningCloudDensity',
 
     FIREWORK_FREQUENCY: 'u_fireworkFrequency',
     FIREWORK_INTENSITY: 'u_fireworkIntensity',

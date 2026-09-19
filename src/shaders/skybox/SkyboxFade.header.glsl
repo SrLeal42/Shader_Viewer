@@ -65,6 +65,9 @@ uniform float u_cloudHeight;
 // Relâmpagos
 uniform float u_lightningFrequency;
 uniform float u_lightningIntensity;
+uniform vec3 u_lightningColor;
+uniform float u_lightningThickness;
+uniform float u_lightningCloudDensity;
 
 // Fogos de Artifício
 uniform float u_fireworkFrequency;

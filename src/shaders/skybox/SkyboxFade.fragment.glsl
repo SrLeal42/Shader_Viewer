@@ -69,7 +69,7 @@ void main() {
     }
 
     if (u_enableLightning > 0.5) {
-        finalBackground = applyLightning(u_time, finalBackground);
+        finalBackground = applyLightning(dir, u_time, finalBackground);
     }
 
     // ─── Pós-Processamento (Exposição, Tonemapping, Saturação) ───

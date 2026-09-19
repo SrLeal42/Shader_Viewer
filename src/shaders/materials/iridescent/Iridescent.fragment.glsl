@@ -13,6 +13,7 @@ uniform vec3  u_baseColor;
 uniform float u_iridescenceStrength;
 uniform float u_iridescenceScale;
 uniform float u_shininess;
+uniform float u_time;
 
 // Global
 uniform vec3 u_cameraPos;
@@ -61,7 +62,7 @@ void main() {
     }
 
     // ─── Iluminação Difusa + Ambiente SH ───
-    vec3 ambientSH = evaluateSH(normal); // Agora evaluateSH já inclui o sol automaticamente!
+    vec3 ambientSH = evaluateSH(normal, u_time); // Agora evaluateSH já inclui o sol automaticamente!
     vec3 diffuseHemi = u_baseColor * u_hemiColor * (hemiDiff * 0.7 + 0.3);
     vec3 diffusePoint = u_baseColor * u_pointColor * pointDiff * pl.attenuation;
     
