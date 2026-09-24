@@ -8,6 +8,9 @@ export class PhysicsManager {
     private scene: B.Scene;
     private outOfBoundsStartTime: number | null = null;
 
+    private _tempSpringDir = new B.Vector3();
+    private _tempSpringVel = new B.Vector3();
+
     constructor(scene: B.Scene) {
         this.scene = scene;
     }
@@ -35,8 +38,8 @@ export class PhysicsManager {
 
         const config = EnvironmentConfigs.physicsSpring;
 
-        const direction = config.anchorPoint.subtract(mesh.position);
-        const distance = direction.length();
+        config.anchorPoint.subtractToRef(mesh.position, this._tempSpringDir);
+        const distance = this._tempSpringDir.length();
 
         const body = mesh.physicsBody;
         if (!body) return;
@@ -51,18 +54,21 @@ export class PhysicsManager {
             // Depois do delay, começa a puxar de volta
             if (timeElapsed >= config.activationDelayMs) {
                 const distanceOutside = distance - config.activationDistance;
-                const extraVelocity = direction.normalize().scale(distanceOutside * config.stiffness);
+                this._tempSpringDir.normalizeToRef(this._tempSpringDir);
+                this._tempSpringDir.scaleInPlace(distanceOutside * config.stiffness);
 
-                const currentVelocity = body.getLinearVelocity();
-                body.setLinearVelocity(currentVelocity.add(extraVelocity));
+                body.getLinearVelocityToRef(this._tempSpringVel);
+                this._tempSpringVel.addInPlace(this._tempSpringDir);
+                body.setLinearVelocity(this._tempSpringVel);
             }
 
         } else {
 
             this.outOfBoundsStartTime = null;
 
-            const currentVelocity = body.getLinearVelocity();
-            body.setLinearVelocity(currentVelocity.scale(config.damping));
+            body.getLinearVelocityToRef(this._tempSpringVel);
+            this._tempSpringVel.scaleInPlace(config.damping);
+            body.setLinearVelocity(this._tempSpringVel);
         }
     }
 

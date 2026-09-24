@@ -70,6 +70,8 @@ export class SceneController {
 
     private resizeTimeout: ReturnType<typeof setTimeout> | null = null;
 
+    private _tempEuler = new B.Vector3();
+
     // ─── Construtor privado (use SceneController.create) ───
 
     private constructor(
@@ -350,12 +352,11 @@ export class SceneController {
         this.transformState.pos.z = mesh.position.z;
 
         if (mesh.rotationQuaternion) {
-            const euler = mesh.rotationQuaternion.toEulerAngles();
+            mesh.rotationQuaternion.toEulerAnglesToRef(this._tempEuler);
 
-            this.transformState.rot.x = B.Tools.ToDegrees(euler.x);
-            this.transformState.rot.y = B.Tools.ToDegrees(euler.y);
-            this.transformState.rot.z = B.Tools.ToDegrees(euler.z);
-
+            this.transformState.rot.x = B.Tools.ToDegrees(this._tempEuler.x);
+            this.transformState.rot.y = B.Tools.ToDegrees(this._tempEuler.y);
+            this.transformState.rot.z = B.Tools.ToDegrees(this._tempEuler.z);
         }
 
         if (this.transformUI) this.transformUI.refresh();
@@ -664,6 +665,8 @@ export class SceneController {
                 this.handleTransformChange,
                 limits
             );
+
+            this.depthNormalManager.resize();
 
             this.resizeTimeout = null;
 

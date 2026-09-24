@@ -30,7 +30,7 @@ export class DepthNormalManager {
             scene,
             false, // generateMipMaps
             true, // doNotChangeAspectRatio
-            B.Constants.TEXTURETYPE_FLOAT,
+            B.Constants.TEXTURETYPE_HALF_FLOAT,
             false, // isCube
             B.Texture.BILINEAR_SAMPLINGMODE,
             true, // generateDepthBuffer
@@ -48,7 +48,7 @@ export class DepthNormalManager {
             scene,
             false,
             true,
-            B.Constants.TEXTURETYPE_FLOAT, // Precisão para normais
+            B.Constants.TEXTURETYPE_HALF_FLOAT,
             false,
             B.Texture.BILINEAR_SAMPLINGMODE,
             true,
@@ -159,6 +159,16 @@ export class DepthNormalManager {
                 if (typeof value === 'number') this.normalMaterial.setFloat(key, value);
             }
         }
+
+    }
+
+    public resize(): void {
+        const engine = this.scene.getEngine();
+        const width = engine.getRenderWidth();
+        const height = engine.getRenderHeight();
+
+        this.depthRTT.resize({ width, height });
+        this.normalRTT.resize({ width, height });
 
     }
 

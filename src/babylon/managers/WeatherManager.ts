@@ -195,7 +195,6 @@ export class WeatherManager {
 
     // ─── Fog ───
 
-
     private enableFog(fogConfig: FogConfig): void {
 
         const shaderName = 'weatherFogPostProcess';
@@ -216,17 +215,25 @@ export class WeatherManager {
             }
         );
 
-        this.fogPostProcess.onApplyObservable.add((effect) => {
-            effect.setColor3('u_fogColor', new B.Color3(fogConfig.color.r, fogConfig.color.g, fogConfig.color.b));
+        // Uniforms estáticos — setados uma vez e re-injetados no resize
+        const fogColor = new B.Color3(fogConfig.color.r, fogConfig.color.g, fogConfig.color.b);
+
+        const injectStaticUniforms = (effect: B.Effect) => {
+            effect.setColor3('u_fogColor', fogColor);
             effect.setFloat('u_fogDensity', fogConfig.density);
             effect.setFloat('u_maxOpacity', fogConfig.maxOpacity);
             effect.setFloat('u_fogStart', fogConfig.start);
             effect.setFloat('u_fogCurve', fogConfig.falloffCurve);
+        };
+
+        // Uniforms dinâmicos — atualizados por frame
+        this.fogPostProcess.onApplyObservable.add((effect) => {
+            injectStaticUniforms(effect);
             effect.setFloat('u_cameraMinZ', this.camera.minZ);
             effect.setFloat('u_cameraMaxZ', this.camera.maxZ);
-
             effect.setTexture('depthSampler', this.depthNormalManager.getDepthTexture());
         });
+
     }
 
     // ─── Efeito de Câmera (Post-Process) ───

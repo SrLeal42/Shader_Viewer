@@ -45,6 +45,8 @@ export class ShaderManager {
     // Callback armazenado para re-injeção dinâmica do cubemap
     private getCubemapCallback: (() => B.BaseTexture | null) | null = null;
 
+    private _tempScreenSize = new B.Vector2(0, 0);
+
 
     constructor(
         scene: B.Scene,
@@ -184,25 +186,18 @@ export class ShaderManager {
             );
             // this.sceneRTTMesh = mesh;
 
-            // A cada frame, repopula o renderList com TODOS os meshes
-            // exceto o modelo com vidro e seus filhos
+            // O engine filtra internamente, sem rebuild de array por frame
             const childSet = new Set<B.AbstractMesh>(children);
-            rtt.onBeforeRenderObservable.add(() => {
-                rtt.renderList!.length = 0;
-                for (const sceneMesh of this.scene.meshes) {
-                    if (sceneMesh !== mesh && !childSet.has(sceneMesh)) {
-                        rtt.renderList!.push(sceneMesh);
-                    }
-                }
-            });
+            rtt.renderListPredicate = (sceneMesh) => {
+                return sceneMesh !== mesh && !childSet.has(sceneMesh);
+            };
 
             this.scene.customRenderTargets.push(rtt);
             this.sceneRTT = rtt;
 
             material.setTexture('u_sceneTexture', rtt);
-            material.setVector2('u_screenSize', new B.Vector2(
-                engine.getRenderWidth(), engine.getRenderHeight()
-            ));
+            this._tempScreenSize.set(engine.getRenderWidth(), engine.getRenderHeight());
+            material.setVector2('u_screenSize', this._tempScreenSize);
         }
 
         // ─── Cubemap do ambiente para reflexão ───
@@ -378,7 +373,8 @@ export class ShaderManager {
                 const config = MaterialShaders[this._activeMaterialId];
                 if (config.needsSceneTexture) {
                     const engine = this.scene.getEngine();
-                    mat.setVector2('u_screenSize', new B.Vector2(engine.getRenderWidth(), engine.getRenderHeight()));
+                    this._tempScreenSize.set(engine.getRenderWidth(), engine.getRenderHeight());
+                    mat.setVector2('u_screenSize', this._tempScreenSize);
                 }
 
                 // Re-injeta cubemap dinamicamente (acompanha troca de skybox)

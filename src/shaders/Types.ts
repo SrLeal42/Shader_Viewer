@@ -98,7 +98,13 @@ export interface PostProcessShaderConfig extends BaseShaderConfig {
 }
 
 
+const flatCache = new Map<ShaderUniform[], ValueUniform[]>();
+
 export function flattenUniforms(uniforms: ShaderUniform[]): ValueUniform[] {
+    const cached = flatCache.get(uniforms);
+
+    if (cached) return cached;
+
     const result: ValueUniform[] = [];
 
     for (const u of uniforms) {
@@ -108,6 +114,8 @@ export function flattenUniforms(uniforms: ShaderUniform[]): ValueUniform[] {
             result.push(u);
         }
     }
+
+    flatCache.set(uniforms, result);
 
     return result;
 }
