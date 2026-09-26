@@ -1,6 +1,20 @@
 #ifndef RAINBOW_GLSL
 #define RAINBOW_GLSL
 
+// ─── Constantes Artísticas ───
+const float CYCLE_SPEED_SCALE = 0.15;
+const float RAINBOW_PHASE_OFFSET = 0.5;
+const float FADE_IN_DURATION = 0.15;
+const float FADE_OUT_START = 0.7;
+const float CENTER_BASE_HEIGHT = -0.3;
+const float CENTER_HEIGHT_RANGE = 0.2;
+const float BAND_EDGE_FADE_IN = 0.1;
+const float BAND_EDGE_FADE_OUT = 0.9;
+const float ARC_MASK_MIN = -0.1;
+const float ARC_MASK_MAX = 0.15;
+const float SHIMMER_BASE = 0.7;
+const float SHIMMER_AMP = 0.3;
+
 // Converte comprimento de onda aproximado (380-780nm) para RGB
 vec3 wavelengthToRGB(float t) {
     
@@ -25,18 +39,18 @@ vec3 applyRainbow(vec3 dir, float time) {
         float fi = float(i);
         
         // Ciclo de vida do arco-íris (aparece e desaparece)
-        float cycle = time * u_rainbowSpeed * 0.15 + fi * 0.5;
+        float cycle = time * u_rainbowSpeed * CYCLE_SPEED_SCALE + fi * RAINBOW_PHASE_OFFSET;
         float id = floor(cycle);
         float t = fract(cycle);
         
         // Opacidade: fade in → sustain → fade out
-        float opacity = smoothstep(0.0, 0.15, t) * smoothstep(1.0, 0.7, t);
+        float opacity = smoothstep(0.0, FADE_IN_DURATION, t) * smoothstep(1.0, FADE_OUT_START, t);
         
         if (opacity < 0.01) continue;
         
         // Centro do arco-íris (posição aleatória no horizonte)
         float centerAngle = hash(id * 23.7 + fi * 9.1) * 6.2832;
-        float centerHeight = -0.3 + hash(id * 41.3 + fi * 5.7) * 0.2; // Abaixo do horizonte
+        float centerHeight = CENTER_BASE_HEIGHT + hash(id * 41.3 + fi * 5.7) * CENTER_HEIGHT_RANGE;
         vec3 rainbowCenter = normalize(vec3(cos(centerAngle), centerHeight, sin(centerAngle)));
         
         // Distância angular do pixel ao centro do arco-íris
@@ -52,10 +66,10 @@ vec3 applyRainbow(vec3 dir, float time) {
         if (bandPos < 0.0 || bandPos > 1.0) continue;
         
         // Suaviza as bordas da faixa
-        float bandMask = smoothstep(0.0, 0.1, bandPos) * smoothstep(1.0, 0.9, bandPos);
+        float bandMask = smoothstep(0.0, BAND_EDGE_FADE_IN, bandPos) * smoothstep(1.0, BAND_EDGE_FADE_OUT, bandPos);
         
         // Confina ao hemisfério superior (arco, não anel completo)
-        float arcMask = smoothstep(-0.1, 0.15, dir.y);
+        float arcMask = smoothstep(ARC_MASK_MIN, ARC_MASK_MAX, dir.y);
         
         // Cor espectral baseada na posição na banda
         vec3 rainbowColor = wavelengthToRGB(bandPos);
@@ -65,7 +79,7 @@ vec3 applyRainbow(vec3 dir, float time) {
             dot(dir, cross(rainbowCenter, vec3(0.0, 1.0, 0.0))),
             dot(dir, cross(vec3(0.0, 1.0, 0.0), cross(rainbowCenter, vec3(0.0, 1.0, 0.0))))
         );
-        float shimmer = 0.7 + 0.3 * noise(vec3(angleAroundCenter * 3.0, time * 0.5, id));
+        float shimmer = SHIMMER_BASE + SHIMMER_AMP * noise(vec3(angleAroundCenter * 3.0, time * 0.5, id));
         
         total += rainbowColor * bandMask * arcMask * opacity * shimmer * u_rainbowIntensity;
     }

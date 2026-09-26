@@ -489,6 +489,31 @@ export class ShaderManager {
         );
     }
 
+
+    public resize(): void {
+        // Redimensiona a RTT da refração do vidro, se ela existir
+        if (this.sceneRTT) {
+            const engine = this.scene.getEngine();
+            const width = engine.getRenderWidth();
+            const height = engine.getRenderHeight();
+
+            this.sceneRTT.resize({ width, height });
+            this._tempScreenSize.set(width, height);
+
+            // Atualiza o uniform u_screenSize imediatamente se o material estiver ativo
+            if (this._activeMaterialId) {
+                const mat = this.materialCache.get(this._activeMaterialId);
+                if (mat) {
+                    mat.setVector2('u_screenSize', this._tempScreenSize);
+                }
+            }
+
+        }
+
+    }
+
+
+
     // ─── Cleanup ───
 
     private disposeSceneRTT(): void {

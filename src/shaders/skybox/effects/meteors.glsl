@@ -1,6 +1,19 @@
 #ifndef METEORS_GLSL
 #define METEORS_GLSL
 
+// ─── Constantes Artísticas ───
+const float GRAVITY_CURVE_SCALE = 0.15;
+const float MAX_CURVE = 4.5;
+const float SPEED_VARIATION = 2.0;
+const float PHASE_SCALE = 1.5;
+const float METEOR_FADE_IN = 0.03;
+const float METEOR_FADE_OUT = 0.01;
+const float THICKNESS_INNER = 0.48;
+const float THICKNESS_OUTER = 0.52;
+const float HORIZON_FADE = 0.2;
+const vec3 METEOR_COLOR = vec3(0.5, 0.8, 1.0);
+const float METEOR_BRIGHTNESS = 5.0;
+
 vec3 applyMeteors(vec3 dir, float time) {
     float c = cos(u_meteorAngle);
     float s = sin(u_meteorAngle);
@@ -18,29 +31,29 @@ vec3 applyMeteors(vec3 dir, float time) {
     // perto de maxCurve em vez de crescer sem limite. Isso evita que
     // meteoros no fim da curva (perto do polo pra onde ela empurra)
     // acelerem descontroladamente.
-    float rawCurve = pow(4.0, -u) * 0.15;
-    float maxCurve = 4.5; // té onde a trilha pode "cair" em V — ajuste ao gosto
+    float rawCurve = pow(4.0, -u) * GRAVITY_CURVE_SCALE;
+    float maxCurve = MAX_CURVE;
     float curve = maxCurve * (1.0 - exp(-rawCurve / maxCurve));
     float trackV = v + curve;
     
     float trackId = floor(trackV * tracks);
     float h = hash(trackId * 31.415);
     
-    float speed = u_meteorSpeedBase + h * 2.0; 
+    float speed = u_meteorSpeedBase + h * SPEED_VARIATION; 
     
-    float phase = u * 1.5 + time * speed + h * 100.0;
+    float phase = u * PHASE_SCALE + time * speed + h * 100.0;
     float cycle = fract(phase * 0.1); 
     
-    float meteor = smoothstep(0.03, 0.0, cycle) * smoothstep(0.0, 0.01, cycle); 
+    float meteor = smoothstep(METEOR_FADE_IN, 0.0, cycle) * smoothstep(0.0, METEOR_FADE_OUT, cycle); 
     
     float localV = fract(trackV * tracks);
-    float thickness = smoothstep(0.48, 0.5, localV) * smoothstep(0.52, 0.5, localV);
+    float thickness = smoothstep(THICKNESS_INNER, 0.5, localV) * smoothstep(THICKNESS_OUTER, 0.5, localV);
     
     float intensity = meteor * thickness;
     
-    intensity *= smoothstep(0.0, 0.2, dir.y);
+    intensity *= smoothstep(0.0, HORIZON_FADE, dir.y);
     
-    return vec3(0.5, 0.8, 1.0) * intensity * 5.0;
+    return METEOR_COLOR * intensity * METEOR_BRIGHTNESS;
 }
 
 #endif

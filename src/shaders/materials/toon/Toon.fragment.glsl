@@ -31,6 +31,10 @@ uniform vec3 u_cameraPos;
 // NOTA: u_hemiDir, u_hemiColor, u_pointPos, u_pointColor, SH
 // são declarados automaticamente pelo lighting.glsl (SharedInclude)
 
+// ─── Constantes Artísticas ───
+const float MIN_LUMINANCE = 0.001;
+const float SPEC_TRANSITION_WIDTH = 0.01;
+
 void main() {
     vec3 normal = normalize(vNormal);
     vec3 viewDir = normalize(u_cameraPos - vWorldPosition);
@@ -53,13 +57,13 @@ void main() {
     float quantized = floor(luminance * u_levels) / u_levels;
     quantized = max(quantized, u_shadowMin);
     
-    float scale = quantized / max(luminance, 0.001);
+    float scale = quantized / max(luminance, MIN_LUMINANCE);
     vec3 toonDiffuse = u_color * totalLight * scale;
 
     // Specular Toon (Brilho Estilizado)
     vec3 halfDir = normalize(pl.direction + viewDir);
     float spec = pow(max(dot(normal, halfDir), 0.0), u_glossiness);
-    float toonSpec = smoothstep(u_specThreshold - 0.01, u_specThreshold, spec);
+    float toonSpec = smoothstep(u_specThreshold - SPEC_TRANSITION_WIDTH, u_specThreshold, spec);
     vec3 specContrib = u_specColor * toonSpec * u_specIntensity;
 
     // Rim Light (Brilho nas bordas)

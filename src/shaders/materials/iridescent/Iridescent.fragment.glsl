@@ -20,6 +20,17 @@ uniform vec3 u_cameraPos;
 
 // NOTA: Luzes, SH e computeSpecular vêm dos SharedIncludes
 
+// ─── Constantes Artísticas ───
+const float ENV_INTENSITY_GAIN = 2.0;
+const float HEMI_DIFF_WEIGHT = 0.7;
+const float HEMI_AMBIENT_WEIGHT = 0.3;
+const float SH_AMBIENT_STRENGTH = 0.3;
+const float LIGHT_ANGLE_WEIGHT = 0.5;
+const float LIGHT_MASK_MIN = 0.1;
+const float LIGHT_MASK_MAX = 0.6;
+const float MIN_SHININESS = 16.0;
+const float MAX_SHININESS = 512.0;
+
 // ─── Cosine Palette (Inigo Quilez) ───
 vec3 palette(in float t) {
     vec3 a = vec3(0.5, 0.5, 0.5);
@@ -49,7 +60,7 @@ void main() {
         dot(u_shY, vec3(0.333)), 
         dot(u_shZ, vec3(0.333))
     );
-    float envIntensity = length(envDominantDir) * 2.0; // Ganho para o peso do ângulo
+    float envIntensity = length(envDominantDir) * ENV_INTENSITY_GAIN;
     float envDiff = 0.0;
     if (envIntensity > 0.001) envDiff = max(dot(normal, normalize(envDominantDir)), 0.0);
     
@@ -63,10 +74,10 @@ void main() {
 
     // ─── Iluminação Difusa + Ambiente SH ───
     vec3 ambientSH = evaluateSH(normal, u_time); // Agora evaluateSH já inclui o sol automaticamente!
-    vec3 diffuseHemi = u_baseColor * u_hemiColor * (hemiDiff * 0.7 + 0.3);
+    vec3 diffuseHemi = u_baseColor * u_hemiColor * (hemiDiff * HEMI_DIFF_WEIGHT + HEMI_AMBIENT_WEIGHT);
     vec3 diffusePoint = u_baseColor * u_pointColor * pointDiff * pl.attenuation;
     
-    vec3 diffuse = diffuseHemi + diffusePoint + u_baseColor * ambientSH * 0.3;
+    vec3 diffuse = diffuseHemi + diffusePoint + u_baseColor * ambientSH * SH_AMBIENT_STRENGTH;
 
     // ─── Efeito Furta-Cor (Iridescence) ───
     float viewAngle = max(dot(normal, viewDir), 0.0);
@@ -89,16 +100,16 @@ void main() {
         ) / totalWeight;
     }
     
-    float t = (1.0 - viewAngle) + (lightAngle * 0.5);
+    float t = (1.0 - viewAngle) + (lightAngle * LIGHT_ANGLE_WEIGHT);
     vec3 iridescentColor = palette(t * u_iridescenceScale);
 
     // Máscara de Luz (Faz o arco-íris sumir nas áreas de sombra total)
-    float lightMask = smoothstep(0.1, 0.6, lightAngle);
+    float lightMask = smoothstep(LIGHT_MASK_MIN, LIGHT_MASK_MAX, lightAngle);
     float finalStrength = u_iridescenceStrength * lightMask;
     vec3 finalColor = mix(diffuse, diffuse + iridescentColor, finalStrength);
 
     // ─── Specular (usando computeSpecular do specular.glsl) ───
-    float shininess = mix(16.0, 512.0, u_shininess); 
+    float shininess = mix(MIN_SHININESS, MAX_SHININESS, u_shininess); 
 
     float hemiSpec = computeSpecular(normal, viewDir, hemiDir, shininess);
     vec3 specular = hemiSpec * u_hemiColor;

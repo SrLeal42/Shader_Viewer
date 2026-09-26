@@ -1,9 +1,13 @@
 #ifndef BLACKHOLE_GLSL
 #define BLACKHOLE_GLSL
 
+// ─── Constantes Artísticas ───
+const float WOBBLE_SPEED = 0.8;
+const float WOBBLE_AMPLITUDE = 0.02;
+
 vec4 applyBlackhole(vec3 dir, float time) {
-    float offsetX = sin(time * 0.8) * 0.02; 
-    float offsetY = cos(time * 0.8) * 0.02; 
+    float offsetX = sin(time * WOBBLE_SPEED) * WOBBLE_AMPLITUDE; 
+    float offsetY = cos(time * WOBBLE_SPEED) * WOBBLE_AMPLITUDE; 
     
     vec3 bhCenter = normalize(vec3(offsetX, offsetY, -1.0));
     

@@ -2,9 +2,12 @@ uniform float u_levitationHeight;
 uniform float u_levitationSpeed;
 uniform float u_levitationRotation;
 
+// ─── Constantes Artísticas ───
+const float TILT_SPEED_RATIO = 0.7;
+
 void applyVertexEffect(inout vec3 pos, inout vec3 norm, float time) {
     float bob = sin(time * u_levitationSpeed) * u_levitationHeight;
-    float angle = sin(time * u_levitationSpeed * 0.7) * u_levitationRotation;
+    float angle = sin(time * u_levitationSpeed * TILT_SPEED_RATIO) * u_levitationRotation;
     
     float s = sin(angle);
     float c = cos(angle);

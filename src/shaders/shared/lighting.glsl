@@ -1,6 +1,19 @@
 #ifndef LIGHTING_GLSL
 #define LIGHTING_GLSL
 
+// ─── Constantes Artísticas ───
+
+// Lightning sync (SYNC: lightning.glsl)
+const float LIT_TRIGGER_CHANCE = 0.20;
+const float LIT_STRIKE_THRESHOLD = 0.05;
+const float LIT_STRIKE_DECAY = 5.0;
+const float LIT_FLASH_DECAY = 8.0;
+const float LIT_AMBIENT_FLASH_INTENSITY = 0.15;
+const float LIT_FLICKER_FREQUENCY = 150.0;
+
+// Point light
+const float POINT_LIGHT_ATTEN_FACTOR = 0.1;
+
 // ─── Uniforms de Luz (injetados automaticamente pelo ShaderManager) ───
 uniform vec3 u_hemiDir;
 uniform vec3 u_hemiColor;
@@ -50,15 +63,15 @@ vec3 evaluateSH(vec3 n, float time) {
         // Hash simples para sincronizar com o relâmpago do skybox
         float trigger = fract(sin(slot * 127.1) * 43758.5453);
         
-        if (trigger <= 0.20) {
-            bool isStrike = trigger >= 0.05;
-            float flash = exp(-t * (isStrike ? 5.0 : 8.0));
+        if (trigger <= LIT_TRIGGER_CHANCE) {
+            bool isStrike = trigger >= LIT_STRIKE_THRESHOLD;
+            float flash = exp(-t * (isStrike ? LIT_STRIKE_DECAY : LIT_FLASH_DECAY));
             
             // Trovão pisca na cena inteira
-            float intensity = isStrike ? 1.0 : 0.15; 
+            float intensity = isStrike ? 1.0 : LIT_AMBIENT_FLASH_INTENSITY; 
             
             // Opcional: tremulação
-            float flicker = isStrike ? (0.5 + 0.5 * sin(time * 150.0)) : 1.0;
+            float flicker = isStrike ? (0.5 + 0.5 * sin(time * LIT_FLICKER_FREQUENCY)) : 1.0;
             
             shLight += u_lightningColor * flash * flicker * intensity * u_lightningIntensity;
         }
@@ -79,7 +92,7 @@ PointLightData getPointLight(vec3 worldPos) {
     float dist = length(toPoint);
     return PointLightData(
         toPoint / dist,
-        1.0 / (1.0 + 0.1 * dist * dist)
+        1.0 / (1.0 + POINT_LIGHT_ATTEN_FACTOR * dist * dist)
     );
 }
 

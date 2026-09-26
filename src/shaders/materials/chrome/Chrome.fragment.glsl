@@ -35,6 +35,13 @@ uniform float u_lumThreshold;
 uniform vec3 u_cameraPos;
 uniform float u_time;
 
+// ─── Constantes Artísticas ───
+const float SCREEN_DISTORTION_SCALE = 0.15;
+const float UV_CLAMP_MIN = 0.001;
+const float UV_CLAMP_MAX = 0.999;
+const float MAX_CUBEMAP_LOD = 7.0;
+const float LUM_THRESHOLD_HALF_WIDTH = 0.1;
+
 void main() {
     vec3 normal = normalize(vNormal);
     vec3 viewDir = normalize(u_cameraPos - vWorldPosition);
@@ -50,8 +57,8 @@ void main() {
 
     // ─── Reflexão Screen-Space (RTT) ───
     vec2 screenUV = gl_FragCoord.xy / u_screenSize;
-    vec2 distortion = perturbedNormal.xy * 0.15;
-    vec2 reflectedScreenUV = clamp(screenUV + distortion, 0.001, 0.999);
+    vec2 distortion = perturbedNormal.xy * SCREEN_DISTORTION_SCALE;
+    vec2 reflectedScreenUV = clamp(screenUV + distortion, UV_CLAMP_MIN, UV_CLAMP_MAX);
     vec3 rttColor = texture(u_sceneTexture, reflectedScreenUV).rgb;
 
     // ─── Reflexão Cubemap ───
@@ -59,7 +66,7 @@ void main() {
     vec3 cubemapColor = vec3(0.0);
 
     if (u_hasEnvCubemap > 0.5) {
-        float lod = u_roughness * 7.0;
+        float lod = u_roughness * MAX_CUBEMAP_LOD;
         cubemapColor = textureLod(u_envCubemap, reflectDir, lod).rgb;
     }
 
@@ -67,7 +74,7 @@ void main() {
 
     // ─── Separação por Luminância (usa getLuminance do lighting.glsl) ───
     float lum = getLuminance(reflectedColor);
-    float lumMask = smoothstep(u_lumThreshold - 0.1, u_lumThreshold + 0.1, lum);
+    float lumMask = smoothstep(u_lumThreshold - LUM_THRESHOLD_HALF_WIDTH, u_lumThreshold + LUM_THRESHOLD_HALF_WIDTH, lum);
     vec3 chromeColor = mix(u_metalColor, reflectedColor, lumMask);
 
     // ─── Fresnel (Schlick) ───

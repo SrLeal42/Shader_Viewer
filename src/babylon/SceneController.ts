@@ -668,6 +668,8 @@ export class SceneController {
 
             this.depthNormalManager.resize();
 
+            this.shaderManager.resize();
+
             this.resizeTimeout = null;
 
         }, 150);
