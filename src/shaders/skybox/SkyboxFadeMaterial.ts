@@ -1,4 +1,4 @@
-import * as B from '@babylonjs/core';
+import * as B from '../../babylon/BabylonAdapter';
 
 import headerSource from './SkyboxFade.header.glsl?raw';
 import mainSource from './SkyboxFade.fragment.glsl?raw';

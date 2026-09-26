@@ -1,4 +1,4 @@
-import * as B from '@babylonjs/core';
+import * as B from '../../../babylon/BabylonAdapter';
 import type { PostProcessShaderConfig } from '../../Types';
 import { TOON_OUTLINE_UNIFORMS } from '../../../configs/Constants';
 

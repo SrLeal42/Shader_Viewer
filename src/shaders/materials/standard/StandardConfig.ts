@@ -1,4 +1,4 @@
-import * as B from '@babylonjs/core';
+import * as B from '../../../babylon/BabylonAdapter';
 import { type MaterialShaderConfig } from '../../Types';
 import { STANDARD_DEFAULT_COLOR } from '../../../configs/Constants';
 import { BaseVertex, SharedInclude } from '../../shared/SharedIncludes'
@@ -19,10 +19,10 @@ export const StandardConfig: MaterialShaderConfig = {
     uniforms: [],
 
     create: (scene: B.Scene, ctx) => {
-        B.Effect.ShadersStore['standardVertexShader'] = ctx.vertexSource;
-        B.Effect.ShadersStore['standardFragmentShader'] = fragmentSource;
+        B.Effect.ShadersStore[`${ctx.shaderName}VertexShader`] = ctx.vertexSource;
+        B.Effect.ShadersStore[`${ctx.shaderName}FragmentShader`] = fragmentSource;
 
-        const material = new B.ShaderMaterial('standardMaterial', scene, 'standard', {
+        const material = new B.ShaderMaterial(`${ctx.shaderName}Mat`, scene, ctx.shaderName, {
             attributes: ctx.attributes,
             uniforms: [
                 'world', 'worldView', 'worldViewProjection', 'view', 'projection', 'vEyePosition', 'u_time',

@@ -1,4 +1,4 @@
-import * as B from '@babylonjs/core';
+import * as B from '../BabylonAdapter';
 import depthFragment from '../../shaders/passes/depth_pass.fragment.glsl?raw';
 import normalFragment from '../../shaders/passes/normal_pass.fragment.glsl?raw';
 import { resolveBaseVertex } from '../../shaders/shared/SharedIncludes';

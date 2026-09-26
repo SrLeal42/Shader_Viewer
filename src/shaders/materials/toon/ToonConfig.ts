@@ -1,4 +1,4 @@
-import * as B from '@babylonjs/core';
+import * as B from '../../../babylon/BabylonAdapter';
 import type { MaterialShaderConfig, MaterialCreateContext } from '../../Types';
 import { SharedInclude } from '../../shared/SharedIncludes';
 
@@ -16,10 +16,10 @@ export const ToonConfig: MaterialShaderConfig = {
     postProcessDependencies: ['toon_edge'],
 
     create: (scene: B.Scene, ctx: MaterialCreateContext) => {
-        B.Effect.ShadersStore['toonVertexShader'] = ctx.vertexSource;
-        B.Effect.ShadersStore['toonFragmentShader'] = fragmentSource;
+        B.Effect.ShadersStore[`${ctx.shaderName}VertexShader`] = ctx.vertexSource;
+        B.Effect.ShadersStore[`${ctx.shaderName}FragmentShader`] = fragmentSource;
 
-        return new B.ShaderMaterial('toonMat', scene, 'toon', {
+        return new B.ShaderMaterial(`${ctx.shaderName}Mat`, scene, ctx.shaderName, {
             attributes: ctx.attributes,
             uniforms: [
                 'worldViewProjection', 'world',

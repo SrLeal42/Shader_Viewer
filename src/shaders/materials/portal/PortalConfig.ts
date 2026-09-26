@@ -1,4 +1,4 @@
-import * as B from '@babylonjs/core';
+import * as B from '../../../babylon/BabylonAdapter';
 import type { MaterialShaderConfig, MaterialCreateContext } from '../../Types';
 
 import fragmentSource from './Portal.fragment.glsl?raw';
@@ -10,10 +10,10 @@ export const PortalConfig: MaterialShaderConfig = {
     category: 'material',
 
     create: (scene: B.Scene, ctx: MaterialCreateContext) => {
-        B.Effect.ShadersStore['portalVertexShader'] = ctx.vertexSource;
-        B.Effect.ShadersStore['portalFragmentShader'] = fragmentSource;
+        B.Effect.ShadersStore[`${ctx.shaderName}VertexShader`] = ctx.vertexSource;
+        B.Effect.ShadersStore[`${ctx.shaderName}FragmentShader`] = fragmentSource;
 
-        return new B.ShaderMaterial('portalMat', scene, 'portal', {
+        return new B.ShaderMaterial(`${ctx.shaderName}Mat`, scene, ctx.shaderName, {
             attributes: ctx.attributes,
             uniforms: [
                 'worldViewProjection', 'world',

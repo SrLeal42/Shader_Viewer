@@ -1,4 +1,4 @@
-import * as B from '@babylonjs/core';
+import * as B from '../../../babylon/BabylonAdapter';
 import type { MaterialShaderConfig, MaterialCreateContext } from '../../Types';
 
 import fragmentSource from './Glass.fragment.glsl?raw';
@@ -12,10 +12,10 @@ export const GlassConfig: MaterialShaderConfig = {
     needsEnvironmentCubemap: true,
 
     create: (scene: B.Scene, ctx: MaterialCreateContext) => {
-        B.Effect.ShadersStore['glassVertexShader'] = ctx.vertexSource;
-        B.Effect.ShadersStore['glassFragmentShader'] = fragmentSource;
+        B.Effect.ShadersStore[`${ctx.shaderName}VertexShader`] = ctx.vertexSource;
+        B.Effect.ShadersStore[`${ctx.shaderName}FragmentShader`] = fragmentSource;
 
-        const material = new B.ShaderMaterial('glassMat', scene, 'glass', {
+        const material = new B.ShaderMaterial(`${ctx.shaderName}Mat`, scene, ctx.shaderName, {
             attributes: ctx.attributes,
             uniforms: [
                 'worldViewProjection', 'world',

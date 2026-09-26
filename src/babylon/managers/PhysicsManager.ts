@@ -1,4 +1,4 @@
-import * as B from '@babylonjs/core';
+import * as B from '../BabylonAdapter';
 import HavokPhysics from '@babylonjs/havok';
 
 import { EnvironmentConfigs } from '../../configs/EnvironmentConfigs';

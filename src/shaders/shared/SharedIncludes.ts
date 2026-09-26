@@ -1,4 +1,4 @@
-import * as B from '@babylonjs/core';
+import * as B from '../../babylon/BabylonAdapter';
 
 import lightingSource from './lighting.glsl?raw';
 import specularSource from './specular.glsl?raw';

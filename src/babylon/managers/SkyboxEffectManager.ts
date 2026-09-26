@@ -1,4 +1,4 @@
-import * as B from '@babylonjs/core';
+import * as B from '../BabylonAdapter';
 
 import { type SkyboxEffectId, MAX_ACTIVE_EFFECTS, SkyboxEffectsConfigs } from '../../configs/SkyboxEffectsConfigs';
 

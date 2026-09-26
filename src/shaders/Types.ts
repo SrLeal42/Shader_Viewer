@@ -58,6 +58,7 @@ export interface MaterialCreateContext {
     vertexSource: string;
     sharedUniforms: string[];
     attributes: string[];
+    shaderName: string;
 }
 
 export interface MaterialShaderConfig extends BaseShaderConfig {

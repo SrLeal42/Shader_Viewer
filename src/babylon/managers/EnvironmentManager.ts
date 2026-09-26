@@ -1,4 +1,4 @@
-import * as B from '@babylonjs/core';
+import * as B from '../BabylonAdapter';
 
 import { EnvironmentConfigs } from '../../configs/EnvironmentConfigs';
 import { SkyboxConfigs, type SkyboxConfig, type SkyboxId } from '../../configs/SkyboxConfigs';

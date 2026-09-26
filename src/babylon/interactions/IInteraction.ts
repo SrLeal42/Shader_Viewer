@@ -1,4 +1,4 @@
-import * as B from '@babylonjs/core';
+import * as B from '../BabylonAdapter';
 import type { ModelEntity } from '../entities/ModelEntity';
 
 // Dados que a interação recebe para saber o que está acontecendo no mundo

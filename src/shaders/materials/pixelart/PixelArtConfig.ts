@@ -1,4 +1,4 @@
-import * as B from '@babylonjs/core';
+import * as B from '../../../babylon/BabylonAdapter';
 import type { MaterialShaderConfig, MaterialCreateContext } from '../../Types';
 import { SharedInclude, BaseVertex } from '../../shared/SharedIncludes';
 
@@ -14,10 +14,10 @@ export const PixelArtConfig: MaterialShaderConfig = {
     sharedIncludes: [SharedInclude.LIGHTING],
 
     create: (scene: B.Scene, ctx: MaterialCreateContext) => {
-        B.Effect.ShadersStore['pixelartVertexShader'] = ctx.vertexSource;
-        B.Effect.ShadersStore['pixelartFragmentShader'] = fragmentSource;
+        B.Effect.ShadersStore[`${ctx.shaderName}VertexShader`] = ctx.vertexSource;
+        B.Effect.ShadersStore[`${ctx.shaderName}FragmentShader`] = fragmentSource;
 
-        return new B.ShaderMaterial('pixelartMat', scene, 'pixelart', {
+        return new B.ShaderMaterial(`${ctx.shaderName}Mat`, scene, ctx.shaderName, {
             attributes: ctx.attributes,
             uniforms: [
                 'worldViewProjection', 'world',

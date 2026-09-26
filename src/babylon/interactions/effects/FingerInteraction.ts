@@ -1,4 +1,4 @@
-import * as B from '@babylonjs/core';
+import * as B from '../../BabylonAdapter';
 import type { IInteraction, InteractionContext } from '../IInteraction';
 import { InteractionConfigs } from '../../../configs/InteractionConfigs';
 

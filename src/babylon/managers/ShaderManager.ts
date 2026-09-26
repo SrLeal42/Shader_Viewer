@@ -1,4 +1,4 @@
-import * as B from '@babylonjs/core';
+import * as B from '../BabylonAdapter';
 
 import {
     MaterialShaders, PostProcessShaders, VertexEffects,
@@ -19,9 +19,11 @@ export class ShaderManager {
 
     private depthNormalManager?: DepthNormalManager;
 
-    // Material: mutuamente exclusivo
+    // Material: mutuamente exclusivo com cache LRU Composto
     private _activeMaterialId: MaterialShaderId | null = null;
-    private materialCache = new Map<MaterialShaderId, B.ShaderMaterial>();
+    private materialCache = new Map<string, B.ShaderMaterial>();
+    private materialUsageOrder: string[] = [];
+    private readonly MAX_CACHED_MATERIALS = 8;
 
     private _activeUniforms: string[] = [];
 
@@ -32,7 +34,7 @@ export class ShaderManager {
     private activePostProcesses = new Map<PostProcessShaderId, B.PostProcess>();
     private ppUniformValues = new Map<PostProcessShaderId, Record<string, unknown>>();
 
-    // Fallback para texturas não definidas (evita GL_INVALID_OPERATION feedback loop)
+    // Fallback para texturas não definidas
     private fallbackTexture!: B.Texture;
     private fallbackCubemap!: B.RawCubeTexture;
 
@@ -76,8 +78,12 @@ export class ShaderManager {
                 // Se o material ativo usa SharedInclude.LIGHTING, injeta SH também
                 const config = MaterialShaders[this._activeMaterialId];
                 if (config.sharedIncludes?.includes(SharedInclude.LIGHTING)) {
-                    const mat = this.materialCache.get(this._activeMaterialId);
+                    const cacheKey = this.activeCacheKey;
+
+                    const mat = this.materialCache.get(cacheKey!);
+
                     if (mat) this.lightManager.injectSHUniforms(mat);
+
                 }
 
             }
@@ -96,12 +102,37 @@ export class ShaderManager {
         return this._activeVertexEffectId;
     }
 
+    private get activeCacheKey(): string | null {
+        if (!this._activeMaterialId) return null;
+        return `${this._activeMaterialId}_${this._activeVertexEffectId}`;
+    }
+
     public get activePostProcessIds(): PostProcessShaderId[] {
         return Array.from(this.activePostProcesses.keys());
     }
 
     public get activePostProcessCount(): number {
         return this.activePostProcesses.size;
+    }
+
+    // ─── Lógica de Cache LRU de Materiais ───
+
+    private markMaterialAsUsed(cacheKey: string): void {
+        this.materialUsageOrder = this.materialUsageOrder.filter(k => k !== cacheKey);
+        this.materialUsageOrder.push(cacheKey);
+    }
+
+    private evictOldestMaterial(): void {
+        const oldestKey = this.materialUsageOrder[0];
+        if (!oldestKey) return;
+
+        const cachedMat = this.materialCache.get(oldestKey);
+        if (cachedMat) {
+            cachedMat.dispose(true, true);
+        }
+
+        this.materialCache.delete(oldestKey);
+        this.materialUsageOrder.shift();
     }
 
     // ─── Material Shaders ───
@@ -115,8 +146,15 @@ export class ShaderManager {
 
         const config = MaterialShaders[shaderId];
         const flatUniforms = flattenUniforms(config.uniforms);
+        const cacheKey = `${shaderId}_${this._activeVertexEffectId}`;
 
-        if (!this.materialCache.has(shaderId)) {
+        this.markMaterialAsUsed(cacheKey);
+
+        if (!this.materialCache.has(cacheKey)) {
+
+            if (this.materialCache.size >= this.MAX_CACHED_MATERIALS) {
+                this.evictOldestMaterial();
+            }
 
             // ─── Monta o MaterialCreateContext ───
             const sharedUniforms = resolveSharedUniforms(config.sharedIncludes);
@@ -131,6 +169,7 @@ export class ShaderManager {
                 vertexSource: vertexDef.source,
                 sharedUniforms: [...sharedUniforms, ...effectUniforms],
                 attributes: vertexDef.attributes,
+                shaderName: cacheKey,
             };
 
             const material = config.create(this.scene, ctx);
@@ -140,10 +179,10 @@ export class ShaderManager {
             const effectFlatUniforms = flattenUniforms(effectConfig.uniforms);
             effectFlatUniforms.forEach(u => this.applyUniform(material, u, u.defaultValue));
 
-            this.materialCache.set(shaderId, material);
+            this.materialCache.set(cacheKey, material);
         }
 
-        const material = this.materialCache.get(shaderId)!;
+        const material = this.materialCache.get(cacheKey)!;
         mesh.material = material;
 
         const children = mesh.getChildMeshes();
@@ -247,9 +286,9 @@ export class ShaderManager {
         const effectConfig = VertexEffects[effectId];
         B.Effect.IncludesShadersStore['vertexEffect'] = effectConfig.source;
 
-        // Invalida todo o cache (o vertex source mudou)
-        this.materialCache.forEach(mat => mat.dispose());
-        this.materialCache.clear();
+        // Antigamente dávamos clear() aqui, perdendo os materiais cacheados.
+        // Agora, como usamos chave composta (cacheKey), reaplicar o material fará
+        // com que ele re-utilize o cache ou crie uma nova combinação, sem apagar os antigos.
 
         // Re-aplica o material ativo se houver
         if (this._activeMaterialId && mesh) {
@@ -268,7 +307,8 @@ export class ShaderManager {
     /** Chamado pelo SceneController quando o usuário move os sliders de luz na UI */
     public reinjectLightUniforms(): void {
         if (!this._activeMaterialId) return;
-        const mat = this.materialCache.get(this._activeMaterialId);
+        const cacheKey = this.activeCacheKey;
+        const mat = this.materialCache.get(cacheKey!);
         if (mat) {
             this.lightManager.injectLightUniforms(mat);
         }
@@ -336,7 +376,8 @@ export class ShaderManager {
             return;
         }
 
-        const mat = this.materialCache.get(this._activeMaterialId);
+        const cacheKey = this.activeCacheKey;
+        const mat = this.materialCache.get(cacheKey!);
 
         if (!mat) return;
 
@@ -363,7 +404,8 @@ export class ShaderManager {
 
         if (this._activeMaterialId) {
 
-            const mat = this.materialCache.get(this._activeMaterialId);
+            const cacheKey = this.activeCacheKey;
+            const mat = this.materialCache.get(cacheKey!);
             if (mat) {
 
                 mat.setFloat('u_time', time);
@@ -442,7 +484,8 @@ export class ShaderManager {
 
         if (!this._activeMaterialId) return;
 
-        const mat = this.materialCache.get(this._activeMaterialId);
+        const cacheKey = this.activeCacheKey;
+        const mat = this.materialCache.get(cacheKey!);
 
         if (!mat) return;
 
@@ -502,7 +545,8 @@ export class ShaderManager {
 
             // Atualiza o uniform u_screenSize imediatamente se o material estiver ativo
             if (this._activeMaterialId) {
-                const mat = this.materialCache.get(this._activeMaterialId);
+                const cacheKey = this.activeCacheKey;
+                const mat = this.materialCache.get(cacheKey!);
                 if (mat) {
                     mat.setVector2('u_screenSize', this._tempScreenSize);
                 }
@@ -539,6 +583,7 @@ export class ShaderManager {
         for (const pp of this.activePostProcesses.values()) pp.dispose();
 
         this.materialCache.clear();
+        this.materialUsageOrder = [];
 
         this.activePostProcesses.clear();
 
