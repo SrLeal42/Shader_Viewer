@@ -1,6 +1,8 @@
 import * as B from '../BabylonAdapter';
 
 import { LightConfigs, type LightModeId, type PointAnimationType } from '../../configs/LightConfigs';
+import { SkyboxEffectsConfigs } from '../../configs/SkyboxEffectsConfigs';
+import type { EventBus } from '../core/EventBus';
 
 export class LightManager {
     private scene: B.Scene;
@@ -56,7 +58,7 @@ export class LightManager {
     private _isDisposed = false;
 
 
-    constructor(scene: B.Scene) {
+    constructor(scene: B.Scene, eventBus: EventBus) {
         this.scene = scene;
 
         // Cria as luzes permanentemente na cena (Performance)
@@ -72,6 +74,49 @@ export class LightManager {
         this.startAnimationLoop();
 
         this.loadHelperModel();
+
+        // ─── Desacoplamento via EventBus ───
+        
+        eventBus.on('UI_LIGHT_MODE_CHANGED', (mode) => {
+            this.setMode(mode);
+        });
+
+        eventBus.on('UI_LIGHT_HEMI_CHANGED', (dir, color, intensity) => {
+            this.updateHemiLight(dir, color, intensity);
+        });
+
+        eventBus.on('UI_LIGHT_POINT_CHANGED', (pos, color, intensity, anim, speed, freq, showHelper) => {
+            this.updatePointLight(pos, color, intensity);
+            this.animationType = anim;
+            this.orbitSpeed = speed;
+            this.pulseFrequency = freq;
+            this.toggleHelper(showHelper);
+        });
+
+        eventBus.on('UI_SKYBOX_EFFECT_TOGGLED', (id, enabled) => {
+            if (id === 'sunFlare') {
+                const config = SkyboxEffectsConfigs.sunFlare.uniforms;
+                this.setSunFlare(
+                    enabled,
+                    config.u_sunPositionAngle as number,
+                    config.u_sunPositionHeight as number,
+                    config.u_sunColor as readonly number[],
+                    config.u_sunIntensity as number
+                );
+            } else if (id === 'lightning') {
+                const config = SkyboxEffectsConfigs.lightning.uniforms;
+                this.setLightning(
+                    enabled,
+                    config.u_lightningFrequency as number,
+                    config.u_lightningIntensity as number,
+                    config.u_lightningColor as readonly number[]
+                );
+            }
+        });
+
+        eventBus.on('CUBEMAP_CHANGED', (cubemap) => {
+            this.updateSHFromCubemap(cubemap);
+        });
     }
 
     // ─── Controle de Estado ───

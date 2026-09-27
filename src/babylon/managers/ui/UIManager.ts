@@ -1,16 +1,13 @@
 import { Pane } from 'tweakpane';
 
+import type { EventBus } from '../../core/EventBus';
+
 import type { UIConfig, UIParameter } from '../../../types/UI';
 import type { ShaderUniform } from '../../../shaders/Types';
 import type { FrustumLimits } from '../../../types/Camera';
 
-import type { ModelId } from '../../../configs/ModelConfigs';
 import type { InteractionId } from '../../../configs/InteractionConfigs';
-import type { SkyboxId } from '../../../configs/SkyboxConfigs';
-import type { SkyboxEffectId } from '../../../configs/SkyboxEffectsConfigs';
-import type { LightModeId, PointAnimationType } from '../../../configs/LightConfigs';
-import type { MaterialShaderId, PostProcessShaderId, VertexEffectId } from '../../../shaders/Registry';
-import type { WeatherPresetId } from '../../../configs/weather/WeatherRegistry';
+import type { LightModeId } from '../../../configs/LightConfigs';
 
 import { ModelSection } from './sections/ModelSection';
 import { TransformSection } from './sections/TransformSection';
@@ -26,6 +23,8 @@ export class UIManager {
     private paneRight: Pane;
     private paneLeft: Pane;
 
+    private eventBus: EventBus;
+
     private modelSection: ModelSection;
     private transformSection: TransformSection;
     private shaderSection: ShaderSection;
@@ -35,7 +34,9 @@ export class UIManager {
     private lightSection: LightSection;
     private interactionSection: InteractionSection;
 
-    constructor(tweakpaneRightContainer: HTMLElement, tweakpaneLeftContainer: HTMLElement) {
+    constructor(tweakpaneRightContainer: HTMLElement, tweakpaneLeftContainer: HTMLElement, eventBus: EventBus) {
+        this.eventBus = eventBus;
+
         this.paneRight = new Pane({ container: tweakpaneRightContainer });
         this.paneLeft = new Pane({ container: tweakpaneLeftContainer });
 
@@ -55,40 +56,41 @@ export class UIManager {
         this.transformSection = new TransformSection(rootTransform);
         this.shaderSection = new ShaderSection(rootShader);
         this.vertexEffectSection = new VertexEffectSection(rootVertexFx);
+
+
+        this.eventBus.on('FORCE_POST_PROCESS_OFF', (id) => this.forceUncheckPostProcess(id));
+
     }
 
 
     // ─── Delegações para o painel Direito ───
 
-    public setupGlobalControls(onModelSelect: (id: ModelId) => void): void {
-        this.modelSection.setup(onModelSelect);
+    public setupGlobalControls(): void {
+        this.modelSection.setup((id) => this.eventBus.emit('UI_MODEL_SELECTED', id));
     }
 
     public setupTransformControls(
         state: { pos: { x: number, y: number, z: number }, rot: { x: number, y: number, z: number }, physics: boolean },
-        onPhysicsChange: (enabled: boolean) => void,
-        onTransformChange: () => void,
         limits: FrustumLimits
     ) {
-        return this.transformSection.setup(state, onPhysicsChange, onTransformChange, limits);
+        return this.transformSection.setup(
+            state,
+            (enabled) => this.eventBus.emit('UI_PHYSICS_TOGGLED', enabled),
+            () => this.eventBus.emit('UI_TRANSFORM_CHANGED'),
+            limits
+        );
     }
 
-    public setupShaderControls(
-        onMaterialSelect: (id: MaterialShaderId) => void
-    ): void {
-        this.shaderSection.setup(onMaterialSelect);
+    public setupShaderControls(): void {
+        this.shaderSection.setup((id) => this.eventBus.emit('UI_SHADER_SELECTED', id));
     }
 
-    public setupVertexEffectControls(
-        onEffectChange: (id: VertexEffectId) => void
-    ): void {
-        this.vertexEffectSection.setup(onEffectChange);
+    public setupVertexEffectControls(): void {
+        this.vertexEffectSection.setup((id) => this.eventBus.emit('UI_VERTEX_EFFECT_SELECTED', id));
     }
 
-    public setupPostProcessControls(
-        onPostProcessToggle: (id: PostProcessShaderId, enabled: boolean) => void
-    ): void {
-        this.postProcessSection.setup(onPostProcessToggle);
+    public setupPostProcessControls(): void {
+        this.postProcessSection.setup((id, enabled) => this.eventBus.emit('UI_POST_PROCESS_TOGGLED', id, enabled));
     }
 
     public forceUncheckPostProcess(id: string): void {
@@ -146,42 +148,38 @@ export class UIManager {
 
     // ─── Delegações para o painel Esquerdo ───
 
-    public setupInteractionControls(
-        initialInteraction: InteractionId,
-        onChange: (id: InteractionId) => void
-    ): void {
-        this.interactionSection.setup(initialInteraction, onChange);
+    public setupInteractionControls(initialInteraction: InteractionId): void {
+        this.interactionSection.setup(initialInteraction, (id) => this.eventBus.emit('UI_INTERACTION_SELECTED', id));
     }
 
-    public setupSkyboxControls(
-        onSkyboxChange: (id: SkyboxId | 'color') => void,
-        onColorChange: (color: { r: number; g: number; b: number }) => void
-    ): void {
-        this.environmentSection.setupSkybox(onSkyboxChange, onColorChange);
+    public setupSkyboxControls(): void {
+        this.environmentSection.setupSkybox(
+            (id) => this.eventBus.emit('UI_SKYBOX_SELECTED', id),
+            (color) => this.eventBus.emit('UI_SKYBOX_COLOR_CHANGED', color)
+        );
     }
 
-    public setupSkyboxEffectsControls(
-        onEffectToggle: (id: SkyboxEffectId, enabled: boolean) => void,
-        registerForceOffCallback: (callback: (id: SkyboxEffectId) => void) => void
-    ): void {
-        this.environmentSection.setupEffects(onEffectToggle, registerForceOffCallback);
+    public setupSkyboxEffectsControls(): void {
+        this.environmentSection.setupEffects(
+            (id, enabled) => this.eventBus.emit('UI_SKYBOX_EFFECT_TOGGLED', id, enabled),
+            (callback) => {
+                this.eventBus.on('FORCE_SKYBOX_EFFECT_OFF', callback);
+            }
+        );
     }
 
-    public setupWeatherControls(
-        onChange: (presetId: WeatherPresetId | 'none') => void
-    ): void {
-        this.environmentSection.setupWeather(onChange);
+    public setupWeatherControls(): void {
+        this.environmentSection.setupWeather((presetId) => this.eventBus.emit('UI_WEATHER_SELECTED', presetId));
     }
 
-    public setupLightControls(
-        initialMode: LightModeId,
-        onModeChange: (mode: LightModeId) => void,
-        onHemiChange: (dir: { x: number, y: number, z: number }, color: { r: number, g: number, b: number }, intensity: number) => void,
-        onPointChange: (pos: { x: number, y: number, z: number }, color: { r: number, g: number, b: number }, intensity: number, anim: PointAnimationType, speed: number, freq: number, showHelper: boolean) => void
-    ): void {
-        this.lightSection.setup(initialMode, onModeChange, onHemiChange, onPointChange);
+    public setupLightControls(initialMode: LightModeId): void {
+        this.lightSection.setup(
+            initialMode,
+            (mode) => this.eventBus.emit('UI_LIGHT_MODE_CHANGED', mode),
+            (dir, color, intensity) => this.eventBus.emit('UI_LIGHT_HEMI_CHANGED', dir, color, intensity),
+            (pos, color, intensity, anim, speed, freq, showHelper) => this.eventBus.emit('UI_LIGHT_POINT_CHANGED', pos, color, intensity, anim, speed, freq, showHelper)
+        );
     }
-
 
     // ─── Lifecycle ───
 

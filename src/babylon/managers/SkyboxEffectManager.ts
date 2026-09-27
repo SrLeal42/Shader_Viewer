@@ -1,6 +1,7 @@
 import * as B from '../BabylonAdapter';
 
 import { type SkyboxEffectId, MAX_ACTIVE_EFFECTS, SkyboxEffectsConfigs } from '../../configs/SkyboxEffectsConfigs';
+import type { EventBus } from '../core/EventBus';
 
 export class SkyboxEffectManager {
     private material: B.ShaderMaterial;
@@ -8,11 +9,15 @@ export class SkyboxEffectManager {
     // Lista ordenada (Fila/FIFO) dos efeitos ativos
     private activeQueue: SkyboxEffectId[] = [];
 
-    // Callback para avisar a UI caso o Manager desligue um efeito automaticamente
-    public onEffectForcedOff?: (effectId: SkyboxEffectId) => void;
+    private eventBus: EventBus;
 
-    constructor(skyboxMaterial: B.ShaderMaterial) {
+    constructor(skyboxMaterial: B.ShaderMaterial, eventBus: EventBus) {
         this.material = skyboxMaterial;
+        this.eventBus = eventBus;
+
+        eventBus.on('UI_SKYBOX_EFFECT_TOGGLED', (id, enabled) => {
+            this.setEffect(id, enabled);
+        });
     }
 
     public setEffect(effect: SkyboxEffectId, enabled: boolean) {
@@ -26,7 +31,7 @@ export class SkyboxEffectManager {
                 const oldest = this.activeQueue.shift();
                 if (oldest) {
                     this.applyToShader(oldest, false);
-                    if (this.onEffectForcedOff) this.onEffectForcedOff(oldest); // Avisa a UI
+                    this.eventBus.emit('FORCE_SKYBOX_EFFECT_OFF', oldest); // Avisa a UI
                 }
             }
 
@@ -72,10 +77,7 @@ export class SkyboxEffectManager {
     }
 
     public dispose() {
-        // Limpamos a fila e desconectamos os callbacks de UI
         this.activeQueue = [];
-        this.onEffectForcedOff = undefined;
-
     }
 
 }

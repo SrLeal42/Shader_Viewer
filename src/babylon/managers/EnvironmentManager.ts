@@ -10,6 +10,8 @@ import type { FrustumLimits } from '../../types/Camera';
 import { easeInOutQuad } from '../../utils/math';
 import { ENVIRONMENT_WALLS, SKYBOX_UNIFORMS } from '../../configs/Constants';
 
+import type { EventBus } from '../core/EventBus';
+
 export class EnvironmentManager {
 
     private scene: B.Scene;
@@ -33,13 +35,33 @@ export class EnvironmentManager {
     private pendingMixCleanup: (() => void) | null = null;
 
 
-    constructor(scene: B.Scene) {
+    constructor(scene: B.Scene, eventBus: EventBus) {
         this.scene = scene;
 
         this.scene.clearColor = EnvironmentConfigs.background.color;
 
         this.initSkybox();
 
+        eventBus.on('UI_SKYBOX_COLOR_CHANGED', (color) => {
+            this.setBackgroundColor(new B.Color3(color.r, color.g, color.b));
+            eventBus.emit('CUBEMAP_CHANGED', null);
+        });
+
+        eventBus.on('UI_SKYBOX_SELECTED', async (id) => {
+            if (id === 'color') {
+                const clearColor = this.scene.clearColor;
+                this.setBackgroundColor(new B.Color3(clearColor.r, clearColor.g, clearColor.b));
+                eventBus.emit('CUBEMAP_CHANGED', null);
+                return;
+            }
+            try {
+                await this.setSkybox(id);
+                const cubemap = this.getCurrentCubemap();
+                eventBus.emit('CUBEMAP_CHANGED', cubemap);
+            } catch (err) {
+                console.error(`[EnvironmentManager] Falha ao carregar skybox '${id}':`, err);
+            }
+        });
     }
 
     // ─── Skybox / Cor ───

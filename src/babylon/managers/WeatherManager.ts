@@ -5,6 +5,7 @@ import fogFragmentSource from '../../shaders/weather/FogOverlay.fragment.glsl?ra
 import { WeatherPresets, type WeatherPresetId } from '../../configs/weather/WeatherRegistry';
 import type { ParticleLayerConfig, FogConfig, CameraEffectConfig } from '../../configs/weather/WeatherTypes';
 import { DepthNormalManager } from './DepthNormalManager';
+import type { EventBus } from '../core/EventBus';
 
 interface WeatherCacheItem {
     particleSystems: B.ParticleSystem[];
@@ -27,7 +28,7 @@ export class WeatherManager {
 
     private currentTime = 0;
 
-    constructor(scene: B.Scene, camera: B.Camera, depthNormalManager: DepthNormalManager) {
+    constructor(scene: B.Scene, camera: B.Camera, depthNormalManager: DepthNormalManager, eventBus: EventBus) {
         this.scene = scene;
         this.camera = camera;
         this.depthNormalManager = depthNormalManager;
@@ -36,6 +37,14 @@ export class WeatherManager {
         if (!B.Effect.ShadersStore['weatherFogPostProcessFragmentShader']) {
             B.Effect.ShadersStore['weatherFogPostProcessFragmentShader'] = fogFragmentSource;
         }
+
+        eventBus.on('UI_WEATHER_SELECTED', (presetId) => {
+            if (presetId === 'none') {
+                this.disable();
+            } else {
+                this.enable(presetId);
+            }
+        });
     }
 
     public get activePresetId(): WeatherPresetId | null {

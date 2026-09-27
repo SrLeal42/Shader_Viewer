@@ -4,6 +4,7 @@ import type { IInteraction, InteractionContext } from '../interactions/IInteract
 import { AvailableInteractions } from '../interactions/InteractionRegistry';
 
 import type { ModelEntity } from '../entities/ModelEntity';
+import type { EventBus } from '../core/EventBus';
 
 export class InteractionManager {
     private scene: B.Scene;
@@ -16,7 +17,7 @@ export class InteractionManager {
     private renderObserver: B.Observer<B.Scene> | null = null;
 
 
-    constructor(scene: B.Scene, camera: B.Camera, getEntity: () => ModelEntity | null) {
+    constructor(scene: B.Scene, camera: B.Camera, getEntity: () => ModelEntity | null, eventBus: EventBus) {
         this.scene = scene;
 
         // Criamos uma função getContext para sempre pegar a entidade mais atualizada
@@ -25,6 +26,8 @@ export class InteractionManager {
             camera,
             currentEntity: getEntity()
         });
+
+        eventBus.on('UI_INTERACTION_SELECTED', (id) => this.setActive(id));
 
         // Ouve os cliques GLOBAIS UMA ÚNICA VEZ e repassa para a interação ativa
         this.pointerObserver = this.scene.onPointerObservable.add((pointerInfo) => {

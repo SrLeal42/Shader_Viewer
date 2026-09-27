@@ -12,11 +12,10 @@ import { LightManager } from './managers/LightManagers';
 import { WeatherManager } from './managers/WeatherManager';
 import { DepthNormalManager } from './managers/DepthNormalManager';
 
+import { EventBus } from './core/EventBus';
 
 import { ModelConfigs, type ModelConfig, type ModelId } from '../configs/ModelConfigs';
 import { PhysicsConfigs } from '../configs/PhysicsConfigs';
-import type { SkyboxId } from '../configs/SkyboxConfigs';
-import { SkyboxEffectsConfigs } from '../configs/SkyboxEffectsConfigs';
 import { ScenePresets, ACTIVE_PRESET } from '../configs/ScenePresets';
 
 import type { ModelEntity } from './entities/ModelEntity';
@@ -34,6 +33,8 @@ import type { ValueUniform } from '../shaders/Types';
 export class SceneController {
     private engine: B.Engine;
     public scene: B.Scene;
+
+    public eventBus: EventBus;
 
     public cameraManager: CameraManager;
     private uiManager: UIManager;
@@ -72,7 +73,7 @@ export class SceneController {
 
     private _tempEuler = new B.Vector3();
 
-    // ─── Construtor privado (use SceneController.create) ───
+    // ─── Construtor ───
 
     private constructor(
         canvas: HTMLCanvasElement,
@@ -86,116 +87,55 @@ export class SceneController {
         this.scene = new B.Scene(this.engine);
 
 
+        this.eventBus = new EventBus();
+
         this.cameraManager = new CameraManager(this.scene, canvas);
         const limits = this.cameraManager.calculateFrustumLimits();
-        this.uiManager = new UIManager(tweakpaneRightContainer, tweakpaneLeftContainer);
+        this.uiManager = new UIManager(tweakpaneRightContainer, tweakpaneLeftContainer, this.eventBus);
         this.physicsManager = new PhysicsManager(this.scene);
         this.modelManager = new ModelManager(this.scene);
-        this.environmentManager = new EnvironmentManager(this.scene);
-        this.skyboxEffectManager = new SkyboxEffectManager(this.environmentManager.activeSkyboxMaterial);
-        this.lightManager = new LightManager(this.scene);
+        this.environmentManager = new EnvironmentManager(this.scene, this.eventBus);
+        this.skyboxEffectManager = new SkyboxEffectManager(this.environmentManager.activeSkyboxMaterial, this.eventBus);
+        this.lightManager = new LightManager(this.scene, this.eventBus);
         this.depthNormalManager = new DepthNormalManager(this.scene);
-        this.weatherManager = new WeatherManager(this.scene, this.cameraManager.camera, this.depthNormalManager);
+        this.weatherManager = new WeatherManager(this.scene, this.cameraManager.camera, this.depthNormalManager, this.eventBus);
         this.shaderManager = new ShaderManager(this.scene, this.cameraManager.camera, this.lightManager, this.depthNormalManager);
         this.interactionManager = new InteractionManager(
             this.scene,
             this.cameraManager.camera,
-            () => this.modelManager.currentEntity
+            () => this.modelManager.currentEntity,
+            this.eventBus
         );
         this.interactionManager.setActive('finger');
 
-        this.uiManager.setupGlobalControls((id) => {
-            this.switchModel(id);
-        });
+        // ─── Inicialização da UI ───
+        this.uiManager.setupGlobalControls();
+        this.uiManager.setupShaderControls();
+        this.uiManager.setupVertexEffectControls();
+        this.uiManager.setupInteractionControls('finger');
+        this.uiManager.setupSkyboxControls();
+        this.uiManager.setupSkyboxEffectsControls();
 
-        this.uiManager.setupShaderControls(
-            (shaderId) => this.switchMaterialShader(shaderId)
-        );
-
-        this.uiManager.setupVertexEffectControls(
-            (effectId) => this.switchVertexEffect(effectId)
-        );
-
-        this.uiManager.setupInteractionControls('finger', (id) => {
-            this.interactionManager.setActive(id);
-        });
-
-        this.uiManager.setupSkyboxControls(
-            (id) => this.switchSkybox(id),
-            (color) => this.environmentManager.setBackgroundColor(
-                new B.Color3(color.r, color.g, color.b)
-            )
-        );
-
-        this.uiManager.setupSkyboxEffectsControls(
-            (id, enabled) => {
-                this.skyboxEffectManager.setEffect(id, enabled);
-
-                // Se for a estrela, notifica o LightManager para aplicar nos modelos
-                if (id === 'sunFlare') {
-                    const config = SkyboxEffectsConfigs.sunFlare.uniforms;
-                    this.lightManager.setSunFlare(
-                        enabled,
-                        config.u_sunPositionAngle as number,
-                        config.u_sunPositionHeight as number,
-                        config.u_sunColor as readonly number[],
-                        config.u_sunIntensity as number
-                    );
-                    // Força o ShaderManager a atualizar os materiais
-                    this.shaderManager.reinjectLightUniforms();
-                } else if (id === 'lightning') {
-                    const config = SkyboxEffectsConfigs.lightning.uniforms;
-                    this.lightManager.setLightning(
-                        enabled,
-                        config.u_lightningFrequency as number,
-                        config.u_lightningIntensity as number,
-                        config.u_lightningColor as readonly number[]
-                    );
-                    this.shaderManager.reinjectLightUniforms();
-                }
-            },
-            (callback) => { this.skyboxEffectManager.onEffectForcedOff = callback; }
-        );
-
-        this.uiManager.setupWeatherControls((presetId) => {
-            if (presetId === 'none') {
-                this.weatherManager.disable();
-            } else {
-                this.weatherManager.enable(presetId);
-            }
-        });
-
-        this.uiManager.setupLightControls(
-            this.lightManager.currentMode,
-            (mode) => {
-                this.lightManager.setMode(mode);
-                this.shaderManager.reinjectLightUniforms();
-            },
-            (dir, color, intensity) => {
-                this.lightManager.updateHemiLight(dir, color, intensity);
-                this.shaderManager.reinjectLightUniforms();
-            },
-            (pos, color, intensity, anim, speed, freq, showHelper) => {
-                this.lightManager.updatePointLight(pos, color, intensity);
-                this.lightManager.animationType = anim;
-                this.lightManager.orbitSpeed = speed;
-                this.lightManager.pulseFrequency = freq;
-                this.lightManager.toggleHelper(showHelper);
-
-                this.shaderManager.reinjectLightUniforms();
-            }
-        );
-
-        this.uiManager.setupPostProcessControls(
-            (shaderId, enabled) => this.togglePostProcess(shaderId, enabled)
-        );
+        this.uiManager.setupWeatherControls();
+        this.uiManager.setupLightControls(this.lightManager.currentMode);
+        this.uiManager.setupPostProcessControls();
 
         this.transformUI = this.uiManager.setupTransformControls(
             this.transformState,
-            this.handlePhysicsChange,
-            this.handleTransformChange,
             limits
         );
+
+        // ─── Conexão Provisória do SceneController com o EventBus ───
+
+        this.eventBus.on('UI_MODEL_SELECTED', (id) => this.switchModel(id));
+        this.eventBus.on('UI_SHADER_SELECTED', (id) => this.switchMaterialShader(id));
+        this.eventBus.on('UI_VERTEX_EFFECT_SELECTED', (id) => this.switchVertexEffect(id));
+        this.eventBus.on('UI_INTERACTION_SELECTED', (id) => this.interactionManager.setActive(id));
+
+        this.eventBus.on('UI_POST_PROCESS_TOGGLED', (id, enabled) => this.togglePostProcess(id, enabled));
+
+        this.eventBus.on('UI_PHYSICS_TOGGLED', (enabled) => this.handlePhysicsChange(enabled));
+        this.eventBus.on('UI_TRANSFORM_CHANGED', () => this.handleTransformChange());
 
     }
 
@@ -252,7 +192,7 @@ export class SceneController {
 
         }
 
-        await controller.switchSkybox(preset.skybox);
+        controller.eventBus.emit('UI_SKYBOX_SELECTED', preset.skybox);
 
         // Aplica o Shader e seus Parâmetros
         if (preset.materialParams) {
@@ -617,34 +557,6 @@ export class SceneController {
     }
 
 
-    // ─── Skybox ───
-
-    private async switchSkybox(id: SkyboxId | 'color'): Promise<void> {
-
-        if (id === 'color') {
-
-            const clearColor = this.scene.clearColor;
-
-            this.environmentManager.setBackgroundColor(
-                new B.Color3(clearColor.r, clearColor.g, clearColor.b)
-            );
-
-            this.lightManager.updateSHFromCubemap(null);
-
-            return;
-        }
-
-        try {
-            await this.environmentManager.setSkybox(id);
-            const cubemap = this.environmentManager.getCurrentCubemap();
-            this.lightManager.updateSHFromCubemap(cubemap);
-        } catch (err) {
-            console.error(`[SceneController] Falha ao carregar skybox '${id}':`, err);
-        }
-
-    }
-
-
     // ─── Lifecycle ───
 
     private onResize = () => {
@@ -661,8 +573,6 @@ export class SceneController {
 
             this.transformUI = this.uiManager.setupTransformControls(
                 this.transformState,
-                this.handlePhysicsChange,
-                this.handleTransformChange,
                 limits
             );
 
