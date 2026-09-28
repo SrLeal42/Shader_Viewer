@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { SceneController } from '../babylon/SceneController';
+import { SceneController } from '../babylon/controllers/SceneController';
 import { CustomCursor } from './ui/CustomCursor';
 
 import styles from './Canvas3D.module.css';
