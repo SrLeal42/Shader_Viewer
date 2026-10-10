@@ -8,7 +8,7 @@ import {
 import { registerSharedIncludesInBabylon, resolveSharedUniforms, resolveBaseVertex, SharedInclude } from '../../shaders/shared/SharedIncludes';
 import { flattenUniforms, type ValueUniform, type MaterialApplyContext, type MaterialCreateContext } from '../../shaders/Types';
 
-import type { LightManager } from './LightManagers';
+import type { LightManager } from './LightManager';
 import type { DepthNormalManager } from './DepthNormalManager';
 
 export class ShaderManager {

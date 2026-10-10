@@ -13,7 +13,7 @@ import { ShaderManager } from '../managers/ShaderManager';
 import { EnvironmentManager } from '../managers/EnvironmentManager';
 import { SkyboxEffectManager } from '../managers/SkyboxEffectManager';
 import { InteractionManager } from '../managers/InteractionManager';
-import { LightManager } from '../managers/LightManagers';
+import { LightManager } from '../managers/LightManager';
 import { WeatherManager } from '../managers/WeatherManager';
 import { DepthNormalManager } from '../managers/DepthNormalManager';
 

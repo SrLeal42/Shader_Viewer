@@ -76,7 +76,7 @@ export class LightManager {
         this.loadHelperModel();
 
         // ─── Desacoplamento via EventBus ───
-        
+
         eventBus.on('UI_LIGHT_MODE_CHANGED', (mode) => {
             this.setMode(mode);
         });
@@ -118,6 +118,9 @@ export class LightManager {
             this.updateSHFromCubemap(cubemap);
         });
     }
+
+
+    public get ShReady(): boolean { return this.shReady }
 
     // ─── Controle de Estado ───
 
