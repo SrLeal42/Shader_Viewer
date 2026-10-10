@@ -41,7 +41,7 @@ export class EventBus {
     // Dicionário guardando quem quer ouvir cada evento
     private listeners: { [K in keyof AppEvents]?: Array<AppEvents[K]> } = {};
 
-    // Função para "Ligar o rádio" (Se inscrever)
+    // Função para se inscrever
     public on<K extends keyof AppEvents>(event: K, listener: AppEvents[K]): void {
         if (!this.listeners[event]) {
             this.listeners[event] = [];
@@ -49,15 +49,15 @@ export class EventBus {
         this.listeners[event]!.push(listener);
     }
 
-    // Função para "Gritar no megafone" (Emitir)
-    // O TypeScript garante que 'args' seja exatamente o que está no contrato!
+    // Função para emitir
+    // O TypeScript garante que 'args' seja exatamente o que está no contrato
     public emit<K extends keyof AppEvents>(event: K, ...args: Parameters<AppEvents[K]>): void {
         const eventListeners = this.listeners[event];
         if (eventListeners) {
             for (const listener of eventListeners) {
-                // Chama quem estava ouvindo
-                (listener as (...args: any[]) => void)(...args);
+                (listener as (...args: Parameters<AppEvents[K]>) => void)(...args);
             }
         }
     }
+
 }

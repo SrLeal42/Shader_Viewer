@@ -1,4 +1,5 @@
 import type { Pane, FolderApi } from 'tweakpane';
+import type { BindingApi } from '@tweakpane/core';
 
 import { SkyboxConfigs, type SkyboxId } from '../../../../configs/SkyboxConfigs';
 import { SkyboxEffectsConfigs, MAX_ACTIVE_EFFECTS, type SkyboxEffectId } from '../../../../configs/SkyboxEffectsConfigs';
@@ -77,7 +78,7 @@ export class EnvironmentSection {
         const folder = this.pane.addFolder({ title: `Efeitos Ambiente MAX(${MAX_ACTIVE_EFFECTS})` });
 
         const params: Record<string, boolean> = {};
-        const bindings: Record<string, any> = {};
+        const bindings: Record<string, BindingApi> = {};
 
         // Varre o arquivo de Configs que criamos e cria um switch para cada efeito
         for (const [id, config] of Object.entries(SkyboxEffectsConfigs)) {

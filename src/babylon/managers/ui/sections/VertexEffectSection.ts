@@ -1,4 +1,5 @@
 import type { FolderApi } from 'tweakpane';
+import type { BindingApi } from '@tweakpane/core';
 
 import { flattenUniforms, type ShaderUniform, type ValueUniform } from '../../../../shaders/Types';
 import { VertexEffects, type VertexEffectId } from '../../../../shaders/Registry';
@@ -53,7 +54,7 @@ export class VertexEffectSection {
         targetProxy: Record<string, unknown>,
         onChange: (uniform: ValueUniform, value: unknown) => void,
         isRoot: boolean = true,
-        allBindings: any[] = []
+        allBindings: BindingApi[] = []
     ): void {
 
         uniforms.forEach((u: ShaderUniform) => {
@@ -68,7 +69,7 @@ export class VertexEffectSection {
                 targetProxy[u.uniform] = typeof u.defaultValue === 'object' ? { ...u.defaultValue } : u.defaultValue;
             }
 
-            const bindingOptions: any = { label: u.label };
+            const bindingOptions: Record<string, unknown> = { label: u.label };
             if (u.type === 'color') {
                 bindingOptions.color = { type: 'float' };
             } else if (u.type === 'float') {

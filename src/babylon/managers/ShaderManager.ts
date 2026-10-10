@@ -372,7 +372,7 @@ export class ShaderManager {
         if (!this._activeMaterialId) return;
 
         if (uniform.targetPostProcess) {
-            this.setPostProcessUniform(uniform.targetPostProcess as any, uniform, value);
+            this.setPostProcessUniform(uniform.targetPostProcess as PostProcessShaderId, uniform, value);
             return;
         }
 

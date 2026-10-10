@@ -41,7 +41,7 @@ export const StandardConfig: MaterialShaderConfig = {
         );
 
         // Passamos a posição da câmera sempre que a cena for renderizada
-        material.onBindObservable.add((_) => {
+        material.onBindObservable.add(() => {
             if (scene.activeCamera) {
                 material.setVector3('u_cameraPos', scene.activeCamera.globalPosition);
             }

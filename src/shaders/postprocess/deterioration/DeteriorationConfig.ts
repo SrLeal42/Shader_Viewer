@@ -9,7 +9,7 @@ export const DeteriorationConfig: PostProcessShaderConfig = {
     title: 'Parâmetros de Deterioração',
     description: 'Efeito combinado de envelhecimento: noise, desaturação, vinheta, aberração cromática e scanlines.',
 
-    create: (scene: B.Scene, camera: B.Camera, _getUniforms: () => Record<string, unknown>) => {
+    create: (scene: B.Scene, camera: B.Camera) => {
         B.Effect.ShadersStore['deteriorationFragmentShader'] = fragmentSource;
 
         const pp = new B.PostProcess('deterioration', 'deterioration', {

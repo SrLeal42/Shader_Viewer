@@ -15,7 +15,6 @@ export const ToonEdgeConfig: PostProcessShaderConfig = {
         camera: B.Camera,
         _getUniforms: () => Record<string, unknown>,
         customDepthTexture?: B.RenderTargetTexture,
-        _customNormalTexture?: B.RenderTargetTexture
     ) => {
         B.Effect.ShadersStore['toonEdgeFragmentShader'] = fragmentSource;
         const pp = new B.PostProcess('toonEdgeProcess', 'toonEdge', {

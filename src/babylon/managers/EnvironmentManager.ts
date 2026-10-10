@@ -120,17 +120,19 @@ export class EnvironmentManager {
             envTexture = B.CubeTexture.CreateFromPrefilteredData(config.path!, this.scene);
 
             await new Promise<void>((resolve, reject) => {
+                let observer: B.Observer<B.CubeTexture> | null = null;
 
-                let timeoutId: number;
-                const observer = envTexture!.onLoadObservable.addOnce(() => {
+                const timeoutId = setTimeout(() => {
+                    if (observer) {
+                        envTexture!.onLoadObservable.remove(observer);
+                    }
+                    reject(new Error(`Timeout ao carregar skybox: ${config.path}`));
+                }, 10000);
+
+                observer = envTexture!.onLoadObservable.addOnce(() => {
                     clearTimeout(timeoutId);
                     resolve();
                 });
-
-                timeoutId = setTimeout(() => {
-                    envTexture!.onLoadObservable.remove(observer);
-                    reject(new Error(`Timeout ao carregar skybox: ${config.path}`));
-                }, 10000);
 
             });
 
@@ -253,7 +255,7 @@ export class EnvironmentManager {
         this.visibilityObserver = this.scene.onBeforeRenderObservable.add(() => {
             const elapsed = performance.now() - startTime;
 
-            let progress = Math.min(elapsed / durationMs, 1.0);
+            const progress = Math.min(elapsed / durationMs, 1.0);
 
             // Aplica easing para consistência com o crossfade
             const eased = easeInOutQuad(progress);
@@ -293,12 +295,9 @@ export class EnvironmentManager {
         this.mixObserver = this.scene.onBeforeRenderObservable.add(() => {
 
             const elapsed = performance.now() - startTime;
-            let progress = elapsed / durationMs;
+            const progress = elapsed / durationMs;
 
             if (progress >= 1.0) {
-
-                progress = 1.0;
-
                 this.scene.onBeforeRenderObservable.remove(this.mixObserver!);
                 this.mixObserver = null;
                 this.skyboxMaterial.setFloat(SKYBOX_UNIFORMS.MIX, 1.0);

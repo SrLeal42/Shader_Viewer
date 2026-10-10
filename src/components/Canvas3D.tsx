@@ -20,14 +20,12 @@ export function Canvas3D() {
     useEffect(() => {
         // Se a UI está visível, o modo cinemático está desligado e não escondemos o cursor
         if (isUIVisible) {
-            setIsIdle(false);
             return;
         }
 
         let timeoutId: number;
 
         const handleActivity = () => {
-
             setIsIdle(false);
 
             clearTimeout(timeoutId);
@@ -35,7 +33,6 @@ export function Canvas3D() {
             timeoutId = window.setTimeout(() => {
                 setIsIdle(true);
             }, INACTIVE_TIME);
-
         };
 
         // Escuta qualquer atividade humana na janela

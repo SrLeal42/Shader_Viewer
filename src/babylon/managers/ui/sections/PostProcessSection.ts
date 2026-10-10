@@ -1,4 +1,5 @@
 import type { Pane, FolderApi } from 'tweakpane';
+import type { BindingApi } from '@tweakpane/core';
 
 import { flattenUniforms, type ShaderUniform, type ValueUniform } from '../../../../shaders/Types';
 
@@ -16,7 +17,7 @@ export class PostProcessSection {
     private rootFolder!: FolderApi;
 
     private ppFolders = new Map<string, FolderApi>();
-    private ppBindings = new Map<string, { params: any, binding: any }>();
+    private ppBindings = new Map<string, { params: Record<string, boolean>; binding: BindingApi }>();
 
     constructor(pane: Pane) {
         this.pane = pane;
@@ -78,7 +79,7 @@ export class PostProcessSection {
         targetProxy: Record<string, unknown>,
         onChange: (uniform: ValueUniform, value: unknown) => void,
         isRoot: boolean = true,
-        allBindings: any[] = []
+        allBindings: BindingApi[] = []
     ): void {
 
         uniforms.forEach((u: ShaderUniform) => {
@@ -93,7 +94,7 @@ export class PostProcessSection {
                 targetProxy[u.uniform] = typeof u.defaultValue === 'object' ? { ...u.defaultValue } : u.defaultValue;
             }
 
-            const bindingOptions: any = { label: u.label };
+            const bindingOptions: Record<string, unknown> = { label: u.label };
             if (u.type === 'color') {
                 bindingOptions.color = { type: 'float' };
             } else if (u.type === 'float') {

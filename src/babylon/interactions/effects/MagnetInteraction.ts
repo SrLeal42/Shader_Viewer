@@ -11,7 +11,7 @@ export class MagnetInteraction implements IInteraction {
 
     private baseForce = 1.0;
 
-    public onPointerEvent(pointerInfo: B.PointerInfo, _context: InteractionContext): void {
+    public onPointerEvent(pointerInfo: B.PointerInfo): void {
         const type = pointerInfo.type;
         const button = pointerInfo.event.button;
 

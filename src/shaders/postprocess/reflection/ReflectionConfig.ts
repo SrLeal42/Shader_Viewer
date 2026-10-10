@@ -7,7 +7,7 @@ export const ReflectionConfig: PostProcessShaderConfig = {
     title: 'Parâmetros do Espelho',
     description: 'Cria um reflexo distorcido na parte inferior da tela.',
     category: 'postprocess',
-    create: (scene: B.Scene, camera: B.Camera, _getUniforms: () => Record<string, unknown>) => {
+    create: (scene: B.Scene, camera: B.Camera) => {
         B.Effect.ShadersStore['reflectionFragmentShader'] = fragmentSource;
 
         const pp = new B.PostProcess(
