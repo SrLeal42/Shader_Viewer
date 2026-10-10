@@ -16,10 +16,14 @@ export function Canvas3D() {
     const [isUIVisible, setIsUIVisible] = useState(true);
     const [isIdle, setIsIdle] = useState(false);
 
+    // O cursor e o botão só devem sumir se a UI estiver oculta E o usuário inativo
+    const isCinematicHidden = !isUIVisible && isIdle;
+
     // --- Lógica do Timer de Inatividade ---
     useEffect(() => {
-        // Se a UI está visível, o modo cinemático está desligado e não escondemos o cursor
+
         if (isUIVisible) {
+            setIsIdle(false);
             return;
         }
 
@@ -39,9 +43,7 @@ export function Canvas3D() {
         window.addEventListener('pointermove', handleActivity);
         window.addEventListener('pointerdown', handleActivity);
         window.addEventListener('keydown', handleActivity);
-
-        handleActivity(); // Inicializa o timer
-
+        handleActivity();
         return () => {
             clearTimeout(timeoutId);
             window.removeEventListener('pointermove', handleActivity);
@@ -54,10 +56,16 @@ export function Canvas3D() {
     useEffect(() => {
 
         const handleKeyDown = (e: KeyboardEvent) => {
-            // Alterna a UI apenas se apertar H sem Control, Alt ou Shift
+
             if (e.key.toLowerCase() === 'h' && !e.ctrlKey && !e.altKey && !e.metaKey) {
-                setIsUIVisible(prev => !prev);
+
+                setIsUIVisible(prev => {
+                    const next = !prev;
+                    if (next) setIsIdle(false);
+                    return next;
+                });
             }
+
         };
         window.addEventListener('keydown', handleKeyDown);
 
@@ -102,11 +110,8 @@ export function Canvas3D() {
     }, []);
 
     return (
-
-        <div className={`${styles.container} ${isIdle ? styles.idle : ''}`}>
-
-            <CustomCursor isHidden={isIdle} />
-
+        <div className={`${styles.container} ${isCinematicHidden ? styles.idle : ''}`}>
+            <CustomCursor isHidden={isCinematicHidden} />
             <canvas ref={canvasRef}
                 className={styles.canvas}
                 id="renderCanvas" />
@@ -119,8 +124,14 @@ export function Canvas3D() {
 
             {/* Botão de Toggle */}
             <button
-                className={`${styles.toggleUIButton} ${isIdle ? styles.hiddenButton : ''}`}
-                onClick={() => setIsUIVisible(!isUIVisible)}
+                className={`${styles.toggleUIButton} ${isCinematicHidden ? styles.hiddenButton : ''}`}
+                onClick={() => {
+                    setIsUIVisible(prev => {
+                        const next = !prev;
+                        if (next) setIsIdle(false);
+                        return next;
+                    });
+                }}
                 title={isUIVisible ? "Ocultar Interface (H)" : "Mostrar Interface (H)"}
             >
                 {isUIVisible ? (
