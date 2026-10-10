@@ -60,4 +60,20 @@ export class EventBus {
         }
     }
 
+    // Função para cancelar inscrição de um ouvinte
+    public off<K extends keyof AppEvents>(event: K, listener: AppEvents[K]): void {
+        const eventListeners = this.listeners[event];
+        if (eventListeners) {
+            const index = eventListeners.indexOf(listener);
+            if (index !== -1) {
+                eventListeners.splice(index, 1);
+            }
+        }
+    }
+
+    // Limpa todos os ouvintes registrados (previne memory leaks no dispose)
+    public clear(): void {
+        this.listeners = {};
+    }
+
 }

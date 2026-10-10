@@ -112,14 +112,6 @@ export class SceneController {
 
         this.modelController.setupTransformUI(limits);
 
-        // ─── EventBus: Orquestração entre Controllers ───
-        this.eventBus.on('UI_MODEL_SELECTED', async (id) => {
-            const entity = await this.modelController.switchModel(id);
-            if (entity) {
-                this.shaderController.reapplyToEntity(entity);
-            }
-        });
-
     }
 
 
@@ -174,11 +166,6 @@ export class SceneController {
             controller.shaderController.applyPresetPostProcesses(preset.postProcesses);
         }
 
-        if (preset.skyboxEffects) {
-            preset.skyboxEffects.forEach(effectId => {
-                controller.skyboxEffectManager.setEffect(effectId, true);
-            });
-        }
 
         if (preset.skyboxEffects) {
             preset.skyboxEffects.forEach(effectId => {
@@ -243,6 +230,8 @@ export class SceneController {
     public dispose() {
 
         if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
+
+        this.eventBus.clear();
 
         this.uiManager.dispose();
         this.modelController.dispose();

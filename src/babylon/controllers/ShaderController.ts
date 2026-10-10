@@ -51,6 +51,10 @@ export class ShaderController {
             this.togglePostProcess(id, enabled);
         });
 
+        eventBus.on('MODEL_LOADED', (entity) => {
+            this.reapplyToEntity(entity);
+        });
+
     }
 
 

@@ -18,6 +18,8 @@ export class ModelController {
     private depthNormalManager: DepthNormalManager;
     private uiManager: UIManager;
 
+    private eventBus: EventBus;
+
     // ─── Estado de Transformação ───
 
     private transformState = {
@@ -43,9 +45,14 @@ export class ModelController {
         this.physicsManager = physicsManager;
         this.depthNormalManager = depthNormalManager;
         this.uiManager = uiManager;
+        this.eventBus = eventBus;
 
         eventBus.on('UI_PHYSICS_TOGGLED', (enabled) => this.handlePhysicsChange(enabled));
         eventBus.on('UI_TRANSFORM_CHANGED', () => this.handleTransformChange());
+        eventBus.on('UI_MODEL_SELECTED', async (id) => {
+            await this.switchModel(id);
+        });
+
     }
 
 
@@ -161,6 +168,8 @@ export class ModelController {
 
         this.applyInitialModelTransform(entity, config, prevState.position, prevState.rotationQuat);
         this.transferPhysicsState(entity, prevState.linVel, prevState.angVel);
+
+        this.eventBus.emit('MODEL_LOADED', entity);
 
         return entity;
     }
