@@ -63,6 +63,23 @@ export class UIManager {
     }
 
 
+    /** Inicializa todos os controles estáticos de ambos os painéis de forma consolidada */
+    public setupAllPanels(options: {
+        initialInteraction?: InteractionId;
+        initialLightMode: LightModeId;
+    }): void {
+        this.setupGlobalControls();
+        this.setupShaderControls();
+        this.setupVertexEffectControls();
+        this.setupInteractionControls(options.initialInteraction ?? 'finger');
+        this.setupSkyboxControls();
+        this.setupSkyboxEffectsControls();
+        this.setupWeatherControls();
+        this.setupLightControls(options.initialLightMode);
+        this.setupPostProcessControls();
+    }
+
+
     // ─── Delegações para o painel Direito ───
 
     public setupGlobalControls(): void {

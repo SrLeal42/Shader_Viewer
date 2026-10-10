@@ -100,15 +100,10 @@ export class SceneController {
         this.interactionManager.setActive('finger');
 
         // ─── Inicialização da UI ───
-        this.uiManager.setupGlobalControls();
-        this.uiManager.setupShaderControls();
-        this.uiManager.setupVertexEffectControls();
-        this.uiManager.setupInteractionControls('finger');
-        this.uiManager.setupSkyboxControls();
-        this.uiManager.setupSkyboxEffectsControls();
-        this.uiManager.setupWeatherControls();
-        this.uiManager.setupLightControls(this.lightManager.currentMode);
-        this.uiManager.setupPostProcessControls();
+        this.uiManager.setupAllPanels({
+            initialInteraction: 'finger',
+            initialLightMode: this.lightManager.currentMode
+        });
 
         this.modelController.setupTransformUI(limits);
 
