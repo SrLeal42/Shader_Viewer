@@ -33,72 +33,10 @@ uniform float u_enableFireworks;
 uniform float u_enableRainbow;
 uniform float u_enableSunFlare;
 
-// ─── Parâmetros dos Efeitos (Injetados via Config) ───
-
-// Warp
-uniform float u_warpSpeed;
-uniform float u_warpIntensity;
-
-// Meteoros
-uniform float u_meteorSpeedBase;
-uniform float u_meteorDensity;
-uniform float u_meteorAngle;
-
-// Aurora
-uniform float u_auroraSpeed;
-uniform float u_auroraIntensity;
-uniform vec3 u_auroraColor;
-uniform vec3 u_auroraColorTop;
-uniform float u_auroraThreshold;
-
-// Buraco Negro
-uniform float u_bhMass;
-uniform float u_bhRadius;
-
-// Nuvens
-uniform float u_cloudSpeed;
-uniform float u_cloudLateralSpeed;
-uniform float u_cloudDensity;
-uniform vec3 u_cloudColor;
-uniform float u_cloudHeight;
-
-// Relâmpagos
-uniform float u_lightningFrequency;
-uniform float u_lightningIntensity;
-uniform vec3 u_lightningColor;
-uniform float u_lightningThickness;
-uniform float u_lightningCloudDensity;
-
-// Fogos de Artifício
-uniform float u_fireworkFrequency;
-uniform float u_fireworkIntensity;
-uniform float u_fireworkSpeed;
-uniform float u_fireworkWobble;
-
-// Arco-Íris
-uniform float u_rainbowSpeed;
-uniform float u_rainbowIntensity;
-uniform float u_rainbowWidth;
-uniform float u_rainbowRadius;
-
-// Sun Flare (Estrela)
-uniform float u_sunSize;
-uniform float u_sunIntensity;
-uniform float u_sunSpeed;
-uniform vec3 u_sunColor;
-uniform float u_sunRays;
-uniform float u_sunProminenceScale;
-uniform float u_sunProminenceFreq;
-uniform float u_sunPositionAngle;
-uniform float u_sunPositionHeight;
-
-
-
 // ─── Constantes ───
 const float MAX_LOD = 7.0;
 
 // ─── Funções Utilitárias (Rotação) ───
-
 vec3 rotateY(vec3 v, float angle) {
     float s = sin(angle);
     float c = cos(angle);

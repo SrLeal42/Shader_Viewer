@@ -1,5 +1,7 @@
 import * as B from '../../babylon/BabylonAdapter';
 
+import { SkyboxEffectsConfigs } from '../../configs/SkyboxEffectsConfigs';
+
 import headerSource from './SkyboxFade.header.glsl?raw';
 import mainSource from './SkyboxFade.fragment.glsl?raw';
 import vertexSource from './SkyboxFade.vertex.glsl?raw';
@@ -21,10 +23,34 @@ import sunflareSource from './effects/sunflare.glsl?raw';
 
 import { SKYBOX_UNIFORMS } from '../../configs/Constants';
 
+
+function formatGlslNumber(n: number): string {
+    const s = n.toString();
+    return s.includes('.') || s.includes('e') ? s : `${s}.0`;
+}
+
+function generateSkyboxDefines(): string {
+    const lines: string[] = ['// ─── Constantes Artísticas Injetadas via TypeScript ───'];
+    for (const config of Object.values(SkyboxEffectsConfigs)) {
+        if (!config.uniforms) continue;
+        for (const [key, val] of Object.entries(config.uniforms)) {
+            if (typeof val === 'number') {
+                lines.push(`#define ${key} ${formatGlslNumber(val)}`);
+            } else if (Array.isArray(val) && val.length === 3) {
+                lines.push(`#define ${key} vec3(${val.map(formatGlslNumber).join(', ')})`);
+            }
+        }
+    }
+    return lines.join('\n');
+}
+
+
+
 // ─── Montagem do Fragment Shader via Concatenação ───
 const fragmentSource = [
     '#version 300 es',
     'precision highp float;',
+    generateSkyboxDefines(),
     headerSource,
     hashSource,
     skyboxNoiseSource,
@@ -59,39 +85,19 @@ export function createSkyboxFadeMaterial(name: string, scene: B.Scene): B.Shader
                 SKYBOX_UNIFORMS.VISIBILITY, SKYBOX_UNIFORMS.BG_COLOR, SKYBOX_UNIFORMS.TONEMAP_STRENGTH,
                 SKYBOX_UNIFORMS.BLUR_1, SKYBOX_UNIFORMS.BLUR_2, SKYBOX_UNIFORMS.EXPOSURE, SKYBOX_UNIFORMS.SATURATION,
                 SKYBOX_UNIFORMS.TIME,
-                // Flags
+                // Flags de Ativação
                 SKYBOX_UNIFORMS.ENABLE_WARP, SKYBOX_UNIFORMS.ENABLE_METEORS,
                 SKYBOX_UNIFORMS.ENABLE_AURORA, SKYBOX_UNIFORMS.ENABLE_BLACKHOLE,
                 SKYBOX_UNIFORMS.ENABLE_CLOUDS, SKYBOX_UNIFORMS.ENABLE_LIGHTNING,
-                SKYBOX_UNIFORMS.ENABLE_FIREWORKS,
-                // Parâmetros
-                SKYBOX_UNIFORMS.WARP_SPEED, SKYBOX_UNIFORMS.WARP_INTENSITY,
-                SKYBOX_UNIFORMS.METEOR_SPEED_BASE, SKYBOX_UNIFORMS.METEOR_DENSITY, SKYBOX_UNIFORMS.METEOR_ANGLE,
-                SKYBOX_UNIFORMS.AURORA_SPEED, SKYBOX_UNIFORMS.AURORA_INTENSITY, SKYBOX_UNIFORMS.AURORA_COLOR,
-                SKYBOX_UNIFORMS.AURORA_COLOR_TOP, SKYBOX_UNIFORMS.AURORA_THRESHOLD,
-                SKYBOX_UNIFORMS.BH_MASS, SKYBOX_UNIFORMS.BH_RADIUS,
-                SKYBOX_UNIFORMS.CLOUD_SPEED, SKYBOX_UNIFORMS.CLOUD_DENSITY,
-                SKYBOX_UNIFORMS.CLOUD_COLOR, SKYBOX_UNIFORMS.CLOUD_HEIGHT,
-                SKYBOX_UNIFORMS.LIGHTNING_FREQUENCY, SKYBOX_UNIFORMS.LIGHTNING_INTENSITY,
-                SKYBOX_UNIFORMS.LIGHTNING_COLOR, SKYBOX_UNIFORMS.LIGHTNING_THICKNESS, SKYBOX_UNIFORMS.LIGHTNING_CLOUD_DENSITY,
-                SKYBOX_UNIFORMS.FIREWORK_FREQUENCY, SKYBOX_UNIFORMS.FIREWORK_INTENSITY,
-                SKYBOX_UNIFORMS.FIREWORK_SPEED, SKYBOX_UNIFORMS.FIREWORK_WOBBLE,
-                SKYBOX_UNIFORMS.ENABLE_RAINBOW,
-                SKYBOX_UNIFORMS.RAINBOW_SPEED, SKYBOX_UNIFORMS.RAINBOW_INTENSITY,
-                SKYBOX_UNIFORMS.RAINBOW_WIDTH, SKYBOX_UNIFORMS.RAINBOW_RADIUS,
+                SKYBOX_UNIFORMS.ENABLE_FIREWORKS, SKYBOX_UNIFORMS.ENABLE_RAINBOW,
                 SKYBOX_UNIFORMS.ENABLE_SUN_FLARE,
-                SKYBOX_UNIFORMS.SUN_SIZE, SKYBOX_UNIFORMS.SUN_INTENSITY,
-                SKYBOX_UNIFORMS.SUN_SPEED, SKYBOX_UNIFORMS.SUN_COLOR,
-                SKYBOX_UNIFORMS.SUN_RAYS, SKYBOX_UNIFORMS.SUN_PROMINENCE_SCALE,
-                SKYBOX_UNIFORMS.SUN_PROMINENCE_FREQ,
-                SKYBOX_UNIFORMS.SUN_POSITION_ANGLE, SKYBOX_UNIFORMS.SUN_POSITION_HEIGHT,
-
             ],
             samplers: ["texture1", "texture2"]
         }
     );
 
     material.backFaceCulling = false;
+
 
     // ─── Valores Iniciais do Skybox Base ───
     material.setFloat(SKYBOX_UNIFORMS.MIX, 0.0);
@@ -118,48 +124,6 @@ export function createSkyboxFadeMaterial(name: string, scene: B.Scene): B.Shader
     material.setFloat(SKYBOX_UNIFORMS.ENABLE_FIREWORKS, 0.0);
     material.setFloat(SKYBOX_UNIFORMS.ENABLE_RAINBOW, 0.0);
     material.setFloat(SKYBOX_UNIFORMS.ENABLE_SUN_FLARE, 0.0);
-
-    // ─── Parâmetros Iniciais Seguros ───
-    material.setFloat(SKYBOX_UNIFORMS.WARP_SPEED, 0.15);
-    material.setFloat(SKYBOX_UNIFORMS.WARP_INTENSITY, 0.2);
-    material.setFloat(SKYBOX_UNIFORMS.METEOR_SPEED_BASE, 0.3);
-    material.setFloat(SKYBOX_UNIFORMS.METEOR_DENSITY, 10.0);
-    material.setFloat(SKYBOX_UNIFORMS.METEOR_ANGLE, 0.5);
-    material.setFloat(SKYBOX_UNIFORMS.AURORA_SPEED, 0.1);
-    material.setFloat(SKYBOX_UNIFORMS.AURORA_INTENSITY, 1.5);
-    material.setColor3(SKYBOX_UNIFORMS.AURORA_COLOR, new B.Color3(0.1, 1.0, 0.5));
-    material.setColor3(SKYBOX_UNIFORMS.AURORA_COLOR_TOP, new B.Color3(0.5, 0.1, 0.8));
-    material.setFloat(SKYBOX_UNIFORMS.AURORA_THRESHOLD, 0.4);
-    material.setFloat(SKYBOX_UNIFORMS.BH_MASS, 0.5);
-    material.setFloat(SKYBOX_UNIFORMS.BH_RADIUS, 0.05);
-    material.setFloat(SKYBOX_UNIFORMS.CLOUD_SPEED, 0.05);
-    material.setFloat(SKYBOX_UNIFORMS.CLOUD_LATERAL_SPEED, 0.3);
-    material.setFloat(SKYBOX_UNIFORMS.CLOUD_DENSITY, 0.5);
-    material.setColor3(SKYBOX_UNIFORMS.CLOUD_COLOR, B.Color3.White());
-    material.setFloat(SKYBOX_UNIFORMS.CLOUD_HEIGHT, 0.4);
-    material.setFloat(SKYBOX_UNIFORMS.LIGHTNING_FREQUENCY, 1.5);
-    material.setFloat(SKYBOX_UNIFORMS.LIGHTNING_INTENSITY, 2.0);
-    material.setColor3(SKYBOX_UNIFORMS.LIGHTNING_COLOR, new B.Color3(0.7, 0.85, 1.0));
-    material.setFloat(SKYBOX_UNIFORMS.LIGHTNING_THICKNESS, 0.005);
-    material.setFloat(SKYBOX_UNIFORMS.LIGHTNING_CLOUD_DENSITY, 0.6);
-    material.setFloat(SKYBOX_UNIFORMS.FIREWORK_FREQUENCY, 0.8);
-    material.setFloat(SKYBOX_UNIFORMS.FIREWORK_INTENSITY, 1.5);
-    material.setFloat(SKYBOX_UNIFORMS.FIREWORK_SPEED, 1.0);
-    material.setFloat(SKYBOX_UNIFORMS.FIREWORK_WOBBLE, 0.015);
-    material.setFloat(SKYBOX_UNIFORMS.RAINBOW_SPEED, 0.5);
-    material.setFloat(SKYBOX_UNIFORMS.RAINBOW_INTENSITY, 0.6);
-    material.setFloat(SKYBOX_UNIFORMS.RAINBOW_WIDTH, 0.08);
-    material.setFloat(SKYBOX_UNIFORMS.RAINBOW_RADIUS, 0.7);
-    material.setFloat(SKYBOX_UNIFORMS.SUN_SIZE, 0.08);
-    material.setFloat(SKYBOX_UNIFORMS.SUN_INTENSITY, 1.5);
-    material.setFloat(SKYBOX_UNIFORMS.SUN_SPEED, 0.3);
-    material.setColor3(SKYBOX_UNIFORMS.SUN_COLOR, new B.Color3(1.0, 0.6, 0.1));
-    material.setFloat(SKYBOX_UNIFORMS.SUN_RAYS, 0.5);
-    material.setFloat(SKYBOX_UNIFORMS.SUN_PROMINENCE_SCALE, 0.04);
-    material.setFloat(SKYBOX_UNIFORMS.SUN_PROMINENCE_FREQ, 4.0);
-    material.setFloat(SKYBOX_UNIFORMS.SUN_POSITION_ANGLE, 0.0);
-    material.setFloat(SKYBOX_UNIFORMS.SUN_POSITION_HEIGHT, 0.5);
-
 
     return material;
 }
