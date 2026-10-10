@@ -20,6 +20,7 @@ const float HEAD_BRIGHTNESS = 2.0;
 // Explosão
 const float EXPLOSION_FADE_START = 0.6;
 const float EXPLOSION_CULL_RADIUS = 0.8;
+const float COS_EXPLOSION_CULL = 0.6967067;
 const float PARTICLE_MIN_SPEED = 0.2;
 const float PARTICLE_SPEED_RANGE = 0.3;
 const float GRAVITY_STRENGTH = 0.5;
@@ -34,7 +35,6 @@ const float FLICKER_SPEED = 40.0;
 const float CORE_SIZE = 0.001;
 
 // Distância de um ponto até um segmento de linha (3D)
-// h = 0.0 na cauda, 1.0 na cabeça
 float distToSegment(vec3 p, vec3 a, vec3 b, out float h) {
     vec3 pa = p - a;
     vec3 ba = b - a;
@@ -72,101 +72,82 @@ vec3 applyFireworks(vec3 dir, float time) {
         
         if (t < LAUNCH_DURATION) {
             // ─── SUBIDA DO FOGUETE ───
-            float lt = t / LAUNCH_DURATION; // Vai de 0.0 a 1.0 durante a subida
-            
+            float lt = t / LAUNCH_DURATION;
             vec3 ground = normalize(vec3(cos(angle), GROUND_Y_OFFSET, sin(angle)));
             
-            // Posição da Cabeça (tCurr)
             float tCurr = lt;
             vec3 pCurr = normalize(mix(ground, center, tCurr));
             float wobbleCurr = sin(pCurr.y * 30.0 + time * 20.0 + id) * u_fireworkWobble;
             pCurr = normalize(pCurr + vec3(cos(angle + 1.57) * wobbleCurr, 0.0, sin(angle + 1.57) * wobbleCurr));
             
-            // Posição da Cauda (tPrev) - fica um pouco para trás criando o rastro
             float tPrev = max(0.0, lt - LAUNCH_TRAIL_SIZE); 
             vec3 pPrev = normalize(mix(ground, center, tPrev));
             float wobblePrev = sin(pPrev.y * 30.0 + (time - 0.1) * 20.0 + id) * u_fireworkWobble;
             pPrev = normalize(pPrev + vec3(cos(angle + 1.57) * wobblePrev, 0.0, sin(angle + 1.57) * wobblePrev));
             
-            // Distância do pixel atual da tela até o segmento do rastro
             float h;
             float d = distToSegment(dir, pPrev, pCurr, h);
             
-            // Máscara da linha (espessura fina e cravada)
             float profile = smoothstep(LAUNCH_PROFILE_OUTER, LAUNCH_PROFILE_INNER, d); 
-            
-            // O segredo do Fade: 'h' vai de 0.0 (na cauda) a 1.0 (na cabeça)
             float trail = profile * h;
-            float head = smoothstep(LAUNCH_HEAD_GLOW_SIZE, 0.0, d) * (h * h); // Brilho extra na ponta
+            float head = smoothstep(LAUNCH_HEAD_GLOW_SIZE, 0.0, d) * (h * h);
             
             total += LAUNCH_COLOR * (trail + head * HEAD_BRIGHTNESS) * u_fireworkIntensity;
             
         } else {
             // ─── EXPLOSÃO (PARTÍCULAS) ───
-            float explodeT = (t - LAUNCH_DURATION) / (1.0 - LAUNCH_DURATION); // 0.0 -> 1.0
-            
-            // Fade out global para todas as partículas apagarem no fim
+            float explodeT = (t - LAUNCH_DURATION) / (1.0 - LAUNCH_DURATION);
             float fadeOut = smoothstep(1.0, EXPLOSION_FADE_START, explodeT);
             
-            // OTIMIZAÇÃO: Só calcula o loop de partículas se o pixel estiver perto da explosão
-            float distToCenter = acos(clamp(dot(dir, center), -1.0, 1.0));
+            float dotCenter = dot(dir, center);
             
-            if (distToCenter < EXPLOSION_CULL_RADIUS && fadeOut > 0.0) {
+            if (dotCenter > COS_EXPLOSION_CULL && fadeOut > 0.0) {
                 
                 vec3 explosionColorSum = vec3(0.0);
-                const int NUM_PARTICLES = 25; // Número de faíscas que saem do centro
+                const int NUM_PARTICLES = 25;
+                const float invN = 1.0 / float(NUM_PARTICLES);
+                
+                float rotX = hash(id * 1.1) * 6.28318;
+                float rotY = hash(id * 2.2) * 6.28318;
+                float cx = cos(rotX), sx = sin(rotX);
+                float cy = cos(rotY), sy = sin(rotY);
+                mat3 rx = mat3(1.0, 0.0, 0.0, 0.0, cx, -sx, 0.0, sx, cx);
+                mat3 ry = mat3(cy, 0.0, sy, 0.0, 1.0, 0.0, -sy, 0.0, cy);
+                mat3 rotCombined = ry * rx;
                 
                 for (int j = 0; j < NUM_PARTICLES; j++) {
                     float fj = float(j);
                     
-                    // ─── Posições Fixas Esféricas (Espiral de Fibonacci) ───
-                    float n = float(NUM_PARTICLES);
-                    float phi = acos(1.0 - 2.0 * (fj + 0.5) / n);
-                    float theta = 2.399963 * fj; // Ângulo de Ouro
+                    float cosPhi = 1.0 - 2.0 * (fj + 0.5) * invN;
+                    float sinPhi = sqrt(max(0.0, 1.0 - cosPhi * cosPhi));
+                    float theta = 2.399963 * fj;
                     
-                    vec3 pDir = vec3(cos(theta) * sin(phi), sin(theta) * sin(phi), cos(phi));
+                    vec3 pDir = rotCombined * vec3(cos(theta) * sinPhi, sin(theta) * sinPhi, cosPhi);
                     
-                    // Rotaciona a esfera inteira aleatoriamente para cada foguete,
-                    // assim o formato esférico perfeito é o mesmo, mas a "pose" é única.
-                    float rotX = hash(id * 1.1) * 6.28318;
-                    float rotY = hash(id * 2.2) * 6.28318;
-                    
-                    mat3 rx = mat3(1.0, 0.0, 0.0, 0.0, cos(rotX), -sin(rotX), 0.0, sin(rotX), cos(rotX));
-                    mat3 ry = mat3(cos(rotY), 0.0, sin(rotY), 0.0, 1.0, 0.0, -sin(rotY), 0.0, cos(rotY));
-                    pDir = ry * rx * pDir; // Aplica a rotação XYZ 
-                    
-                    // Velocidade da partícula
                     float speed = PARTICLE_MIN_SPEED + hash(id * 13.1 + fj * 7.1) * PARTICLE_SPEED_RANGE; 
                     
-                    // Posição Atual
                     float tCurr = explodeT;
                     vec3 pCurr = center + pDir * (speed * tCurr);
-                    pCurr.y -= GRAVITY_STRENGTH * tCurr * tCurr; // Gravidade parabólica atuando aqui!
+                    pCurr.y -= GRAVITY_STRENGTH * tCurr * tCurr;
                     pCurr = normalize(pCurr);
                     
-                    // Posição Anterior (Cauda da faísca para gerar a linha do rastro)
-                    float trailLen = TRAIL_MIN_LENGTH + hash(fj * 2.3) * TRAIL_LENGTH_RANGE; // Rastros de tamanhos variados
+                    float trailLen = TRAIL_MIN_LENGTH + hash(fj * 2.3) * TRAIL_LENGTH_RANGE;
                     float tPrev = max(0.0, explodeT - trailLen);
                     vec3 pPrev = center + pDir * (speed * tPrev);
-                    pPrev.y -= TRAIL_GRAVITY_STRENGTH * tPrev * tPrev; // A gravidade também age na cauda
+                    pPrev.y -= TRAIL_GRAVITY_STRENGTH * tPrev * tPrev;
                     pPrev = normalize(pPrev);
                     
-                    // Calcula a linha de rastro dessa partícula específica
                     float h;
                     float d = distToSegment(dir, pPrev, pCurr, h);
                     
-                    // Desenho da faísca (espessura)
                     float profile = smoothstep(SPARK_PROFILE_OUTER, SPARK_PROFILE_INNER, d);
-                    float spark = profile * h; // 'h' aplica o fade na cauda do rastro automaticamente
+                    float spark = profile * h;
                     
-                    // Faz a partícula piscar sutilmente para parecer faíscas queimando
                     float flicker = FLICKER_BASE + FLICKER_AMPLITUDE * sin(time * FLICKER_SPEED + fj * 3.14);
                     
-                    // Adiciona um núcleo branco brilhante na cabeça da faísca
                     float core = smoothstep(CORE_SIZE, 0.0, d) * h;
                     vec3 sparkColor = mix(color, vec3(1.0), core);
                     
-                    // Soma a faísca na explosão
                     explosionColorSum += sparkColor * spark * flicker;
                 }
                 

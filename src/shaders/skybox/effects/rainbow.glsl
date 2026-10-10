@@ -32,6 +32,9 @@ vec3 wavelengthToRGB(float t) {
 }
 
 vec3 applyRainbow(vec3 dir, float time) {
+
+    if (dir.y < ARC_MASK_MIN) return vec3(0.0);
+    
     vec3 total = vec3(0.0);
     
     // 2 arco-íris simultâneos em fases diferentes

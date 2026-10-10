@@ -163,65 +163,58 @@ float drawBolt(vec3 dir, float seed, float progress) {
 // ─── Função Principal ───
 vec3 applyLightning(vec3 dir, float time, vec3 background) {
     // ─── Nuvens Constantes da Tempestade ───
-    // Limita as nuvens a uma faixa vertical superior no céu
     float heightMask = smoothstep(u_cloudHeight - CLOUD_FADE_BELOW, u_cloudHeight, dir.y) 
                      * smoothstep(u_cloudHeight + CLOUD_FADE_ABOVE_START, u_cloudHeight + CLOUD_FADE_ABOVE_END, dir.y);
-                     
-    // Projeta coordenadas com movimento lateral
-    float u_cloud = atan(dir.z, dir.x) + time * u_cloudSpeed * u_cloudLateralSpeed;
-    float v_cloud = dir.y;
-    vec3 cloudPos = vec3(u_cloud * CLOUD_COORD_SCALE_U, v_cloud * CLOUD_COORD_SCALE_V, time * u_cloudSpeed);
-    
-    // Mapa de densidade da tempestade
-    float stormDensity = stormFBM_l(cloudPos * STORM_FBM_SCALE);
-    
-    // Máscara da nuvem densa, dependendo do u_lightningCloudDensity
-    float cloudMask = smoothstep(1.0 - u_lightningCloudDensity * CLOUD_DENSITY_UPPER, 1.0 - u_lightningCloudDensity * CLOUD_DENSITY_LOWER, stormDensity) * heightMask;
-    
-    // Escurece o background onde há nuvens pesadas
-    vec3 stormSky = mix(background, STORM_SKY_COLOR, cloudMask * STORM_DARKEN_STRENGTH);
     
     float slot = floor(time * u_lightningFrequency);
-    float t = fract(time * u_lightningFrequency);
+    float trigger = hash1D_l(slot * 127.1);
+    
+    if (heightMask < 0.005 && trigger > TRIGGER_CHANCE) {
+        return background;
+    }
+    
+    float cloudMask = 0.0;
+    if (heightMask >= 0.005) {
+        float u_cloud = atan(dir.z, dir.x) + time * u_cloudSpeed * u_cloudLateralSpeed;
+        float v_cloud = dir.y;
+        vec3 cloudPos = vec3(u_cloud * CLOUD_COORD_SCALE_U, v_cloud * CLOUD_COORD_SCALE_V, time * u_cloudSpeed);
+        float stormDensity = stormFBM_l(cloudPos * STORM_FBM_SCALE);
+        cloudMask = smoothstep(1.0 - u_lightningCloudDensity * CLOUD_DENSITY_UPPER, 1.0 - u_lightningCloudDensity * CLOUD_DENSITY_LOWER, stormDensity) * heightMask;
+    }
+    
+    vec3 stormSky = mix(background, STORM_SKY_COLOR, cloudMask * STORM_DARKEN_STRENGTH);
     
     // Chance de evento por slot
-    float trigger = hash1D_l(slot * 127.1);
     if (trigger > TRIGGER_CHANCE) return stormSky;
     
-    // Se trigger estiver acima do limiar, será um raio caindo.
+    float t = fract(time * u_lightningFrequency);
     bool isStrike = trigger >= STRIKE_THRESHOLD;
     
-    // Decaimento mais lento para ser mais visível
     float flash = exp(-t * (isStrike ? STRIKE_DECAY : FLASH_DECAY));
     
-    // Epicentro muito mais amplo
     vec3 epicenter = normalize(vec3(
         hash1D_l(slot * 1.1) - 0.5,
         abs(hash1D_l(slot * 1.2)) + EPICENTER_MIN_HEIGHT,
         hash1D_l(slot * 1.3) - 0.5
     ));
     
-    // Distância do epicentro afeta menos (espalha mais a luz)
     float dist = distance(dir, epicenter);
     float intraCloudGlow = exp(-dist * INTRACLOUD_FALLOFF) * flash * cloudMask * INTRACLOUD_INTENSITY;
     
     vec3 finalLight = u_lightningColor * intraCloudGlow;
     
     if (isStrike) {
-        // Flash global forte iluminando a tempestade
         finalLight += u_lightningColor * flash * STRIKE_GLOBAL_FLASH * cloudMask;
         
-        // Crescimento do raio
         float boltProgress = min(t / BOLT_GROWTH_DURATION, 1.0);
         float boltIntensity = drawBolt(dir, slot, boltProgress);
         
         float flicker = 0.5 + 0.5 * sin(time * FLICKER_FREQUENCY);
-        
-        // Adiciona o raio 
         finalLight += u_lightningColor * boltIntensity * flash * flicker * BOLT_BRIGHTNESS;
     }
     
     return stormSky + finalLight * u_lightningIntensity;
 }
+
 
 #endif

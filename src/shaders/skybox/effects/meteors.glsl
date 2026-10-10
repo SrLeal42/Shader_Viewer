@@ -15,6 +15,9 @@ const vec3 METEOR_COLOR = vec3(0.5, 0.8, 1.0);
 const float METEOR_BRIGHTNESS = 5.0;
 
 vec3 applyMeteors(vec3 dir, float time) {
+    
+    if (dir.y <= 0.0) return vec3(0.0);
+    
     float c = cos(u_meteorAngle);
     float s = sin(u_meteorAngle);
     mat3 rotZ = mat3(c, s, 0.0, -s, c, 0.0, 0.0, 0.0, 1.0);
