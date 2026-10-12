@@ -26,6 +26,7 @@ import { ToonEdgeConfig } from './postprocess/toon_edge/ToonEdgeConfig';
 import { PixelateConfig } from './postprocess/pixelate/PixelateConfig';
 import { ReflectionConfig } from './postprocess/reflection/ReflectionConfig';
 import { DeteriorationConfig } from './postprocess/deterioration/DeteriorationConfig';
+import { AsciiConfig } from './postprocess/ascii/AsciiConfig';
 
 export const MAX_POST_PROCESSES = 5;
 
@@ -36,6 +37,7 @@ export const PostProcessShaders = {
     pixelate: PixelateConfig,
     reflection: ReflectionConfig,
     deterioration: DeteriorationConfig,
+    ascii: AsciiConfig,
 } as const satisfies Record<string, PostProcessShaderConfig>;
 
 // Vertex Effects — mutuamente exclusivos
