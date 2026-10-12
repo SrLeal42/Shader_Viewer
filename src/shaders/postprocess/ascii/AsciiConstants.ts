@@ -3,7 +3,7 @@
 export const ASCII_CELL_SIZE = 8;
 
 /** Escala de luminância: do mais escuro (índice 0) ao mais claro. */
-export const ASCII_LUMA_RAMP = ' .:-=+*#%@';
+export const ASCII_LUMA_RAMP = ' .·:;+*?%S#&8@$';
 
 /**
  * Glifos de borda. A ORDEM É FIXA e deve casar com os buckets do Pass 1:
@@ -12,7 +12,7 @@ export const ASCII_LUMA_RAMP = ' .:-=+*#%@';
 export const ASCII_EDGE_GLYPHS = '|\\-/';
 
 /** Brilho do skybox em ASCII. 0 = só o modelo, 1 = mesmo peso do modelo. */
-export const ASCII_SKY_BRIGHTNESS = 0.3;
+export const ASCII_SKY_BRIGHTNESS = 0.75;
 
 /** Multiplicador de cor aplicado aos glifos de borda (destaque da silhueta). */
 export const ASCII_EDGE_COLOR_BOOST = 1.25;
@@ -25,8 +25,8 @@ export const ASCII_MONO_GREEN: readonly [number, number, number] = [0.2, 1.0, 0.
 export const ASCII_MONO_AMBER: readonly [number, number, number] = [1.0, 0.7, 0.15];
 
 /** Fonte do atlas. Web fonts são redesenhadas automaticamente ao carregar. */
-export const ASCII_FONT_FAMILY = 'monospace';
-export const ASCII_FONT_SCALE = 1.0;
+export const ASCII_FONT_FAMILY = "'Charis SIL', serif"; // "'Lucida Console', monospace"; // "'Consolas', monospace";//'monospace';
+export const ASCII_FONT_SCALE = 0.9;
 
 // ─── Derivados (não editar) ───
 
