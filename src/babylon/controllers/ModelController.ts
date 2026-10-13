@@ -33,6 +33,8 @@ export class ModelController {
     private currentParams: Record<string, unknown> = {};
     private _tempEuler = new B.Vector3();
 
+    private physicsRebuildTimeout: number | null = null;
+    private timeRebuild = 200; // ms
 
     constructor(
         modelManager: ModelManager,
@@ -116,6 +118,11 @@ export class ModelController {
 
         if (!config) return null;
 
+        if (this.physicsRebuildTimeout !== null) {
+            window.clearTimeout(this.physicsRebuildTimeout);
+            this.physicsRebuildTimeout = null;
+        }
+
         const prevState = this.capturePreviousModelState();
 
         if (this.modelManager.currentEntity) {
@@ -130,7 +137,7 @@ export class ModelController {
             if (param.onApply && entity) {
                 param.onApply(entity.mesh, value as never);
                 if (entity.hasPhysics) {
-                    entity.rebuildPhysics();
+                    this.schedulePhysicsRebuild(entity, this.timeRebuild);
                 }
             }
         });
@@ -296,9 +303,28 @@ export class ModelController {
     }
 
 
+    private schedulePhysicsRebuild(entity: ModelEntity, delayMs = 200): void {
+        if (this.physicsRebuildTimeout !== null) {
+            window.clearTimeout(this.physicsRebuildTimeout);
+        }
+
+        this.physicsRebuildTimeout = window.setTimeout(() => {
+            this.physicsRebuildTimeout = null;
+            // Garante que o modelo ainda é o atual e ainda tem física ativa
+            if (this.modelManager.currentEntity === entity && entity.hasPhysics) {
+                entity.rebuildPhysics();
+            }
+        }, delayMs);
+    }
+
+
     // ─── Dispose ───
 
     public dispose(): void {
+        if (this.physicsRebuildTimeout !== null) {
+            window.clearTimeout(this.physicsRebuildTimeout);
+            this.physicsRebuildTimeout = null;
+        }
         this.modelManager.dispose();
     }
 

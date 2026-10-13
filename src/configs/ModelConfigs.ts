@@ -12,9 +12,20 @@ export interface ModelConfig extends UIConfig {
 }
 
 // Helpers para não duplicar código
-const createGLBLoader = (filename: string) => async (scene: B.Scene) => {
+const createGLBLoader = (filename: string, bakeRotation?: B.Vector3) => async (scene: B.Scene) => {
     const result = await B.SceneLoader.ImportMeshAsync('', '/models/', filename, scene);
-    return result.meshes[0];
+
+    const root = result.meshes[0];
+    if (bakeRotation) {
+        const rotMatrix = B.Matrix.RotationYawPitchRoll(bakeRotation.y, bakeRotation.x, bakeRotation.z);
+        for (const child of root.getChildMeshes()) {
+            if (child instanceof B.Mesh) {
+                child.bakeTransformIntoVertices(rotMatrix);
+            }
+        }
+    }
+
+    return root;
 };
 
 const createScaleParam = (baseScale: number, maxScale: number = 3) => ({
@@ -87,17 +98,18 @@ export const ModelConfigs = {
         label: 'Suzanne',
         title: 'Propriedades da Suzanne',
         colliderType: B.PhysicsShapeType.CONVEX_HULL,
-        // initialRotation: new B.Vector3(0, Math.PI, 0),
+        // initialRotation: new B.Vector3(-Math.PI / 2, 0, 0),
         description: 'Suzanner',
-        loader: createGLBLoader('suzanne.glb'),
-        parameters: [createScaleParam(0.6)]
+        loader: createGLBLoader('suzanne.glb', new B.Vector3(-Math.PI / 2, 0, 0)),
+        parameters: [createScaleParam(0.01)]
     },
     candelabra: {
         label: 'Candelabro',
         title: 'Propriedades do Candelabro',
         colliderType: B.PhysicsShapeType.CONVEX_HULL,
+        // initialRotation: new B.Vector3(-Math.PI / 2, 0, 0),
         description: 'Candelabro',
-        loader: createGLBLoader('candelabra.glb'),
+        loader: createGLBLoader('candelabra.glb', new B.Vector3(-Math.PI / 2, 0, 0)),
         parameters: [createScaleParam(0.02, 5)]
     },
     axis: {
@@ -108,7 +120,31 @@ export const ModelConfigs = {
         loader: createGLBLoader('axis.glb'),
         parameters: [createScaleParam(1)]
     },
-
+    donut: {
+        label: 'Rosquinha',
+        title: 'Propriedades da Rosquinha',
+        colliderType: B.PhysicsShapeType.CONVEX_HULL,
+        description: 'Rosquinha',
+        loader: createGLBLoader('donut.glb'),
+        parameters: [createScaleParam(0.5)]
+    },
+    dragon: {
+        label: 'Dragão',
+        title: 'Propriedades da Dragão',
+        colliderType: B.PhysicsShapeType.CONVEX_HULL,
+        description: 'Dragão',
+        loader: createGLBLoader('dragon.glb'),
+        parameters: [createScaleParam(0.05)]
+    },
+    car: {
+        label: 'Carro',
+        title: 'Propriedades da Carro',
+        colliderType: B.PhysicsShapeType.CONVEX_HULL,
+        initialRotation: new B.Vector3(0, -Math.PI / 2, 0),
+        description: 'Carro',
+        loader: createGLBLoader('car.glb'),
+        parameters: [createScaleParam(0.01)]
+    },
 } as const satisfies Record<string, ModelConfig>;
 
 export type ModelId = keyof typeof ModelConfigs;
