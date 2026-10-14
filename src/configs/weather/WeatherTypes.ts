@@ -1,20 +1,23 @@
-// import * as B from '../../babylon/BabylonAdapter';
 
-// ─── Configuração de uma Camada de Partículas ───
+export type ParticuleBasicShape = 'circle' | 'square' | 'drop';
 
 export interface ParticleLayerConfig {
-    texturePath?: string;       // Caminho para a textura (undefined = quadrado branco)
+    texturePath?: string;
+    particleShape?: ParticuleBasicShape; // Formato padrão quando texturePath for omitido
     spriteSheet?: {
-        cellWidth: number;      // Largura de cada célula em pixels
-        cellHeight: number;     // Altura de cada célula em pixels
-        totalCells: number;     // Quantas variações existem no sheet
+        cellWidth: number;
+        cellHeight: number;
+        totalCells: number;
     };
-    capacity: number;           // Quantidade máxima de partículas vivas
-    emitRate: number;           // Partículas emitidas por segundo
+    capacity: number;
+    emitRate: number;
     lifetime: { min: number; max: number };
     size: { min: number; max: number };
     speed: { min: number; max: number };
     direction: { x: number; y: number; z: number };
+    directionSpread?: { x: number; y: number; z: number }; // Variação aleatória de direção (fundamental para cinzas e tempestades)
+    scaleX?: { min: number; max: number };                 // Esticar partículas (ex: gotas finas)
+    scaleY?: { min: number; max: number };                 // Esticar partículas (ex: gotas compridas)
     gravity: { x: number; y: number; z: number };
     color: {
         start: { r: number; g: number; b: number; a: number };

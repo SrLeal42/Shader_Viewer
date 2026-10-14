@@ -3,7 +3,7 @@ import * as B from '../BabylonAdapter';
 import fogFragmentSource from '../../shaders/weather/FogOverlay.fragment.glsl?raw';
 
 import { WeatherPresets, type WeatherPresetId } from '../../configs/weather/WeatherRegistry';
-import type { ParticleLayerConfig, FogConfig, CameraEffectConfig } from '../../configs/weather/WeatherTypes';
+import type { ParticleLayerConfig, FogConfig, CameraEffectConfig, ParticuleBasicShape } from '../../configs/weather/WeatherTypes';
 import { DepthNormalManager } from './DepthNormalManager';
 import type { EventBus } from '../core/EventBus';
 
@@ -25,6 +25,8 @@ export class WeatherManager {
     private readonly MAX_CACHED_PRESETS = 3;
     private presetCache = new Map<WeatherPresetId, WeatherCacheItem>();
     private usageOrder: WeatherPresetId[] = []; // O último item é o mais recentemente usado
+
+    private defaultTextures = new Map<ParticuleBasicShape, B.DynamicTexture>();
 
     private currentTime = 0;
 
@@ -166,10 +168,67 @@ export class WeatherManager {
 
     // ─── Criação de Efeitos ───
 
+
+    private getDefaultParticleTexture(shape: ParticuleBasicShape = 'circle'): B.DynamicTexture {
+        const cached = this.defaultTextures.get(shape);
+
+        if (cached) return cached;
+
+        const size = 64;
+        const dt = new B.DynamicTexture(`default_particle_${shape}`, size, this.scene, false);
+
+        const ctx = dt.getContext() as CanvasRenderingContext2D;
+        ctx.clearRect(0, 0, size, size);
+
+        if (shape === 'square') {
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(4, 4, size - 8, size - 8);
+
+        } else if (shape === 'drop') {
+            // Gotinha suave vertical para chuva
+            const grad = ctx.createLinearGradient(size / 2, 0, size / 2, size);
+            grad.addColorStop(0, 'rgba(255, 255, 255, 0.05)');
+            grad.addColorStop(0.7, 'rgba(255, 255, 255, 0.85)');
+            grad.addColorStop(1, 'rgba(255, 255, 255, 1.0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.ellipse(size / 2, size / 2, size * 0.18, size * 0.45, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+        } else {
+
+            // Círculo suave / grão de areia com fade radial
+            const center = size / 2;
+            const radius = size / 2 - 4;
+            const grad = ctx.createRadialGradient(center, center, 0, center, center, radius);
+            grad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
+            grad.addColorStop(0.7, 'rgba(255, 255, 255, 0.85)');
+            grad.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(center, center, radius, 0, Math.PI * 2);
+            ctx.fill();
+
+        }
+
+        dt.update();
+        dt.hasAlpha = true;
+        this.defaultTextures.set(shape, dt);
+
+        return dt;
+    }
+
+
     private createParticleLayer(layer: ParticleLayerConfig, presetId: string): B.ParticleSystem {
         const ps = new B.ParticleSystem(`weather_${presetId}_particles`, layer.capacity, this.scene);
 
-        if (layer.texturePath) ps.particleTexture = new B.Texture(layer.texturePath, this.scene);
+        // Se houver texturePath carrega a textura; caso contrário usa a procedural sem falhar!
+        if (layer.texturePath) {
+            ps.particleTexture = new B.Texture(layer.texturePath, this.scene);
+        } else {
+            ps.particleTexture = this.getDefaultParticleTexture(layer.particleShape ?? 'circle');
+        }
 
         if (layer.spriteSheet) {
             ps.isAnimationSheetEnabled = true;
@@ -181,11 +240,26 @@ export class WeatherManager {
             ps.spriteRandomStartCell = true;
         }
 
+        // Suporte a escala não-uniforme (gotas compridas de chuva)
+        if (layer.scaleX) {
+            ps.minScaleX = layer.scaleX.min;
+            ps.maxScaleX = layer.scaleX.max;
+        }
+
+        if (layer.scaleY) {
+            ps.minScaleY = layer.scaleY.min;
+            ps.maxScaleY = layer.scaleY.max;
+        }
         ps.emitter = new B.Vector3(0, layer.emitterSize.y / 2 + 2, 0);
 
+        // Variação angular usando directionSpread
+        const spreadX = layer.directionSpread?.x ?? 0.1;
+        const spreadY = layer.directionSpread?.y ?? 0.0;
+        const spreadZ = layer.directionSpread?.z ?? 0.1;
+
         ps.createBoxEmitter(
-            new B.Vector3(layer.direction.x - 0.1, layer.direction.y, layer.direction.z - 0.1),
-            new B.Vector3(layer.direction.x + 0.1, layer.direction.y, layer.direction.z + 0.1),
+            new B.Vector3(layer.direction.x - spreadX, layer.direction.y - spreadY, layer.direction.z - spreadZ),
+            new B.Vector3(layer.direction.x + spreadX, layer.direction.y + spreadY, layer.direction.z + spreadZ),
             new B.Vector3(-layer.emitterSize.x / 2, 0, -layer.emitterSize.z / 2),
             new B.Vector3(layer.emitterSize.x / 2, 0, layer.emitterSize.z / 2)
         );
@@ -294,6 +368,10 @@ export class WeatherManager {
 
     public dispose(): void {
         this.disable();
+
+        for (const dt of this.defaultTextures.values()) dt.dispose();
+
+        this.defaultTextures.clear()
 
         for (const presetId of this.usageOrder) {
             const cached = this.presetCache.get(presetId);
