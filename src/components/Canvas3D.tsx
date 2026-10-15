@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
+import { PerformanceBar } from './ui/PerformanceBar';
+
 import { SceneController } from '../babylon/controllers/SceneController';
 import { CustomCursor } from './ui/CustomCursor';
 
@@ -15,6 +17,8 @@ export function Canvas3D() {
 
     const [isUIVisible, setIsUIVisible] = useState(true);
     const [isIdle, setIsIdle] = useState(false);
+
+    const [isStatsVisible, setIsStatsVisible] = useState(false);
 
     // O cursor e o botão só devem sumir se a UI estiver oculta E o usuário inativo
     const isCinematicHidden = !isUIVisible && isIdle;
@@ -52,7 +56,7 @@ export function Canvas3D() {
         };
     }, [isUIVisible]);
 
-    // --- Lógica da Tecla de Atalho (H) ---
+
     useEffect(() => {
 
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -71,6 +75,20 @@ export function Canvas3D() {
 
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
+
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'F3') {
+                e.preventDefault(); // Evita abrir a caixa de busca nativa do navegador
+                setIsStatsVisible(prev => !prev);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
 
     // --- Setup do BabylonJS ---
     useEffect(() => {
@@ -122,6 +140,7 @@ export function Canvas3D() {
             <div ref={tweakpaneRightRef}
                 className={`${styles.tweakpaneContainerRight} ${!isUIVisible ? styles.hiddenUI : ''}`} />
 
+
             {/* Botão de Toggle */}
             <button
                 className={`${styles.toggleUIButton} ${isCinematicHidden ? styles.hiddenButton : ''}`}
@@ -148,6 +167,21 @@ export function Canvas3D() {
                     </svg>
                 )}
             </button>
+
+
+            <button
+                className={`${styles.toggleStatsButton} ${isStatsVisible ? styles.statsButtonActive : ''} ${isCinematicHidden ? styles.hiddenButton : ''}`}
+                onClick={() => setIsStatsVisible(prev => !prev)}
+                title={isStatsVisible ? "Ocultar Estatísticas (F3)" : "Ver Estatísticas (F3)"}
+            >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
+            </button>
+
+
+            <PerformanceBar controller={controllerRef.current} isVisible={isStatsVisible && !isCinematicHidden} />
+
 
         </div>
     );

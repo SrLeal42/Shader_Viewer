@@ -35,6 +35,7 @@ export {
     RawCubeTexture,
     RenderTargetTexture,
     Scene,
+    SceneInstrumentation,
     SceneLoader,
     ShaderMaterial,
     StandardMaterial,

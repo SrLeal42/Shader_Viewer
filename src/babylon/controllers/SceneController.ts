@@ -20,6 +20,19 @@ import { DepthNormalManager } from '../managers/DepthNormalManager';
 import { ScenePresets, ACTIVE_PRESET } from '../../configs/ScenePresets';
 
 
+export interface PerformanceMetrics {
+    fps: number;
+    frameTimeMs: number;
+    drawCalls: number;
+    triangles: number;
+    activeMeshes: number;
+    totalMeshes: number;
+    activeParticles: number;
+    totalParticlesCapacity: number;
+    particlesTimeMs: number;
+    physicsTimeMs: number;
+}
+
 
 export class SceneController {
 
@@ -46,6 +59,8 @@ export class SceneController {
 
     private resizeTimeout: ReturnType<typeof setTimeout> | null = null;
 
+    private instrumentation: B.SceneInstrumentation;
+
 
     private constructor(
         canvas: HTMLCanvasElement,
@@ -59,6 +74,12 @@ export class SceneController {
         this.scene = new B.Scene(this.engine);
 
         this.eventBus = new EventBus();
+
+        // Inicializa o monitoramento de desempenho
+        this.instrumentation = new B.SceneInstrumentation(this.scene);
+        this.instrumentation.captureParticlesRenderTime = true;
+        this.instrumentation.captureFrameTime = true;
+        this.instrumentation.capturePhysicsTime = true;
 
         // ─── Managers ───
         this.cameraManager = new CameraManager(this.scene, canvas);
@@ -109,6 +130,32 @@ export class SceneController {
 
     }
 
+
+
+    public getPerformanceMetrics(): PerformanceMetrics {
+        let activeParticles = 0;
+        let totalParticlesCapacity = 0;
+
+        for (const ps of this.scene.particleSystems) {
+            activeParticles += ps.getActiveCount();
+            totalParticlesCapacity += ps.getCapacity();
+
+        }
+
+        return {
+            fps: Math.round(this.engine.getFps()),
+            frameTimeMs: this.instrumentation.frameTimeCounter.current,
+            drawCalls: this.instrumentation.drawCallsCounter.current,
+            triangles: Math.round(this.scene.getActiveIndices() / 3),
+            activeMeshes: this.scene.getActiveMeshes().length,
+            totalMeshes: this.scene.meshes.length,
+            activeParticles,
+            totalParticlesCapacity,
+            particlesTimeMs: this.instrumentation.particlesRenderTimeCounter.current,
+            physicsTimeMs: this.instrumentation.physicsTimeCounter.current
+        };
+
+    }
 
     // ─── Factory assíncrona ───
 
@@ -227,6 +274,8 @@ export class SceneController {
         if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
 
         this.eventBus.clear();
+
+        this.instrumentation.dispose();
 
         this.uiManager.dispose();
         this.modelController.dispose();
