@@ -6,6 +6,8 @@ import type { UIConfig, UIParameter } from '../../../types/UI';
 import type { ShaderUniform } from '../../../shaders/Types';
 import type { FrustumLimits } from '../../../types/Camera';
 
+import type { ScenePreset } from '../../../configs/ScenePresets';
+
 import type { InteractionId } from '../../../configs/InteractionConfigs';
 import type { LightModeId } from '../../../configs/LightConfigs';
 
@@ -197,6 +199,13 @@ export class UIManager {
             (pos, color, intensity, anim, speed, freq, showHelper) => this.eventBus.emit('UI_LIGHT_POINT_CHANGED', pos, color, intensity, anim, speed, freq, showHelper)
         );
     }
+
+
+
+    public applyLightPreset(presetLight?: ScenePreset['light']): void {
+        this.lightSection.applyPresetLight(presetLight);
+    }
+
 
     // ─── Lifecycle ───
 

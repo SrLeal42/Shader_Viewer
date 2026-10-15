@@ -119,7 +119,7 @@ export class EnvironmentSection {
             options[config.label] = id;
         }
 
-        const params = { weather: 'none' as string };
+        const params = { weather: (ScenePresets[ACTIVE_PRESET]?.weather ?? 'none') as string };
 
         const binding = folder.addBinding(params, 'weather', {
             options,

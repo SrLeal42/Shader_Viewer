@@ -118,25 +118,42 @@ export class EnvironmentManager {
 
         if (!envTexture) {
             envTexture = B.CubeTexture.CreateFromPrefilteredData(config.path!, this.scene);
+            this.textureCache.set(id, envTexture);
 
             await new Promise<void>((resolve, reject) => {
-                let observer: B.Observer<B.CubeTexture> | null = null;
 
+                if (envTexture!.isReady()) {
+                    resolve();
+                    return;
+                }
+
+                let observer: B.Observer<B.CubeTexture> | null = null;
+                let errorObserver: B.Observer<B.BaseTexture> | null = null;
                 const timeoutId = setTimeout(() => {
-                    if (observer) {
-                        envTexture!.onLoadObservable.remove(observer);
-                    }
+                    cleanup();
                     reject(new Error(`Timeout ao carregar skybox: ${config.path}`));
-                }, 10000);
+                }, 30000);
+
+                const cleanup = () => {
+                    clearTimeout(timeoutId);
+                    if (observer) envTexture!.onLoadObservable.remove(observer);
+                    if (errorObserver) B.Texture.OnTextureLoadErrorObservable.remove(errorObserver);
+                };
 
                 observer = envTexture!.onLoadObservable.addOnce(() => {
-                    clearTimeout(timeoutId);
+                    cleanup();
                     resolve();
+                });
+
+                errorObserver = B.Texture.OnTextureLoadErrorObservable.add((tex) => {
+                    if (tex === envTexture) {
+                        cleanup();
+                        reject(new Error(`Erro ao carregar textura: ${config.path}`));
+                    }
                 });
 
             });
 
-            this.textureCache.set(id, envTexture);
         }
 
         // Troca de iluminação PBR (instantânea por performance)

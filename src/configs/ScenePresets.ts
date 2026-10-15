@@ -1,12 +1,15 @@
 import type { ModelId } from './ModelConfigs';
 import type { SkyboxId } from './SkyboxConfigs';
 import type { SkyboxEffectId } from './SkyboxEffectsConfigs';
-
+import type { WeatherPresetId } from './weather/WeatherRegistry';
+import type { LightModeId, PointAnimationType } from './LightConfigs';
+import type { InteractionId } from './InteractionConfigs';
 import type { MaterialShaderId, PostProcessShaderId, VertexEffectId } from '../shaders/Registry';
 
 export interface ScenePreset {
     model: ModelId;
     skybox: SkyboxId | 'color';
+    skyboxColor?: { r: number, g: number, b: number }; // Cor quando skybox for 'color'
     material: MaterialShaderId;
 
     // Modifica escala, posição e rotação inicial do modelo
@@ -17,19 +20,39 @@ export interface ScenePreset {
     };
 
     modelParams?: Record<string, unknown>;
-
-    // Define valores customizados para os sliders do Material
     materialParams?: Record<string, unknown>;
 
+    // Efeitos de Vértice
     vertexEffect?: VertexEffectId;
     vertexEffectParams?: Record<string, unknown>;
 
-    // Liga Efeitos Post-Process e define seus parâmetros customizados
+    // Pós-processamento e Efeitos de Skybox
     postProcesses?: Partial<Record<PostProcessShaderId, Record<string, unknown>>>;
-
-    // Liga Efeitos de Ambiente (Skybox Effects) e define seus parâmetros customizados
     skyboxEffects?: SkyboxEffectId[];
+
+    weather?: WeatherPresetId | 'none';
+
+    light?: {
+        mode?: LightModeId;
+        hemi?: {
+            direction?: { x: number, y: number, z: number };
+            color?: { r: number, g: number, b: number };
+            intensity?: number;
+        };
+        point?: {
+            position?: { x: number, y: number, z: number };
+            color?: { r: number, g: number, b: number };
+            intensity?: number;
+            showHelper?: boolean;
+            animationType?: PointAnimationType;
+            orbitSpeed?: number;
+            pulseFrequency?: number;
+        };
+    };
+
+    interaction?: InteractionId;
 }
+
 
 export const ScenePresets: Record<string, ScenePreset> = {
 
@@ -163,6 +186,29 @@ export const ScenePresets: Record<string, ScenePreset> = {
         },
         skyboxEffects: ['meteors']
 
+    },
+
+    stormy_candelabra: {
+        model: 'candelabra',
+        skybox: 'cosmic_cluster',
+        material: 'standard',
+        weather: 'rain',
+        light: {
+            mode: 'both',
+            hemi: { intensity: 0.3, color: { r: 0.4, g: 0.5, b: 0.7 } },
+            point: {
+                position: { x: 0, y: 2.5, z: 1.5 },
+                color: { r: 1.0, g: 0.7, b: 0.3 },
+                intensity: 1.8,
+                animationType: 'pulse',
+                pulseFrequency: 4.0,
+                showHelper: false
+            }
+        },
+        skyboxEffects: ['lightning'],
+        postProcesses: {
+            bloom: { u_intensity: 1.2, u_threshold: 0.7 }
+        }
     }
 
 };

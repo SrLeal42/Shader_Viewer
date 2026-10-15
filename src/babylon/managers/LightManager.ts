@@ -262,7 +262,6 @@ export class LightManager {
         this.animObserver = this.scene.onBeforeRenderObservable.add(() => {
             if (this.currentMode === 'hemi') return;
 
-            // ─── CÁLCULO DO DELTA TIME ───
             const time = performance.now() / 1000;
             const deltaTime = time - this.lastTime;
             this.lastTime = time;
@@ -277,11 +276,16 @@ export class LightManager {
                 this.pointLight.position.y = this.pointBasePosition.y;
             }
 
+            // Sincroniza a posição 3D do eixo se ele estiver ativo
+            if (this.helperRoot && this.showHelper) {
+                this.syncHelperPosition();
+            }
+
             if (this.animationType === 'pulse') {
                 this.isDirty = true;
                 this.pulsePhase += deltaTime * this.pulseFrequency;
 
-                const sine = (Math.sin(this.pulsePhase) + 1) / 2; // normaliza de 0 a 1
+                const sine = (Math.sin(this.pulsePhase) + 1) / 2;
                 const factor = 0.2 + (sine * 0.8);
                 this.pointLight.intensity = this.pointTrueIntensity * factor;
 
@@ -308,6 +312,12 @@ export class LightManager {
         }
     }
 
+    private syncHelperPosition(): void {
+        if (this.helperRoot) {
+            this.helperRoot.position.copyFrom(this.pointLight.position);
+        }
+    }
+
     private async loadHelperModel() {
         try {
             const result = await B.SceneLoader.ImportMeshAsync('', '/models/', 'axis.glb', this.scene);
@@ -317,14 +327,13 @@ export class LightManager {
                 return;
             }
 
-            // O loader de .glb ativa ToneMapping sozinho. Nós forçamos o desligamento para não quebrar nosso pipeline.
             this.scene.imageProcessingConfiguration.toneMappingEnabled = false;
 
-            // O nó raiz gerencia toda a peça junta
             this.helperRoot = result.meshes[0];
-            this.helperRoot.parent = this.pointLight;
-
+            this.helperRoot.parent = null;
             this.helperRoot.scaling = new B.Vector3(0.3, 0.3, 0.3);
+
+            this.syncHelperPosition();
 
             result.meshes.forEach(mesh => {
                 if (mesh.name === 'Esfera') {

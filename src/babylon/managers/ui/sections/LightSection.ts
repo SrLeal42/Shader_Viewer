@@ -1,10 +1,31 @@
 import type { Pane } from 'tweakpane';
+import type { BindingApi } from '@tweakpane/core';
 
 import { LightConfigs, type LightModeId, type PointAnimationType } from '../../../../configs/LightConfigs';
-
+import { ScenePresets, ACTIVE_PRESET, type ScenePreset } from '../../../../configs/ScenePresets';
 
 export class LightSection {
     private pane: Pane;
+
+    private modeParams!: { mode: LightModeId };
+    private hemiParams!: {
+        direction: { x: number, y: number, z: number };
+        color: { r: number, g: number, b: number };
+        intensity: number;
+    };
+    private pointParams!: {
+        position: { x: number, y: number, z: number };
+        color: { r: number, g: number, b: number };
+        intensity: number;
+        showHelper: boolean;
+        animationType: PointAnimationType;
+        orbitSpeed: number;
+        pulseFrequency: number;
+    };
+
+    private bindings: BindingApi[] = [];
+    private updateVisibilityFn: ((mode: string) => void) | null = null;
+    private updateAnimVisibilityFn: ((type: string) => void) | null = null;
 
     constructor(pane: Pane) {
         this.pane = pane;
@@ -18,74 +39,121 @@ export class LightSection {
     ): void {
         const mainFolder = this.pane.addFolder({ title: 'Iluminação' });
 
-        const modeParams = { mode: initialMode };
-        const hemiParams = { ...LightConfigs.hemi };
-        const pointParams = { ...LightConfigs.point };
+        const presetLight = ScenePresets[ACTIVE_PRESET]?.light;
+
+        this.modeParams = { mode: presetLight?.mode ?? initialMode };
+        this.hemiParams = {
+            direction: { ...(presetLight?.hemi?.direction ?? LightConfigs.hemi.direction) },
+            color: { ...(presetLight?.hemi?.color ?? LightConfigs.hemi.color) },
+            intensity: presetLight?.hemi?.intensity ?? LightConfigs.hemi.intensity
+        };
+        this.pointParams = {
+            position: { ...(presetLight?.point?.position ?? LightConfigs.point.position) },
+            color: { ...(presetLight?.point?.color ?? LightConfigs.point.color) },
+            intensity: presetLight?.point?.intensity ?? LightConfigs.point.intensity,
+            showHelper: presetLight?.point?.showHelper ?? LightConfigs.point.showHelper,
+            animationType: presetLight?.point?.animationType ?? LightConfigs.point.animationType,
+            orbitSpeed: presetLight?.point?.orbitSpeed ?? LightConfigs.point.orbitSpeed,
+            pulseFrequency: presetLight?.point?.pulseFrequency ?? LightConfigs.point.pulseFrequency,
+        };
 
         // Pastas dinâmicas
         const hemiFolder = mainFolder.addFolder({ title: 'Hemisférica (Global)' });
         const pointFolder = mainFolder.addFolder({ title: 'Ponto de Luz' });
 
-        // Função mágica para mostrar/esconder pastas conforme a seleção do usuário
-        const updateVisibility = (mode: string) => {
+        this.updateVisibilityFn = (mode: string) => {
             hemiFolder.hidden = mode === 'point';
             pointFolder.hidden = mode === 'hemi';
         };
-        updateVisibility(initialMode);
+        this.updateVisibilityFn(this.modeParams.mode);
 
-        const modeBinding = mainFolder.addBinding(modeParams, 'mode', {
+        const modeBinding = mainFolder.addBinding(this.modeParams, 'mode', {
             options: { 'Hemisférica': 'hemi', 'Ponto de Luz': 'point', 'Ambas': 'both' },
             label: 'Modo'
         }).on('change', (ev) => {
-            updateVisibility(ev.value);
+            this.updateVisibilityFn?.(ev.value);
             onModeChange(ev.value as LightModeId);
         });
-        modeBinding.element.title = "Define o tipo de iluminação ativa na cena.";
-        // ─── Controles da Hemi ───
-        const triggerHemi = () => onHemiChange(hemiParams.direction, hemiParams.color, hemiParams.intensity);
+        this.bindings.push(modeBinding);
 
-        const hemiIntensity = hemiFolder.addBinding(hemiParams, 'intensity', { label: 'Intensidade', min: 0, max: 2, step: 0.1 }).on('change', triggerHemi);
-        hemiIntensity.element.title = "Define a força geral da luz ambiente.";
+        const triggerHemi = () => onHemiChange(this.hemiParams.direction, this.hemiParams.color, this.hemiParams.intensity);
+        this.bindings.push(
+            hemiFolder.addBinding(this.hemiParams, 'intensity', { label: 'Intensidade', min: 0, max: 2, step: 0.1 }).on('change', triggerHemi),
+            hemiFolder.addBinding(this.hemiParams, 'color', { label: 'Cor', color: { type: 'float' } }).on('change', triggerHemi),
+            hemiFolder.addBinding(this.hemiParams, 'direction', { label: 'Direção', x: { min: -1, max: 1 }, y: { min: -1, max: 1 }, z: { min: -1, max: 1 } }).on('change', triggerHemi)
+        );
 
-        const hemiColor = hemiFolder.addBinding(hemiParams, 'color', { label: 'Cor', color: { type: 'float' } }).on('change', triggerHemi);
-        hemiColor.element.title = "A cor principal que ilumina todos os objetos da cena.";
+        const triggerPoint = () => onPointChange(
+            this.pointParams.position,
+            this.pointParams.color,
+            this.pointParams.intensity,
+            this.pointParams.animationType,
+            this.pointParams.orbitSpeed,
+            this.pointParams.pulseFrequency,
+            this.pointParams.showHelper
+        );
 
-        const hemiDir = hemiFolder.addBinding(hemiParams, 'direction', { label: 'Direção', x: { min: -1, max: 1 }, y: { min: -1, max: 1 }, z: { min: -1, max: 1 } }).on('change', triggerHemi);
-        hemiDir.element.title = "Vetor (X, Y, Z) apontando para onde o céu (parte iluminada) está virado.";
-        // ─── Controles do Ponto de Luz ───
-        const triggerPoint = () => onPointChange(pointParams.position, pointParams.color, pointParams.intensity, pointParams.animationType, pointParams.orbitSpeed, pointParams.pulseFrequency, pointParams.showHelper);
+        const helperBinding = pointFolder.addBinding(this.pointParams, 'showHelper', { label: 'Mostrar Eixos' }).on('change', triggerPoint);
+        const pointIntensity = pointFolder.addBinding(this.pointParams, 'intensity', { label: 'Intensidade', min: 0, max: 2, step: 0.1 }).on('change', triggerPoint);
+        const pointColor = pointFolder.addBinding(this.pointParams, 'color', { label: 'Cor', color: { type: 'float' } }).on('change', triggerPoint);
+        const pointPos = pointFolder.addBinding(this.pointParams, 'position', { label: 'Posição', x: { min: -10, max: 10 }, y: { min: -10, max: 10 }, z: { min: -10, max: 10 } }).on('change', triggerPoint);
 
-        const pointHelper = pointFolder.addBinding(pointParams, 'showHelper', { label: 'Mostrar Eixos' }).on('change', triggerPoint);
-        pointHelper.element.title = "Ativa um gizmo visual para mostrar a posição exata da luz 3D na cena.";
+        this.bindings.push(helperBinding, pointIntensity, pointColor, pointPos);
 
-        const pointIntensity = pointFolder.addBinding(pointParams, 'intensity', { label: 'Intensidade', min: 0, max: 2, step: 0.1 }).on('change', triggerPoint);
-        pointIntensity.element.title = "Força da luz pontual."; pointFolder.addBinding(pointParams, 'color', { label: 'Cor', color: { type: 'float' } }).on('change', triggerPoint);
-        pointFolder.addBinding(pointParams, 'position', { label: 'Posição', x: { min: -10, max: 10 }, y: { min: -10, max: 10 }, z: { min: -10, max: 10 } }).on('change', triggerPoint);
-
-        // ─── Sub-pasta Dinâmica de Animação ───
         const animFolder = pointFolder.addFolder({ title: 'Efeito de Animação' });
-        animFolder.element.title = "Define qual o comportamento da luz pontual na cena.";
-        const speedBinding = animFolder.addBinding(pointParams, 'orbitSpeed', { label: 'Vel. Órbita', min: 0.1, max: 10, step: 0.1 }).on('change', triggerPoint);
-        const freqBinding = animFolder.addBinding(pointParams, 'pulseFrequency', { label: 'Freq. Pulso', min: 0.1, max: 15, step: 0.1 }).on('change', triggerPoint);
+        const speedBinding = animFolder.addBinding(this.pointParams, 'orbitSpeed', { label: 'Vel. Órbita', min: 0.1, max: 10, step: 0.1 }).on('change', triggerPoint);
+        const freqBinding = animFolder.addBinding(this.pointParams, 'pulseFrequency', { label: 'Freq. Pulso', min: 0.1, max: 15, step: 0.1 }).on('change', triggerPoint);
 
-        const updateAnimVisibility = (type: string) => {
+        this.updateAnimVisibilityFn = (type: string) => {
             speedBinding.hidden = type !== 'orbit';
             freqBinding.hidden = type !== 'pulse';
         };
-        updateAnimVisibility(pointParams.animationType);
+        this.updateAnimVisibilityFn(this.pointParams.animationType);
 
-        animFolder.addBinding(pointParams, 'animationType', {
+        const animBinding = animFolder.addBinding(this.pointParams, 'animationType', {
             options: { 'Estática': 'none', 'Orbitar (Girar)': 'orbit', 'Pulsar (Piscar)': 'pulse' },
             label: 'Comportamento'
         }).on('change', (ev) => {
-            updateAnimVisibility(ev.value);
+            this.updateAnimVisibilityFn?.(ev.value);
             triggerPoint();
         });
 
+        this.bindings.push(speedBinding, freqBinding, animBinding);
     }
 
+    /** Permite aplicar os valores de um preset e atualizar a interface visualmente */
+    public applyPresetLight(presetLight?: ScenePreset['light']): void {
+        if (!presetLight) return;
+
+        if (presetLight.mode) {
+            this.modeParams.mode = presetLight.mode;
+            this.updateVisibilityFn?.(presetLight.mode);
+        }
+
+        if (presetLight.hemi) {
+            if (presetLight.hemi.intensity !== undefined) this.hemiParams.intensity = presetLight.hemi.intensity;
+            if (presetLight.hemi.color) Object.assign(this.hemiParams.color, presetLight.hemi.color);
+            if (presetLight.hemi.direction) Object.assign(this.hemiParams.direction, presetLight.hemi.direction);
+        }
+
+        if (presetLight.point) {
+            const p = presetLight.point;
+            if (p.intensity !== undefined) this.pointParams.intensity = p.intensity;
+            if (p.color) Object.assign(this.pointParams.color, p.color);
+            if (p.position) Object.assign(this.pointParams.position, p.position);
+            if (p.showHelper !== undefined) this.pointParams.showHelper = p.showHelper;
+            if (p.animationType) {
+                this.pointParams.animationType = p.animationType;
+                this.updateAnimVisibilityFn?.(p.animationType);
+            }
+            if (p.orbitSpeed !== undefined) this.pointParams.orbitSpeed = p.orbitSpeed;
+            if (p.pulseFrequency !== undefined) this.pointParams.pulseFrequency = p.pulseFrequency;
+        }
+
+        this.bindings.forEach(b => b.refresh());
+    }
 
     public dispose(): void {
-        // O folder é gerenciado pelo Pane pai
+        this.bindings = [];
     }
 }

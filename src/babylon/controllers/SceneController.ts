@@ -17,7 +17,7 @@ import { LightManager } from '../managers/LightManager';
 import { WeatherManager } from '../managers/WeatherManager';
 import { DepthNormalManager } from '../managers/DepthNormalManager';
 
-import { ScenePresets, ACTIVE_PRESET } from '../../configs/ScenePresets';
+import { ScenePresets, ACTIVE_PRESET, type ScenePreset } from '../../configs/ScenePresets';
 
 
 export interface PerformanceMetrics {
@@ -169,50 +169,18 @@ export class SceneController {
 
         await controller.physicsManager.init();
 
-        // Se o React já desmontou enquanto o Havok carregava, aborta
-        if (signal?.aborted) {
-            controller.dispose();
-            throw new DOMException('Inicialização abortada', 'AbortError');
-        }
-
         const limits = controller.cameraManager.calculateFrustumLimits();
 
         controller.environmentManager.resizeBoundaries(limits);
-        const preset = ScenePresets[ACTIVE_PRESET];
 
-        // Aplica Transformações e Física
-        await controller.modelController.switchModel(preset.model, preset.modelParams);
+        const initialPreset = ScenePresets[ACTIVE_PRESET];
+        if (initialPreset) {
+            await controller.applyPreset(initialPreset, signal);
+        }
 
         if (signal?.aborted) {
             controller.dispose();
             throw new DOMException('Inicialização abortada', 'AbortError');
-        }
-
-        // Bloco de transformação/física:
-        if (preset.transform && controller.modelController.currentEntity) {
-            controller.modelController.applyPresetTransform(preset.transform);
-        }
-
-        controller.eventBus.emit('UI_SKYBOX_SELECTED', preset.skybox);
-        // Aplica o Shader e seus Parâmetros
-        if (controller.modelController.currentEntity) {
-            controller.shaderController.applyPresetMaterial(
-                preset.material,
-                controller.modelController.currentEntity,
-                preset.materialParams
-            );
-        }
-
-        // Liga Efeitos de Pós-Processamento
-        if (preset.postProcesses) {
-            controller.shaderController.applyPresetPostProcesses(preset.postProcesses);
-        }
-
-
-        if (preset.skyboxEffects) {
-            preset.skyboxEffects.forEach(effectId => {
-                controller.skyboxEffectManager.setEffect(effectId, true);
-            });
         }
 
         controller.startRenderLoop();
@@ -240,6 +208,88 @@ export class SceneController {
         });
 
         window.addEventListener('resize', this.onResize);
+    }
+
+
+    /**
+    * Aplica um preset completo na cena.
+    * Pode ser chamado tanto no startup quanto em runtime para trocar de preset!
+    */
+    public async applyPreset(preset: ScenePreset, signal?: AbortSignal): Promise<void> {
+
+        await this.modelController.switchModel(preset.model, preset.modelParams);
+        if (signal?.aborted) return;
+
+        if (preset.transform && this.modelController.currentEntity) {
+            this.modelController.applyPresetTransform(preset.transform);
+        }
+
+        this.eventBus.emit('UI_SKYBOX_SELECTED', preset.skybox);
+        if (preset.skybox === 'color' && preset.skyboxColor) {
+            this.eventBus.emit('UI_SKYBOX_COLOR_CHANGED', preset.skyboxColor);
+        }
+
+        const entity = this.modelController.currentEntity;
+        if (entity) {
+            this.shaderController.applyPresetMaterial(
+                preset.material,
+                entity,
+                preset.materialParams
+            );
+
+            if (preset.vertexEffect) {
+                this.shaderController.switchVertexEffect(preset.vertexEffect, entity);
+            }
+        }
+
+        if (preset.postProcesses) {
+            this.shaderController.applyPresetPostProcesses(preset.postProcesses);
+        }
+
+        if (preset.skyboxEffects) {
+            preset.skyboxEffects.forEach(effectId => {
+                this.skyboxEffectManager.setEffect(effectId, true);
+            });
+        }
+
+        if (preset.weather && preset.weather !== 'none') {
+            this.eventBus.emit('UI_WEATHER_SELECTED', preset.weather);
+        }
+
+        if (preset.light) {
+            if (preset.light.mode) {
+                this.lightManager.setMode(preset.light.mode);
+            }
+
+            if (preset.light.hemi) {
+                const h = preset.light.hemi;
+                this.lightManager.updateHemiLight(
+                    h.direction ?? { x: 0, y: 1, z: 1 },
+                    h.color ?? { r: 1, g: 1, b: 1 },
+                    h.intensity ?? 1.0
+                );
+            }
+
+            if (preset.light.point) {
+                const p = preset.light.point;
+                this.lightManager.updatePointLight(
+                    p.position ?? { x: 0, y: 2, z: 3 },
+                    p.color ?? { r: 1, g: 1, b: 1 },
+                    p.intensity ?? 1.0
+                );
+                if (p.animationType) this.lightManager.animationType = p.animationType;
+                if (p.orbitSpeed !== undefined) this.lightManager.orbitSpeed = p.orbitSpeed;
+                if (p.pulseFrequency !== undefined) this.lightManager.pulseFrequency = p.pulseFrequency;
+                if (p.showHelper !== undefined) this.lightManager.toggleHelper(p.showHelper);
+            }
+
+            this.uiManager.applyLightPreset(preset.light);
+        }
+
+        if (preset.interaction) {
+            this.interactionManager.setActive(preset.interaction);
+        }
+
     }
 
 

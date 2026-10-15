@@ -11,18 +11,43 @@ export interface ModelConfig extends UIConfig {
     initialRotation?: B.Vector3; // Em radianos/Euler
 }
 
-// Helpers para não duplicar código
+// Helper robusto para carregar GLB com Bake Hierárquico completo
 const createGLBLoader = (filename: string, bakeRotation?: B.Vector3) => async (scene: B.Scene) => {
     const result = await B.SceneLoader.ImportMeshAsync('', '/models/', filename, scene);
-
     const root = result.meshes[0];
+
     if (bakeRotation) {
-        const rotMatrix = B.Matrix.RotationYawPitchRoll(bakeRotation.y, bakeRotation.x, bakeRotation.z);
-        for (const child of root.getChildMeshes()) {
-            if (child instanceof B.Mesh) {
-                child.bakeTransformIntoVertices(rotMatrix);
+
+        root.rotationQuaternion = B.Quaternion.FromEulerVector(bakeRotation);
+        root.computeWorldMatrix(true);
+        const childMeshes = root.getChildMeshes();
+
+        for (const child of childMeshes) {
+            if (child instanceof B.Mesh && child.getTotalVertices() > 0) {
+                const worldMatrix = child.computeWorldMatrix(true).clone();
+
+                // Grava a transformação definitiva nos vértices
+                child.bakeTransformIntoVertices(worldMatrix);
+                // Conecta diretamente à raiz com transform local neutro (identidade)
+                child.parent = root;
+                child.position.setAll(0);
+                child.rotation.setAll(0);
+                child.scaling.setAll(1);
+                child.rotationQuaternion = null;
+                child.computeWorldMatrix(true);
+                child.refreshBoundingInfo();
             }
         }
+
+        for (const node of root.getChildren().slice()) {
+            if (!childMeshes.includes(node as B.AbstractMesh)) {
+                node.dispose();
+            }
+        }
+
+        root.rotationQuaternion = B.Quaternion.Identity();
+        root.position.setAll(0);
+        root.computeWorldMatrix(true);
     }
 
     return root;
@@ -100,7 +125,7 @@ export const ModelConfigs = {
         colliderType: B.PhysicsShapeType.CONVEX_HULL,
         // initialRotation: new B.Vector3(-Math.PI / 2, 0, 0),
         description: 'Suzanner',
-        loader: createGLBLoader('suzanne.glb', new B.Vector3(-Math.PI / 2, 0, 0)),
+        loader: createGLBLoader('suzanne.glb', new B.Vector3(Math.PI / 2, Math.PI, 0)),
         parameters: [createScaleParam(0.01)]
     },
     candelabra: {
@@ -109,7 +134,7 @@ export const ModelConfigs = {
         colliderType: B.PhysicsShapeType.CONVEX_HULL,
         // initialRotation: new B.Vector3(-Math.PI / 2, 0, 0),
         description: 'Candelabro',
-        loader: createGLBLoader('candelabra.glb', new B.Vector3(-Math.PI / 2, 0, 0)),
+        loader: createGLBLoader('candelabra.glb', new B.Vector3(Math.PI / 2, 0, 0)),
         parameters: [createScaleParam(0.02, 5)]
     },
     axis: {
