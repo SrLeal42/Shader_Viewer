@@ -1,3 +1,51 @@
+:root {
+  color-scheme: dark;
+
+  /* Superfícies */
+  --bg-canvas: #0A0A0C;
+  --bg-panel: #121215;
+  --bg-input: #18181C;
+  --bg-elevated: #1A1A1F;
+
+  /* Bordas */
+  --border-default: #2A2A30;
+  --border-accent: #5C2828;
+
+  /* Identidade — Vermelho Oxidado */
+  --accent-primary: #B84A4A;
+  --accent-hover: #CB5E5E;
+  --accent-subtle: rgba(184, 74, 74, 0.15);
+
+  /* Tipografia (Cores) */
+  --text-primary: #EEEEF0;
+  --text-secondary: #A0A2AA;
+  --text-muted: #7A7D87;
+
+  /* Estados Semânticos */
+  --status-success: #8DAA8B;
+  --status-warning: #D6A65D;
+  --status-error: #CB5E5E;
+  --status-repel: #5B8296; /* Azul-aço industrial para estado de repulsão */
+
+  /* Famílias Tipográficas */
+  --font-ui: 'Space Grotesk', sans-serif;
+  --font-data: 'JetBrains Mono', monospace;
+
+  /* Geometria & Escala (Base 4px) */
+  --radius-panel: 0px;
+  --border-width: 1px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body,
 html {
   margin: 0;
@@ -5,9 +53,11 @@ html {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background-color: #1a1a1f;
-  /* Fundo que combina com a cena */
-  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #root {

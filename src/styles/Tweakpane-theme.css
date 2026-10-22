@@ -1,39 +1,116 @@
 :root {
-    /* Fonte */
-    --tp-font-family: 'Roboto', sans-serif;
+    /* Tipografia e Geometria Nativas do Tweakpane v4 */
+    --tp-base-font-family: var(--font-data);
+    --tp-base-border-radius: var(--radius-panel);
+    --tp-blade-border-radius: var(--radius-panel);
+    --tp-container-unit-size: 22px;
+    --tp-container-unit-spacing: 4px;
 
-    /* Fundo principal do painel (Cinza bem escuro) */
-    --tp-base-background-color: hsla(0, 0%, 12%, 0.95);
-    --tp-base-shadow-color: hsla(0, 0%, 0%, 0.5);
+    /* Fundo principal do painel */
+    --tp-base-background-color: var(--bg-panel);
+    --tp-base-shadow-color: rgba(0, 0, 0, 0.85);
 
-    /* Fundo de pastas/folders (Levemente mais claro que o fundo principal) */
-    --tp-container-background-color: hsla(0, 0%, 16%, 1.0);
-    --tp-container-background-color-hover: hsla(0, 0%, 20%, 1.0);
-    --tp-container-background-color-focus: hsla(0, 0%, 24%, 1.0);
-    --tp-container-background-color-active: hsla(0, 0%, 24%, 1.0);
-    --tp-container-foreground-color: hsla(0, 0%, 90%, 1.0);
+    /* Pastas / Containers */
+    --tp-container-background-color: var(--bg-elevated);
+    --tp-container-background-color-hover: #222228;
+    --tp-container-background-color-focus: #26262E;
+    --tp-container-background-color-active: #2A2A34;
+    --tp-container-foreground-color: var(--text-primary);
 
-    /* Textos de rótulos/labels */
-    --tp-label-foreground-color: hsla(0, 0%, 75%, 1.0);
+    /* Labels de parâmetros */
+    --tp-label-foreground-color: var(--text-secondary);
 
-    /* Inputs (campos de texto, dropdowns) */
-    --tp-input-background-color: hsla(0, 0%, 22%, 1.0);
-    --tp-input-background-color-hover: hsla(0, 0%, 26%, 1.0);
-    --tp-input-background-color-focus: hsla(0, 0%, 35%, 1.0);
-    --tp-input-background-color-active: hsla(0, 0%, 40%, 1.0);
-    --tp-input-foreground-color: hsla(0, 0%, 95%, 1.0);
+    /* Inputs (Numéricos, Dropdowns, Textos) */
+    --tp-input-background-color: var(--bg-input);
+    --tp-input-background-color-hover: #202026;
+    --tp-input-background-color-focus: #24242C;
+    --tp-input-background-color-active: #282830;
+    --tp-input-foreground-color: var(--text-primary);
 
-    /* Botões gerais */
-    --tp-button-background-color: hsla(0, 0%, 30%, 1.0);
-    --tp-button-background-color-hover: hsla(0, 0%, 35%, 1.0);
-    --tp-button-background-color-focus: hsla(0, 0%, 40%, 1.0);
-    --tp-button-background-color-active: hsla(0, 0%, 20%, 1.0);
-    --tp-button-foreground-color: hsla(0, 0%, 95%, 1.0);
+    /* Botões */
+    --tp-button-background-color: var(--bg-elevated);
+    --tp-button-background-color-hover: var(--accent-hover);
+    --tp-button-background-color-focus: var(--accent-primary);
+    --tp-button-background-color-active: var(--accent-primary);
+    --tp-button-foreground-color: var(--text-primary);
 
-    /* Sliders (linha indicadora de progresso do slider) */
-    --tp-groove-foreground-color: hsla(0, 0%, 60%, 1.0);
+    /* Sliders (Preenchimento ativo em Vermelho Oxidado) */
+    --tp-groove-foreground-color: var(--accent-primary);
 
-    /* Monitores (campos de leitura / read-only) */
-    --tp-monitor-background-color: hsla(0, 0%, 8%, 1.0);
-    --tp-monitor-foreground-color: hsla(0, 0%, 85%, 1.0);
+    /* Monitores (Read-only) */
+    --tp-monitor-background-color: var(--bg-canvas);
+    --tp-monitor-foreground-color: var(--text-secondary);
+}
+
+/* ─── Estrutura Brutalista do Painel ─── */
+.tp-dfwv {
+    width: 300px !important;
+    border: var(--border-width) solid var(--border-default);
+}
+
+/* Cabeçalhos de Pastas */
+.tp-fldv_b {
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: var(--border-width) solid var(--border-default);
+}
+
+.tp-fldv_t::before {
+    content: '// ';
+    color: var(--accent-primary);
+    font-family: var(--font-data);
+    font-weight: 600;
+}
+
+/* Guia lateral discreta para pastas aninhadas abertas */
+.tp-fldv.tp-fldv-expanded > .tp-fldv_c {
+    border-left: 2px solid var(--border-default);
+}
+
+.tp-fldv.tp-fldv-expanded:focus-within > .tp-fldv_c {
+    border-left-color: var(--accent-primary);
+}
+
+/* Labels dos Controles */
+.tp-lblv_l {
+    font-family: var(--font-ui);
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    color: var(--text-secondary);
+}
+
+/* Inputs, Dropdowns e Caixas de Valor */
+.tp-txtv_i,
+.tp-lstv_s,
+.tp-ckbv_w {
+    font-family: var(--font-data);
+    font-size: 12px;
+    border: var(--border-width) solid var(--border-default);
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.tp-txtv_i:focus,
+.tp-lstv_s:focus,
+.tp-ckbv_i:focus + .tp-ckbv_w {
+    border-color: var(--accent-primary);
+    background-color: var(--bg-input);
+    outline: none;
+}
+
+/* Botões de Ação (ex: Restaurar Padrões) */
+.tp-btnv_b {
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border: var(--border-width) solid var(--border-default);
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.tp-btnv_b:hover {
+    border-color: var(--accent-hover);
 }

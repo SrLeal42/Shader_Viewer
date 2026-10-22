@@ -265,6 +265,57 @@ export const ScenePresets: Record<string, ScenePreset> = {
 
     },
 
+    dithering_planet: {
+        model: 'sphere',
+        skybox: 'galaxy',
+        material: 'chrome',
+        transform: {
+            position: { x: 4.0, y: -0.7, z: -2.7 },
+            rotation: { x: 0, y: 0, z: 0 },
+            physics: false
+        },
+
+        modelParams: { scale: 2.0 },
+
+        materialParams: {
+            "u_metalColor": {r: 0.85, g: 0.85, b: 0.88},
+            "u_roughness": 0.93,
+            "u_lumThreshold": 0.05,
+            "u_noiseScale": 0.1,
+            "u_noiseStrength": 0.25,
+            "u_noiseSpeed": 0.01,
+            "u_reflectivity": 1.3,
+            "u_fresnelPower": 4.0,
+        },
+        light: {
+            mode: 'hemi',
+            hemi: { intensity: 1.6, color: {r: 1.00, g: 1.00, b: 1.00} }
+        },
+        postProcesses: {
+            'dithering': {
+                "u_pattern": 1,
+                "u_ditherScale": 2,
+                "u_colorMode": 1,
+                "u_threshold": 0.51,
+                "u_darkColor": {r: 0.08, g: 0.09, b: 0.12},
+                "u_lightColor": {r: 0.59, g: 0.40, b: 1.00},
+            },
+            'deterioration': {
+                "u_noiseStrength": 0.04,
+                "u_noiseScale": 1000.0,
+                "u_desaturation": 0.0,
+                "u_vignetteStrength": 0.50,
+                "u_vignetteRadius": 0.20,
+                "u_chromaticAberration": 0.0,
+                "u_scanlineStrength": 0.10,
+                "u_scanlineFrequency": 50.0,
+                "u_scanlineSpeed": 0.1,
+            }
+        },
+        skyboxEffects: ['warp', 'blackhole']
+
+    }
+
 };
 
-export const ACTIVE_PRESET: keyof typeof ScenePresets = 'dithering_monkey'; //'default'; 
+export const ACTIVE_PRESET: keyof typeof ScenePresets = 'dithering_planet'; //'default'; 
