@@ -209,8 +209,62 @@ export const ScenePresets: Record<string, ScenePreset> = {
         postProcesses: {
             bloom: { u_intensity: 1.2, u_threshold: 0.7 }
         }
-    }
+    },
+
+    dithering_monkey: {
+        model: 'suzanne',
+        skybox: 'cosmic_cluster',
+        material: 'portal',
+        transform: {
+            position: { x: 0, y: 0.2, z: 1.2 },
+            rotation: { x: -5, y: 15, z: 0 },
+            physics: false
+        },
+
+        modelParams: { scale: 1.8 },
+
+        materialParams: {
+            "u_pattern": 0,
+            "u_layers": 8.0,
+            "u_scrollSpeed": 0.3,
+            "u_rotationSpeed": 0.15,
+            "u_parallaxDepth": 3.0,
+            "u_baseColor": {r: 1.00, g: 1.00, b: 1.00},
+            "u_accentColor": {r: 0.86, g: 1.00, b: 0.00},
+            "u_brightness": 1.4,
+            "u_edgeGlow": 3.0,
+            "u_edgeColor": {r: 1.00, g: 1.00, b: 1.00},
+        },
+        postProcesses: {
+            'dithering': {
+                "u_pattern": 1,
+                "u_ditherScale": 2,
+                "u_colorMode": 1,
+                "u_threshold": 0.75,
+                "u_darkColor": {r: 0.00, g: 0.00, b: 0.00},
+                "u_lightColor": {r: 0.96, g: 1.00, b: 0.90},
+            },
+            'bloom': {
+                "u_threshold": 0.90,
+                "u_intensity": 1.9,
+                "u_radius": 3.4,
+            },
+            'deterioration': {
+                "u_noiseStrength": 0.00,
+                "u_noiseScale": 1000.0,
+                "u_desaturation": 0.0,
+                "u_vignetteStrength": 0.59,
+                "u_vignetteRadius": 0.23,
+                "u_chromaticAberration": 0.0,
+                "u_scanlineStrength": 0.15,
+                "u_scanlineFrequency": 50.0,
+                "u_scanlineSpeed": 0.5,
+            }
+        },
+        skyboxEffects: ['warp', 'meteors', 'aurora']
+
+    },
 
 };
 
-export const ACTIVE_PRESET: keyof typeof ScenePresets = 'default'; 
+export const ACTIVE_PRESET: keyof typeof ScenePresets = 'dithering_monkey'; //'default'; 

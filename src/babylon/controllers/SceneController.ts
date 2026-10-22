@@ -165,9 +165,21 @@ export class SceneController {
         tweakpaneLeftContainer: HTMLElement,
         signal?: AbortSignal
     ): Promise<SceneController> {
+        
+        await Promise.resolve();
+        
+        if (signal?.aborted) {
+            throw new DOMException('Inicialização abortada', 'AbortError');
+        }
+        
         const controller = new SceneController(canvas, tweakpaneRightContainer, tweakpaneLeftContainer);
-
+        
         await controller.physicsManager.init();
+        
+        if (signal?.aborted) {
+            controller.dispose();
+            throw new DOMException('Inicialização abortada', 'AbortError');
+        }
 
         const limits = controller.cameraManager.calculateFrustumLimits();
 
@@ -224,9 +236,15 @@ export class SceneController {
             this.modelController.applyPresetTransform(preset.transform);
         }
 
-        this.eventBus.emit('UI_SKYBOX_SELECTED', preset.skybox);
-        if (preset.skybox === 'color' && preset.skyboxColor) {
-            this.eventBus.emit('UI_SKYBOX_COLOR_CHANGED', preset.skyboxColor);
+        if (preset.skybox === 'color') {
+            const clear = this.scene.clearColor;
+            const c = preset.skyboxColor ?? { r: clear.r, g: clear.g, b: clear.b };
+            this.environmentManager.setBackgroundColor(new B.Color3(c.r, c.g, c.b));
+            this.eventBus.emit('CUBEMAP_CHANGED', null);
+        } else {
+            await this.environmentManager.setSkybox(preset.skybox);
+            if (signal?.aborted) return;
+            this.eventBus.emit('CUBEMAP_CHANGED', this.environmentManager.getCurrentCubemap());
         }
 
         const entity = this.modelController.currentEntity;

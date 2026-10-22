@@ -3,11 +3,17 @@ import type { SharedInclude, BaseVertex } from './shared/SharedIncludes';
 
 // --- Uniforms expostos ao Tweakpane ---
 
+export interface VisibilityCondition {
+    uniform: string;
+    value: string | number | boolean;
+}
+
 interface BaseUniform {
     uniform: string;   // Nome do uniform no GLSL (ex: 'u_levels')
     label: string;     // Nome exibido no Tweakpane
     description?: string;
     targetPostProcess?: string;
+    visibleWhen?: VisibilityCondition;
 }
 
 interface FloatUniform extends BaseUniform {
@@ -38,6 +44,7 @@ export interface FolderUniform {
     type: 'folder';
     label: string;
     children: ShaderUniform[];
+    visibleWhen?: VisibilityCondition;
 }
 
 export type ValueUniform = FloatUniform | ColorUniform | BooleanUniform | ListUniform;

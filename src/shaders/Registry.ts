@@ -27,6 +27,7 @@ import { PixelateConfig } from './postprocess/pixelate/PixelateConfig';
 import { ReflectionConfig } from './postprocess/reflection/ReflectionConfig';
 import { DeteriorationConfig } from './postprocess/deterioration/DeteriorationConfig';
 import { AsciiConfig } from './postprocess/ascii/AsciiConfig';
+import { DitheringConfig } from './postprocess/dithering/DitheringConfig';
 
 export const MAX_POST_PROCESSES = 5;
 
@@ -38,6 +39,7 @@ export const PostProcessShaders = {
     reflection: ReflectionConfig,
     deterioration: DeteriorationConfig,
     ascii: AsciiConfig,
+    dithering: DitheringConfig,
 } as const satisfies Record<string, PostProcessShaderConfig>;
 
 // Vertex Effects — mutuamente exclusivos

@@ -79,14 +79,25 @@ export class PostProcessSection {
         targetProxy: Record<string, unknown>,
         onChange: (uniform: ValueUniform, value: unknown) => void,
         isRoot: boolean = true,
-        allBindings: BindingApi[] = []
+        allBindings: BindingApi[] = [],
+        visibilityCheckers: (() => void)[] = []
     ): void {
+
+        const runVisibilityChecks = () => {
+            visibilityCheckers.forEach(check => check());
+        };
 
         uniforms.forEach((u: ShaderUniform) => {
 
             if (u.type === 'folder') {
                 const subFolder = folder.addFolder({ title: u.label });
-                this.buildUniformControls(subFolder, u.children, targetProxy, onChange, false, allBindings);
+                if (u.visibleWhen) {
+                    const cond = u.visibleWhen;
+                    visibilityCheckers.push(() => {
+                        subFolder.hidden = targetProxy[cond.uniform] !== cond.value;
+                    });
+                }
+                this.buildUniformControls(subFolder, u.children, targetProxy, onChange, false, allBindings, visibilityCheckers);
                 return;
             }
 
@@ -108,16 +119,27 @@ export class PostProcessSection {
             const binding = folder.addBinding(targetProxy, u.uniform, bindingOptions)
                 .on('change', (ev) => {
                     onChange(u, ev.value);
+                    runVisibilityChecks();
                 });
 
             if (u.description) {
                 binding.element.title = u.description;
             }
 
+            if (u.visibleWhen) {
+                const cond = u.visibleWhen;
+                visibilityCheckers.push(() => {
+                    binding.hidden = targetProxy[cond.uniform] !== cond.value;
+                });
+            }
+
             allBindings.push(binding);
         });
 
         if (isRoot) {
+            // Aplica a visibilidade inicial assim que todos os defaults foram populados no targetProxy
+            runVisibilityChecks();
+
             folder.addButton({ title: 'Restaurar Padrões' })
                 .on('click', () => {
                     const flatUniforms = flattenUniforms(uniforms);
@@ -127,8 +149,10 @@ export class PostProcessSection {
                         onChange(u, resetValue);
                     });
                     allBindings.forEach(b => b.refresh());
+                    runVisibilityChecks();
                 });
         }
+    
     }
 
     public forceUncheck(id: string): void {
