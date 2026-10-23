@@ -162,14 +162,14 @@ export class DepthNormalManager {
 
     }
 
-    public resize(): void {
+    public resize(customWidth?: number, customHeight?: number): void {
         const engine = this.scene.getEngine();
-        const width = engine.getRenderWidth();
-        const height = engine.getRenderHeight();
-
+        
+        const width = customWidth ?? engine.getRenderWidth();
+        const height = customHeight ?? engine.getRenderHeight();
+        
         this.depthRTT.resize({ width, height });
         this.normalRTT.resize({ width, height });
-
     }
 
     public dispose() {

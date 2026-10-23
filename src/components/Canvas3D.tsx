@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { PerformanceBar } from './ui/PerformanceBar';
 
@@ -19,6 +19,7 @@ export function Canvas3D() {
     const [isIdle, setIsIdle] = useState(false);
 
     const [isStatsVisible, setIsStatsVisible] = useState(false);
+    const [isCapturing, setIsCapturing] = useState(false);
 
     // O cursor e o botão só devem sumir se a UI estiver oculta E o usuário inativo
     const isCinematicHidden = !isUIVisible && isIdle;
@@ -88,6 +89,35 @@ export function Canvas3D() {
 
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
+
+
+    const handleScreenshot = useCallback(async () => {
+        if (!controllerRef.current || isCapturing) return;
+        
+        setIsCapturing(true);
+        
+        try {
+            await controllerRef.current.captureScreenshot4K();
+        } catch (err) {
+            console.error('[Canvas3D] Falha ao capturar screenshot:', err);
+        } finally {
+            setIsCapturing(false);
+        }
+
+    }, [isCapturing]);
+    
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'F9') {
+                e.preventDefault();
+                handleScreenshot();
+            }
+        };
+        
+        window.addEventListener('keydown', handleKeyDown);
+        
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [handleScreenshot]);
 
 
     // --- Setup do BabylonJS ---
@@ -169,6 +199,7 @@ export function Canvas3D() {
             </button>
 
 
+            
             <button
                 className={`${styles.toggleStatsButton} ${isStatsVisible ? styles.statsButtonActive : ''} ${isCinematicHidden ? styles.hiddenButton : ''}`}
                 onClick={() => setIsStatsVisible(prev => !prev)}
@@ -176,6 +207,19 @@ export function Canvas3D() {
             >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
+            </button>
+
+
+            <button
+                className={`${styles.screenshotButton} ${isCinematicHidden ? styles.hiddenButton : ''}`}
+                onClick={handleScreenshot}
+                disabled={isCapturing}
+                title={isCapturing ? "Capturando Screenshot 4K..." : "Capturar Screenshot 4K (F9)"}
+            >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                    <circle cx="12" cy="13" r="4"></circle>
                 </svg>
             </button>
 

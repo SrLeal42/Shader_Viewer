@@ -60,6 +60,7 @@ export class SceneController {
     private resizeTimeout: ReturnType<typeof setTimeout> | null = null;
 
     private instrumentation: B.SceneInstrumentation;
+    private isCapturingScreenshot = false;
 
 
     private constructor(
@@ -311,9 +312,62 @@ export class SceneController {
     }
 
 
+    public async captureScreenshot4K(): Promise<void> {
+        
+        if (this.isCapturingScreenshot) return;
+        
+        this.isCapturingScreenshot = true;
+        
+        const TARGET_W = 3840;
+        const TARGET_H = 2160;
+        
+        const prevWidth = this.engine.getRenderWidth(true);
+        const prevHeight = this.engine.getRenderHeight(true);
+        
+        try {
+            // Oculta o helper 3D da PointLight (se ativo)
+            this.lightManager.setHelperTemporaryVisibility(false);
+            // Força o backbuffer para 3840x2160 e redimensiona RTTs dependentes
+            this.engine.setSize(TARGET_W, TARGET_H, true);
+            this.depthNormalManager.resize(TARGET_W, TARGET_H);
+            this.shaderController.resize(TARGET_W, TARGET_H);
+            // Renderiza 1 frame completo em 4K
+            this.scene.render();
+        
+            // Extrai o frame em 4K e dispara o download
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            const filename = `SV-screenshot-4k-${timestamp}.png`;
+            const data = await B.Tools.CreateScreenshotAsync(
+                this.engine,
+                this.cameraManager.camera,
+                { width: TARGET_W, height: TARGET_H },
+                'image/png'
+            );
+        
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = data;
+            link.click();
+        
+        } finally {
+            // Restaura estado original da viewport e helpers
+            this.engine.setSize(prevWidth, prevHeight, true);
+            this.depthNormalManager.resize(prevWidth, prevHeight);
+            this.shaderController.resize(prevWidth, prevHeight);
+            this.lightManager.setHelperTemporaryVisibility(true);
+            this.scene.render();
+            this.isCapturingScreenshot = false;
+        }
+
+    }
+
+
     // ─── Lifecycle ───
 
     private onResize = () => {
+        
+        if (this.isCapturingScreenshot) return;
+
         // engine.resize() precisa ser imediato para o canvas não distorcer
         this.engine.resize();
 

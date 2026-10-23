@@ -312,6 +312,16 @@ export class LightManager {
         }
     }
 
+    public setHelperTemporaryVisibility(visible: boolean): void {
+        if (!visible) {
+            if (this.helperRoot) {
+                this.helperRoot.setEnabled(false);
+            }
+        } else {
+            this.toggleHelper(this.showHelper);
+        }
+    }
+
     private syncHelperPosition(): void {
         if (this.helperRoot) {
             this.helperRoot.position.copyFrom(this.pointLight.position);

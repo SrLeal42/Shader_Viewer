@@ -533,16 +533,17 @@ export class ShaderManager {
     }
 
 
-    public resize(): void {
+    public resize(customWidth?: number, customHeight?: number): void {
+        
         // Redimensiona a RTT da refração do vidro, se ela existir
         if (this.sceneRTT) {
             const engine = this.scene.getEngine();
-            const width = engine.getRenderWidth();
-            const height = engine.getRenderHeight();
-
+            const width = customWidth ?? engine.getRenderWidth();
+            const height = customHeight ?? engine.getRenderHeight();
+        
             this.sceneRTT.resize({ width, height });
             this._tempScreenSize.set(width, height);
-
+        
             // Atualiza o uniform u_screenSize imediatamente se o material estiver ativo
             if (this._activeMaterialId) {
                 const cacheKey = this.activeCacheKey;
@@ -551,7 +552,7 @@ export class ShaderManager {
                     mat.setVector2('u_screenSize', this._tempScreenSize);
                 }
             }
-
+        
         }
 
     }

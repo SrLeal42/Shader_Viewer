@@ -244,9 +244,9 @@ export class ShaderController {
     public updateTime(elapsed: number): void {
         this.shaderManager.updateTime(elapsed, this.vertexEffectParams);
     }
-
-    public resize(): void {
-        this.shaderManager.resize();
+    
+    public resize(customWidth?: number, customHeight?: number): void {
+        this.shaderManager.resize(customWidth, customHeight);
     }
 
 

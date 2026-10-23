@@ -45,7 +45,8 @@
 }
 
 .toggleUIButton,
-.toggleStatsButton {
+.toggleStatsButton,
+.screenshotButton {
     position: absolute;
     bottom: var(--space-4);
     z-index: 20;
@@ -70,17 +71,28 @@
     left: calc(var(--space-4) + 38px + var(--space-2));
 }
 
+.screenshotButton {
+    right: var(--space-4);
+}
+
 .toggleUIButton:hover,
-.toggleStatsButton:hover {
+.toggleStatsButton:hover,
+.screenshotButton:hover:not(:disabled) {
     border-color: var(--accent-hover);
     color: var(--accent-hover);
     background-color: var(--bg-elevated);
 }
 
 .toggleUIButton:focus-visible,
-.toggleStatsButton:focus-visible {
+.toggleStatsButton:focus-visible,
+.screenshotButton:focus-visible {
     outline: 2px solid var(--accent-primary);
     outline-offset: 2px;
+}
+
+.screenshotButton:disabled {
+    opacity: 0.5;
+    pointer-events: none;
 }
 
 .statsButtonActive {

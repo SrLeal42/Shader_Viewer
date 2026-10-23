@@ -318,4 +318,4 @@ export const ScenePresets: Record<string, ScenePreset> = {
 
 };
 
-export const ACTIVE_PRESET: keyof typeof ScenePresets = 'dithering_planet'; //'default'; 
+export const ACTIVE_PRESET: keyof typeof ScenePresets = 'default'; 
