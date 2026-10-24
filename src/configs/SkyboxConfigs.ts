@@ -21,7 +21,7 @@ export const SkyboxConfigs = {
     },
     studio: {
         label: 'Studio',
-        path: '/skyboxes/studio.env',
+        path: './skyboxes/studio.env',
         intensity: 1.0,
         rotationY: 0,
         rotationX: 0,
@@ -32,7 +32,7 @@ export const SkyboxConfigs = {
     },
     sky: {
         label: 'Sky',
-        path: '/skyboxes/sky.env',
+        path: './skyboxes/sky.env',
         intensity: 0.8,
         rotationY: Math.PI,
         rotationX: 0,
@@ -43,7 +43,7 @@ export const SkyboxConfigs = {
     },
     frutiger_classic: {
         label: 'Frutiger Aero (Classic)',
-        path: '/skyboxes/frutiger_aero_classic.env',
+        path: './skyboxes/frutiger_aero_classic.env',
         intensity: 0.8,
         rotationY: Math.PI,
         rotationX: 0,
@@ -54,7 +54,7 @@ export const SkyboxConfigs = {
     },
     frutiger_winter: {
         label: 'Frutiger Aero (Winter)',
-        path: '/skyboxes/frutiger_aero_winter.env',
+        path: './skyboxes/frutiger_aero_winter.env',
         intensity: 0.8,
         rotationY: Math.PI,
         rotationX: 0,
@@ -65,7 +65,7 @@ export const SkyboxConfigs = {
     },
     xangai: {
         label: 'Xangai',
-        path: '/skyboxes/xangai.env',
+        path: './skyboxes/xangai.env',
         intensity: 1.0,
         rotationY: Math.PI / 1.15,
         rotationX: -0.35,
@@ -76,7 +76,7 @@ export const SkyboxConfigs = {
     },
     cyberpunk: {
         label: 'Cyberpunk City',
-        path: '/skyboxes/cyberpunk_city.env',
+        path: './skyboxes/cyberpunk_city.env',
         intensity: 1.0,
         rotationY: Math.PI / 1.5,
         rotationX: -0.45,
@@ -87,7 +87,7 @@ export const SkyboxConfigs = {
     },
     underwater: {
         label: 'Underwater',
-        path: '/skyboxes/underwater.env',
+        path: './skyboxes/underwater.env',
         intensity: 1.0,
         rotationY: Math.PI,
         rotationX: 0,
@@ -98,7 +98,7 @@ export const SkyboxConfigs = {
     },
     desert: {
         label: 'Desert',
-        path: '/skyboxes/desert.env',
+        path: './skyboxes/desert.env',
         intensity: 1.0,
         rotationY: Math.PI / 2,
         rotationX: -Math.PI / 6,
@@ -109,7 +109,7 @@ export const SkyboxConfigs = {
     },
     volcano: {
         label: 'Volcano',
-        path: '/skyboxes/volcano.env',
+        path: './skyboxes/volcano.env',
         intensity: 1.0,
         rotationY: Math.PI,
         rotationX: 0,
@@ -120,7 +120,7 @@ export const SkyboxConfigs = {
     },
     galaxy: {
         label: 'Galaxy',
-        path: '/skyboxes/galaxy.env',
+        path: './skyboxes/galaxy.env',
         intensity: 1.0,
         rotationY: Math.PI,
         rotationX: 0,
@@ -131,7 +131,7 @@ export const SkyboxConfigs = {
     },
     cosmic_cluster: {
         label: 'Cosmic Cluster',
-        path: '/skyboxes/cosmic_cluster.env',
+        path: './skyboxes/cosmic_cluster.env',
         intensity: 1.0,
         rotationY: Math.PI,
         rotationX: 0,

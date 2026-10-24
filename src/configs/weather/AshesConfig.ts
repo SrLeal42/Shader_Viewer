@@ -7,7 +7,7 @@ export const AshesConfig: WeatherPresetConfig = {
 
     particles: [
         {
-            texturePath: '/textures/weather/ashes/ashes.png',
+            texturePath: './textures/weather/ashes/ashes.png',
             spriteSheet: {
                 cellWidth: 500,
                 cellHeight: 500,
@@ -42,7 +42,7 @@ export const AshesConfig: WeatherPresetConfig = {
         fragmentSource: frostFragmentSource,
         uniforms: ['u_time', 'u_intensity', 'u_vignetteInner', 'u_vignetteOuter', 'u_pulseSpeed', 'u_pulseAmplitude'],
         textures: [
-            { sampler: 'frostSampler', path: '/textures/weather/ashes/ashes_overlay.png' }
+            { sampler: 'frostSampler', path: './textures/weather/ashes/ashes_overlay.png' }
         ],
         overlay: {
             intensity: 0.75,

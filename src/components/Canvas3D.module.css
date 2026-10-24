@@ -1,4 +1,5 @@
-* {
+.hideCursor,
+.hideCursor * {
     cursor: none !important;
 }
 

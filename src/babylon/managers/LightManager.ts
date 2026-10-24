@@ -73,7 +73,9 @@ export class LightManager {
         this.setMode(this.currentMode);
         this.startAnimationLoop();
 
-        this.loadHelperModel();
+        if (!__LIVELY_BUILD__) {
+            this.loadHelperModel();
+        }
 
         // ─── Desacoplamento via EventBus ───
 
@@ -330,7 +332,7 @@ export class LightManager {
 
     private async loadHelperModel() {
         try {
-            const result = await B.SceneLoader.ImportMeshAsync('', '/models/', 'axis.glb', this.scene);
+            const result = await B.SceneLoader.ImportMeshAsync('', './models/', 'axis.glb', this.scene);
 
             if (this._isDisposed) {
                 result.meshes.forEach(m => m.dispose(false, true));

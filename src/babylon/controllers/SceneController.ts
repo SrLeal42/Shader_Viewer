@@ -6,7 +6,7 @@ import { ModelController } from './ModelController';
 import { ShaderController } from './ShaderController';
 
 import { CameraManager } from '../managers/CameraManager';
-import { UIManager } from '../managers/ui/UIManager';
+import type { UIManager } from '../managers/ui/UIManager';
 import { PhysicsManager } from '../managers/PhysicsManager';
 import { ModelManager } from '../managers/ModelManager';
 import { ShaderManager } from '../managers/ShaderManager';
@@ -45,7 +45,7 @@ export class SceneController {
     private shaderController: ShaderController;
 
     public cameraManager: CameraManager;
-    private uiManager: UIManager;
+    private uiManager: UIManager | null = null;
 
     private physicsManager: PhysicsManager;
 
@@ -59,33 +59,34 @@ export class SceneController {
 
     private resizeTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    private instrumentation: B.SceneInstrumentation;
+    private instrumentation: B.SceneInstrumentation | null = null;
     private isCapturingScreenshot = false;
 
 
     private constructor(
         canvas: HTMLCanvasElement,
-        tweakpaneRightContainer: HTMLElement,
-        tweakpaneLeftContainer: HTMLElement
+        eventBus: EventBus,
+        uiManager: UIManager | null
     ) {
         this.engine = new B.Engine(canvas, true, {
-            preserveDrawingBuffer: true,
+            preserveDrawingBuffer: !__LIVELY_BUILD__,
             stencil: true
         });
         this.scene = new B.Scene(this.engine);
 
-        this.eventBus = new EventBus();
+        this.eventBus = eventBus;
+        this.uiManager = uiManager;
 
-        // Inicializa o monitoramento de desempenho
-        this.instrumentation = new B.SceneInstrumentation(this.scene);
-        this.instrumentation.captureParticlesRenderTime = true;
-        this.instrumentation.captureFrameTime = true;
-        this.instrumentation.capturePhysicsTime = true;
+        if (!__LIVELY_BUILD__) {
+            this.instrumentation = new B.SceneInstrumentation(this.scene);
+            this.instrumentation.captureParticlesRenderTime = true;
+            this.instrumentation.captureFrameTime = true;
+            this.instrumentation.capturePhysicsTime = true;
+        }
 
         // ─── Managers ───
         this.cameraManager = new CameraManager(this.scene, canvas);
         const limits = this.cameraManager.calculateFrustumLimits();
-        this.uiManager = new UIManager(tweakpaneRightContainer, tweakpaneLeftContainer, this.eventBus);
         this.physicsManager = new PhysicsManager(this.scene);
         this.environmentManager = new EnvironmentManager(this.scene, this.eventBus);
         this.skyboxEffectManager = new SkyboxEffectManager(this.environmentManager.activeSkyboxMaterial, this.eventBus);
@@ -122,15 +123,15 @@ export class SceneController {
         this.interactionManager.setActive('finger');
 
         // ─── Inicialização da UI ───
-        this.uiManager.setupAllPanels({
-            initialInteraction: 'finger',
-            initialLightMode: this.lightManager.currentMode
-        });
-
-        this.modelController.setupTransformUI(limits);
+        if (this.uiManager) {
+            this.uiManager.setupAllPanels({
+                initialInteraction: 'finger',
+                initialLightMode: this.lightManager.currentMode
+            });
+            this.modelController.setupTransformUI(limits);
+        }
 
     }
-
 
 
     public getPerformanceMetrics(): PerformanceMetrics {
@@ -145,15 +146,15 @@ export class SceneController {
 
         return {
             fps: Math.round(this.engine.getFps()),
-            frameTimeMs: this.instrumentation.frameTimeCounter.current,
-            drawCalls: this.instrumentation.drawCallsCounter.current,
+            frameTimeMs: this.instrumentation?.frameTimeCounter.current ?? 0,
+            drawCalls: this.instrumentation?.drawCallsCounter.current ?? 0,
             triangles: Math.round(this.scene.getActiveIndices() / 3),
             activeMeshes: this.scene.getActiveMeshes().length,
             totalMeshes: this.scene.meshes.length,
             activeParticles,
             totalParticlesCapacity,
-            particlesTimeMs: this.instrumentation.particlesRenderTimeCounter.current,
-            physicsTimeMs: this.instrumentation.physicsTimeCounter.current
+            particlesTimeMs: this.instrumentation?.particlesRenderTimeCounter.current ?? 0,
+            physicsTimeMs: this.instrumentation?.physicsTimeCounter.current ?? 0
         };
 
     }
@@ -162,19 +163,26 @@ export class SceneController {
 
     public static async create(
         canvas: HTMLCanvasElement,
-        tweakpaneRightContainer: HTMLElement,
-        tweakpaneLeftContainer: HTMLElement,
+        tweakpaneRightContainer: HTMLElement | null,
+        tweakpaneLeftContainer: HTMLElement | null,
         signal?: AbortSignal
     ): Promise<SceneController> {
-        
         await Promise.resolve();
         
         if (signal?.aborted) {
             throw new DOMException('Inicialização abortada', 'AbortError');
         }
-        
-        const controller = new SceneController(canvas, tweakpaneRightContainer, tweakpaneLeftContainer);
-        
+     
+        const eventBus = new EventBus();
+     
+        let uiManager: UIManager | null = null;
+        if (!__LIVELY_BUILD__ && tweakpaneRightContainer && tweakpaneLeftContainer) {
+            const { UIManager: UIManagerClass } = await import('../managers/ui/UIManager');
+            if (signal?.aborted) throw new DOMException('Inicialização abortada', 'AbortError');
+            uiManager = new UIManagerClass(tweakpaneRightContainer, tweakpaneLeftContainer, eventBus);
+        }
+
+        const controller = new SceneController(canvas, eventBus, uiManager);
         await controller.physicsManager.init();
         
         if (signal?.aborted) {
@@ -186,7 +194,9 @@ export class SceneController {
 
         controller.environmentManager.resizeBoundaries(limits);
 
-        const initialPreset = ScenePresets[ACTIVE_PRESET];
+        const targetPresetKey = (__LIVELY_BUILD__ && __LIVELY_PRESET__) ? __LIVELY_PRESET__ : ACTIVE_PRESET;
+        const initialPreset = ScenePresets[targetPresetKey] ?? ScenePresets[ACTIVE_PRESET];
+
         if (initialPreset) {
             await controller.applyPreset(initialPreset, signal);
         }
@@ -202,21 +212,29 @@ export class SceneController {
     }
 
 
-
     private startRenderLoop(): void {
-        const startTime = performance.now();
-
+        let lastTick = performance.now();
+        let accumulatedTime = 0;
+        
         this.engine.runRenderLoop(() => {
-            const elapsed = (performance.now() - startTime) / 1000;
-
-            document.title = `Shader Viewer | FPS: ${this.engine.getFps().toFixed(0)}`;
-
-            this.shaderController.updateTime(elapsed);
-            this.skyboxEffectManager.updateTime(elapsed);
-            this.weatherManager.update(elapsed);
-
+        
+            const now = performance.now();
+            const dt = (now - lastTick) / 1000;
+            lastTick = now;
+        
+            if (document.hidden) return;
+        
+            accumulatedTime += dt;
+        
+            if (!__LIVELY_BUILD__) {
+                document.title = `Shader Viewer | FPS: ${this.engine.getFps().toFixed(0)}`;
+            }
+        
+            this.shaderController.updateTime(accumulatedTime);
+            this.skyboxEffectManager.updateTime(accumulatedTime);
+            this.weatherManager.update(accumulatedTime);
             this.modelController.updatePhysicsTick();
-
+        
             this.scene.render();
         });
 
@@ -302,7 +320,7 @@ export class SceneController {
                 if (p.showHelper !== undefined) this.lightManager.toggleHelper(p.showHelper);
             }
 
-            this.uiManager.applyLightPreset(preset.light);
+            this.uiManager?.applyLightPreset(preset.light);
         }
 
         if (preset.interaction) {
@@ -397,9 +415,9 @@ export class SceneController {
 
         this.eventBus.clear();
 
-        this.instrumentation.dispose();
+        this.instrumentation?.dispose();
 
-        this.uiManager.dispose();
+        this.uiManager?.dispose();
         this.modelController.dispose();
         this.shaderController.dispose();
         this.environmentManager.dispose();

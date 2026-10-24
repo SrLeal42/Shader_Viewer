@@ -16,7 +16,7 @@ export class ShaderController {
 
     private shaderManager: ShaderManager;
     private environmentManager: EnvironmentManager;
-    private uiManager: UIManager;
+    private uiManager: UIManager | null;
 
     // ─── Estado de Shaders ───
 
@@ -29,7 +29,7 @@ export class ShaderController {
     constructor(
         shaderManager: ShaderManager,
         environmentManager: EnvironmentManager,
-        uiManager: UIManager,
+        uiManager: UIManager | null,
         eventBus: EventBus,
         getEntity: () => ModelEntity | null
     ) {
@@ -108,9 +108,9 @@ export class ShaderController {
 
         const config = MaterialShaders[shaderId];
 
-        this.uiManager.clearShaderPanel();
+        this.uiManager?.clearShaderPanel();
 
-        this.uiManager.buildShaderPanel(
+        this.uiManager?.buildShaderPanel(
             config.title,
             config.uniforms,
             currentParams,
@@ -135,7 +135,7 @@ export class ShaderController {
     public switchVertexEffect(effectId: VertexEffectId, entity: ModelEntity): void {
 
         this.vertexEffectParams = {};
-        this.uiManager.clearVertexEffectPanel();
+        this.uiManager?.clearVertexEffectPanel();
 
         this.shaderManager.setVertexEffect(effectId, entity.mesh, {
             getAlbedo: (m) => entity.getOriginalAlbedoTexture(m),
@@ -151,7 +151,7 @@ export class ShaderController {
 
         const config = VertexEffects[effectId];
         if (config.uniforms.length > 0) {
-            this.uiManager.buildVertexEffectPanel(
+            this.uiManager?.buildVertexEffectPanel(
                 config.label,
                 config.uniforms,
                 this.vertexEffectParams,
@@ -175,7 +175,7 @@ export class ShaderController {
                 const oldest = this.shaderManager.activePostProcessIds[0];
                 if (oldest) {
                     this.togglePostProcess(oldest, false);
-                    this.uiManager.forceUncheckPostProcess(oldest);
+                    this.uiManager?.forceUncheckPostProcess(oldest);
                 }
             }
 
@@ -189,7 +189,7 @@ export class ShaderController {
             }
 
             this.ppParams.set(shaderId, proxy);
-            this.uiManager.buildPostProcessPanel(
+            this.uiManager?.buildPostProcessPanel(
                 shaderId,
                 config.title,
                 config.uniforms,
@@ -201,7 +201,7 @@ export class ShaderController {
 
         } else {
             this.shaderManager.disablePostProcess(shaderId);
-            this.uiManager.clearPostProcessPanel(shaderId);
+            this.uiManager?.clearPostProcessPanel(shaderId);
             this.ppParams.delete(shaderId);
         }
 

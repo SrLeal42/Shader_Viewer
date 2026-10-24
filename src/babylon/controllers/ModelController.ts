@@ -16,7 +16,7 @@ export class ModelController {
     private modelManager: ModelManager;
     private physicsManager: PhysicsManager;
     private depthNormalManager: DepthNormalManager;
-    private uiManager: UIManager;
+    private uiManager: UIManager | null;
 
     private eventBus: EventBus;
 
@@ -40,7 +40,7 @@ export class ModelController {
         modelManager: ModelManager,
         physicsManager: PhysicsManager,
         depthNormalManager: DepthNormalManager,
-        uiManager: UIManager,
+        uiManager: UIManager | null,
         eventBus: EventBus
     ) {
         this.modelManager = modelManager;
@@ -76,6 +76,9 @@ export class ModelController {
     // ─── Setup da UI de Transformação ───
 
     public setupTransformUI(limits: FrustumLimits): void {
+        
+        if (!this.uiManager) return;
+
         this.transformUI = this.uiManager.setupTransformControls(
             this.transformState,
             limits
@@ -132,7 +135,7 @@ export class ModelController {
         // Painel de parâmetros do modelo
         this.currentParams = initialParams ? { ...initialParams } : {};
 
-        this.uiManager.buildDynamicPanel(config, this.currentParams, (param, value) => {
+        this.uiManager?.buildDynamicPanel(config, this.currentParams, (param, value) => {
             const entity = this.modelManager.currentEntity;
             if (param.onApply && entity) {
                 param.onApply(entity.mesh, value as never);

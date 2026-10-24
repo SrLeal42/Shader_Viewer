@@ -8,7 +8,7 @@ export const SnowConfig: WeatherPresetConfig = {
 
     particles: [
         {
-            texturePath: '/textures/weather/snow/flakes.png',
+            texturePath: './textures/weather/snow/flakes.png',
             spriteSheet: {
                 cellWidth: 435,
                 cellHeight: 500,
@@ -42,7 +42,7 @@ export const SnowConfig: WeatherPresetConfig = {
         fragmentSource: frostFragmentSource,
         uniforms: ['u_time', 'u_intensity', 'u_vignetteInner', 'u_vignetteOuter', 'u_pulseSpeed', 'u_pulseAmplitude'],
         textures: [
-            { sampler: 'frostSampler', path: '/textures/weather/snow/frost_overlay.png' }
+            { sampler: 'frostSampler', path: './textures/weather/snow/frost_overlay.png' }
         ],
         overlay: {
             intensity: 1.0,

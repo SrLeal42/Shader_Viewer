@@ -13,7 +13,7 @@ export interface ModelConfig extends UIConfig {
 
 // Helper robusto para carregar GLB com Bake Hierárquico completo
 const createGLBLoader = (filename: string, bakeRotation?: B.Vector3) => async (scene: B.Scene) => {
-    const result = await B.SceneLoader.ImportMeshAsync('', '/models/', filename, scene);
+    const result = await B.SceneLoader.ImportMeshAsync('', './models/', filename, scene);
     const root = result.meshes[0];
 
     if (bakeRotation) {

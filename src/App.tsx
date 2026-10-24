@@ -1,6 +1,9 @@
 import { Canvas3D } from './components/Canvas3D';
 import './App.css';
-import './styles/Tweakpane-theme.css'
+
+if (!__LIVELY_BUILD__) {
+  import('./styles/Tweakpane-theme.css');
+}
 
 function App() {
   return (

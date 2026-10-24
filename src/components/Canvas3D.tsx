@@ -10,6 +10,57 @@ import styles from './Canvas3D.module.css';
 const INACTIVE_TIME = 3000;// 3 segundos para considerar "inativo"
 
 export function Canvas3D() {
+    if (__LIVELY_BUILD__) {
+        return <LivelyCanvas3D />;
+    }
+    return <DevCanvas3D />;
+}
+
+
+function LivelyCanvas3D() {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    
+    useEffect(() => {
+    
+        if (!canvasRef.current) return;
+    
+        const abortController = new AbortController();
+        let instance: SceneController | null = null;
+    
+        SceneController.create(
+            canvasRef.current,
+            null,
+            null,
+            abortController.signal
+        ).then((controller) => {
+            if (abortController.signal.aborted) {
+                controller.dispose();
+                return;
+            }
+            instance = controller;
+        }).catch((err) => {
+            if (!abortController.signal.aborted) {
+                console.error('[LivelyCanvas3D] Falha ao inicializar:', err);
+            }
+        });
+    
+        return () => {
+            abortController.abort();
+            instance?.dispose();
+        };
+    
+    }, []);
+    
+    return (
+        <div className={styles.container}>
+            <canvas ref={canvasRef} className={styles.canvas} id="renderCanvas" />
+        </div>
+    );
+
+}
+
+
+export function DevCanvas3D() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const tweakpaneRightRef = useRef<HTMLDivElement>(null);
     const tweakpaneLeftRef = useRef<HTMLDivElement>(null);
@@ -158,7 +209,7 @@ export function Canvas3D() {
     }, []);
 
     return (
-        <div className={`${styles.container} ${isCinematicHidden ? styles.idle : ''}`}>
+        <div className={`${styles.container} ${styles.hideCursor} ${isCinematicHidden ? styles.idle : ''}`}>
             <CustomCursor isHidden={isCinematicHidden} />
             <canvas ref={canvasRef}
                 className={styles.canvas}

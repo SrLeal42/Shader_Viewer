@@ -37,7 +37,7 @@ export const SandstormConfig: WeatherPresetConfig = {
         fragmentSource: frostFragmentSource,
         uniforms: ['u_time', 'u_intensity', 'u_vignetteInner', 'u_vignetteOuter', 'u_pulseSpeed', 'u_pulseAmplitude'],
         textures: [
-            { sampler: 'frostSampler', path: '/textures/weather/sand/sand_overlay.png' }
+            { sampler: 'frostSampler', path: './textures/weather/sand/sand_overlay.png' }
         ],
         overlay: {
             intensity: 0.9,
