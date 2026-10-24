@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
   const livelyPreset = process.env.LIVELY_PRESET || '';
 
   return {
-    base: isLively ? './' : '/',
+    base: './',
     plugins: [react()],
     define: {
       __LIVELY_BUILD__: JSON.stringify(isLively),

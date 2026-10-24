@@ -17,17 +17,19 @@ export function PerformanceBar({ controller, isVisible }: PerformanceBarProps) {
     const [metrics, setMetrics] = useState<PerformanceMetrics | null>(null);
 
     useEffect(() => {
-        if (!isVisible || !controller) {
-            setMetrics(null);
-            return;
-        }
-
+        
+        if (!isVisible || !controller) return;
+        
         // Atualiza 5x por segundo para não gerar sobrecarga no React
         const interval = window.setInterval(() => {
             setMetrics(controller.getPerformanceMetrics());
         }, 200);
 
-        return () => window.clearInterval(interval);
+        return () => {
+            window.clearInterval(interval);
+            setMetrics(null);
+        };
+        
     }, [isVisible, controller]);
 
     if (!isVisible || !metrics) return null;

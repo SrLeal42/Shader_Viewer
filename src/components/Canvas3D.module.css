@@ -112,3 +112,63 @@
     opacity: 0;
     pointer-events: none;
 }
+
+
+
+/* --- Overlay de Carregamento & Erro --- */
+.loadingOverlay {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    background-color: var(--bg-canvas);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.4s ease;
+    user-select: none;
+}
+
+.loadingOverlayHidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.loadingBox {
+    font-family: var(--font-data);
+    border-left: 2px solid var(--accent-primary);
+    padding: var(--space-2) var(--space-4);
+    background-color: var(--bg-panel);
+    border-top: var(--border-width) solid var(--border-default);
+    border-right: var(--border-width) solid var(--border-default);
+    border-bottom: var(--border-width) solid var(--border-default);
+}
+
+.errorBox {
+    border-left-color: var(--status-error);
+}
+
+.loadingHeader {
+    color: var(--accent-primary);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    margin-bottom: var(--space-1);
+}
+
+.loadingText {
+    color: var(--text-secondary);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    animation: brutalistPulse 1.4s infinite ease-in-out;
+}
+
+.errorText {
+    color: var(--status-error);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+}
+
+@keyframes brutalistPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}

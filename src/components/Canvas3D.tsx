@@ -53,7 +53,12 @@ function LivelyCanvas3D() {
     
     return (
         <div className={styles.container}>
-            <canvas ref={canvasRef} className={styles.canvas} id="renderCanvas" />
+            <canvas
+                ref={canvasRef}
+                className={styles.canvas}
+                id="renderCanvas"
+                onContextMenu={(e) => e.preventDefault()}
+            />
         </div>
     );
 
@@ -66,10 +71,16 @@ export function DevCanvas3D() {
     const tweakpaneLeftRef = useRef<HTMLDivElement>(null);
     const controllerRef = useRef<SceneController | null>(null);
 
-    const [isUIVisible, setIsUIVisible] = useState(true);
-    const [isIdle, setIsIdle] = useState(false);
+    const [controller, setController] = useState<SceneController | null>(null);
+    
+    const [isLoading, setIsLoading] = useState(true);
+    const [initError, setInitError] = useState<string | null>(null);
 
+    const [isUIVisible, setIsUIVisible] = useState(true);
+    
+    const [isIdle, setIsIdle] = useState(false);
     const [isStatsVisible, setIsStatsVisible] = useState(false);
+    
     const [isCapturing, setIsCapturing] = useState(false);
 
     // O cursor e o botão só devem sumir se a UI estiver oculta E o usuário inativo
@@ -77,37 +88,33 @@ export function DevCanvas3D() {
 
     // --- Lógica do Timer de Inatividade ---
     useEffect(() => {
-
-        if (isUIVisible) {
-            setIsIdle(false);
-            return;
-        }
-
-        let timeoutId: number;
-
+        
+        if (isUIVisible) return;
+        
+        let timeoutId = window.setTimeout(() => {
+            setIsIdle(true);
+        }, INACTIVE_TIME);
+        
         const handleActivity = () => {
             setIsIdle(false);
-
             clearTimeout(timeoutId);
-
             timeoutId = window.setTimeout(() => {
                 setIsIdle(true);
             }, INACTIVE_TIME);
         };
-
-        // Escuta qualquer atividade humana na janela
+        
         window.addEventListener('pointermove', handleActivity);
         window.addEventListener('pointerdown', handleActivity);
         window.addEventListener('keydown', handleActivity);
-        handleActivity();
+        
         return () => {
             clearTimeout(timeoutId);
             window.removeEventListener('pointermove', handleActivity);
             window.removeEventListener('pointerdown', handleActivity);
             window.removeEventListener('keydown', handleActivity);
         };
-    }, [isUIVisible]);
 
+    }, [isUIVisible]);
 
     useEffect(() => {
 
@@ -173,6 +180,7 @@ export function DevCanvas3D() {
 
     // --- Setup do BabylonJS ---
     useEffect(() => {
+
         if (!canvasRef.current || !tweakpaneRightRef.current || !tweakpaneLeftRef.current) return;
 
         const abortController = new AbortController();
@@ -182,38 +190,57 @@ export function DevCanvas3D() {
             tweakpaneRightRef.current,
             tweakpaneLeftRef.current,
             abortController.signal
-        ).then((controller) => {
+        ).then((instance) => {
 
             if (abortController.signal.aborted) {
-                controller.dispose();
+                instance.dispose();
                 return;
             }
-
-            controllerRef.current = controller;
+            controllerRef.current = instance;
+            setController(instance);
+            setIsLoading(false);
 
         }).catch((err) => {
             if (abortController.signal.aborted) return;
             console.error('[Canvas3D] Falha ao inicializar:', err);
+            setInitError('FAILED TO INITIALIZE WEBGL / HAVOK ENGINE. VERIFY HARDWARE ACCELERATION.');
+            setIsLoading(false);
         });
 
         return () => {
             abortController.abort();
-
             if (controllerRef.current) {
                 controllerRef.current.dispose();
                 controllerRef.current = null;
             }
 
         };
-
+    
     }, []);
 
     return (
         <div className={`${styles.container} ${styles.hideCursor} ${isCinematicHidden ? styles.idle : ''}`}>
             <CustomCursor isHidden={isCinematicHidden} />
-            <canvas ref={canvasRef}
+            
+            <canvas
+                ref={canvasRef}
                 className={styles.canvas}
-                id="renderCanvas" />
+                id="renderCanvas"
+                onContextMenu={(e) => e.preventDefault()}
+            />
+
+
+            <div className={`${styles.loadingOverlay} ${!isLoading && !initError ? styles.loadingOverlayHidden : ''}`}>
+                <div className={`${styles.loadingBox} ${initError ? styles.errorBox : ''}`}>
+                    <div className={styles.loadingHeader}>
+                        {initError ? '// SYSTEM FAULT' : '// SYSTEM INITIALIZATION'}
+                    </div>
+                    <div className={initError ? styles.errorText : styles.loadingText}>
+                        {initError ?? 'LOADING SHADERS & HAVOK PHYSICS...'}
+                    </div>
+                </div>
+            </div>
+
 
             <div ref={tweakpaneLeftRef}
                 className={`${styles.tweakpaneContainerLeft} ${!isUIVisible ? styles.hiddenUI : ''}`} />
@@ -275,7 +302,7 @@ export function DevCanvas3D() {
             </button>
 
 
-            <PerformanceBar controller={controllerRef.current} isVisible={isStatsVisible && !isCinematicHidden} />
+            <PerformanceBar controller={controller} isVisible={isStatsVisible && !isCinematicHidden} />
 
 
         </div>
