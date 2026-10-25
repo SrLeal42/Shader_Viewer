@@ -188,29 +188,6 @@ export const ScenePresets: Record<string, ScenePreset> = {
 
     },
 
-    stormy_candelabra: {
-        model: 'candelabra',
-        skybox: 'cosmic_cluster',
-        material: 'standard',
-        weather: 'rain',
-        light: {
-            mode: 'both',
-            hemi: { intensity: 0.3, color: { r: 0.4, g: 0.5, b: 0.7 } },
-            point: {
-                position: { x: 0, y: 2.5, z: 1.5 },
-                color: { r: 1.0, g: 0.7, b: 0.3 },
-                intensity: 1.8,
-                animationType: 'pulse',
-                pulseFrequency: 4.0,
-                showHelper: false
-            }
-        },
-        skyboxEffects: ['lightning'],
-        postProcesses: {
-            bloom: { u_intensity: 1.2, u_threshold: 0.7 }
-        }
-    },
-
     dithering_monkey: {
         model: 'suzanne',
         skybox: 'cosmic_cluster',

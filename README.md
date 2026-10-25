@@ -1,120 +1,160 @@
-## Objetivo do Projeto
+# SHADER VIEWER // 3D SHADERS & PHYSICS LAB
 
-Projeto de portfólio: uma aplicação web onde o usuário pode escolher entre diferentes objetos 3D pré-selecionados, aplicar diferentes shaders (materiais e pós-processamento) sobre eles, e ajustar os parâmetros de cada shader em tempo real através de uma interface de controles.
+```text
+================================================================================
+  [LABORATORY] Real-Time GLSL Shaders, Havok Physics & Post-Processing Pipeline
+  [ENGINE]     Babylon.js 9.x + Havok WASM + React 19 + TypeScript + Vite
+  [INTERFACE]  Industrial Brutalist UI System / Tweakpane v4 / HUD Telemetry
+================================================================================
+```
 
-Além do resultado visual, o projeto serve como veículo de aprendizado/aprofundamento em:
+O **Shader Viewer** e um laboratorio interativo em tempo real para experimentacao grafica de shaders GLSL, simulacao de corpos rigidos com Havok Physics e pipelines avancados de pos-processamento, construido sobre a arquitetura do Babylon.js.
 
-- **Babylon.js**, com foco na API de shaders (`ShaderMaterial`, `PostProcess`, pipeline de renderização);
-- **TypeScript**, com tipagem forte aplicada a uniforms, materiais e estado da aplicação;
-- Fundamentos de shaders em si (GLSL, vertex/fragment, pós-processamento).
-
----
-
-## Funcionalidades planejadas
-
-### Objetos 3D
-
-- Esfera
-- Suzanne
-- Dragão
-- Carro
-- Upload de modelo customizado pelo usuário (_talvez_)
-
-### Shaders de pós-processamento
-
-- Dithering
-- ASCII
-- Edge Detector
-
-### Materiais com shader próprio
-
-- Cartoon (toon shading)
-- Pixel Art
-- Portal Effect
-- Vidro (_talvez_)
-- Espelho (_talvez_)
-
-### Vertex shaders
-
-- Ondas (deformação de vértices)
-- Flickering
-
-### Interatividade
-
-- Painel de parâmetros ajustáveis por shader (uniforms expostos)
-- Interações físicas com os modelos (ex: lançar confete)
+Projetado sob a filosofia de ferramentas de desenvolvimento industrial, a aplicacao desacopla estritamente o ciclo de vida reativo da interface (React 19) do loop imperativo de renderizacao gráfica (60+ FPS no WebGL). Alem da operacao web interativa, inclui uma suite de compilacao headless otimizada para o Lively Wallpaper.
 
 ---
 
-## Stack Tecnológica
+## // REGISTRO VISUAL (4K SCREENSHOTS)
 
-### Núcleo
+> Capturas brutas em resolucao 3840x2160 geradas atraves do pipeline de supersampling sincronizado no backbuffer (`F9` / Screenshot 4K).
 
-| Tecnologia                                                    | Função                                                                                                                                                                                                                                  |
-| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Babylon.js**                                                | Engine de renderização 3D. Escolhido por expor a API de shaders (`ShaderMaterial`, `PostProcess`, sistema de plugins de material) de forma mais direta que outras alternativas, favorecendo o aprendizado profundo do pipeline gráfico. |
-| **TypeScript**                                                | Tipagem forte para uniforms, estado da aplicação, controllers e integração entre camadas.                                                                                                                                               |
-| **Vite**                                                      | Bundler e dev server. Integração rápida com TS, HMR, e suporte a importar arquivos `.glsl`/`.fx` como string bruta (`?raw`), mantendo os shaders em arquivos separados.                                                                 |
-| **@babylonjs/core, @babylonjs/loaders, @babylonjs/materials** | Pacotes modulares do Babylon (em vez do bundle monolítico), para manter o tamanho final do bundle enxuto.                                                                                                                               |
+![Dithering Duotone com Galaxy Skybox e uma esfera](./docs/screenshots/dithering_planet.png)
+* Figura 1.0: Dithering Duotone Post-Process com Galaxy Skybox e uma esfera.
+<br />
 
-### Interface (UI)
+![Dithering Duotone com Cosmic Cluster Skybox e o Suzanne](./docs/screenshots/dithering_monkey.png)
+* Figura 2.0: Dithering Duotone Post-Process com Cosmic Skybox e o Suzanne.
+<br />
 
-| Tecnologia    | Função                                                                                                                                                                                                                                                                                                                                         |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **React**     | Camada de UI "de fora" do canvas: seletor de modelo, seletor de shader, dropzone de upload, estados estruturais (baixa frequência de mudança). **Não** controla o render loop nem os uniforms em tempo real.                                                                                                                                   |
-| **Tweakpane** | Painel de parâmetros dos shaders (sliders, color pickers, etc). Vive do lado imperativo, junto ao controller do Babylon — os bindings apontam diretamente para os uniforms do `ShaderMaterial` ativo, sem passar pelo ciclo de re-render do React. Escrito em TS, ativamente mantido, com plugins e boa estética para esse tipo de ferramenta. |
-
-### Física / Interações
-
-| Tecnologia                   | Função                                                                                                                                                                                                                                                                                                                                                                                                          |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Havok (@babylonjs/havok)** | Motor de física padrão e oficialmente recomendado pelo Babylon desde a v6 (substituiu Cannon/Ammo/Oimo como primeira opção). WebAssembly, gratuito (MIT). Usado para a interação de confete e, potencialmente, outras interações físicas com os modelos (drag, colisão, destruição). Carregado via _dynamic import_, apenas quando o usuário interage pela primeira vez, para não pesar o carregamento inicial. |
-
-### Ferramentas de apoio
-
-| Tecnologia                                | Função                                                                                    |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------- |
-| **ESLint + Prettier (typescript-eslint)** | Padronização e qualidade de código.                                                       |
-| **gltf-pipeline / Draco compression**     | Compressão dos modelos 3D (especialmente o dragão) para carregamento mais rápido.         |
-| **Fontes de assets**                      | glTF-Sample-Models (Khronos), Poly Haven, Sketchfab (filtrando CC0) para os modelos base. |
-
-### Consideração futura (fase 2)
-
-- **WebGPU**: Babylon possui suporte maduro a WebGPU desde a v5 (2022), com shaders internos reescritos em WGSL nativo desde 2024, e ampla cobertura de navegadores em 2026. A troca de engine é simples (`WebGPUEngine` + fallback automático para WebGL). Plano: começar com WebGL/GLSL (mais documentação disponível) e, futuramente, adicionar um toggle WebGL/WebGPU como diferencial do projeto.
+![Dithering Duotone com Xangai Skybox e uma esfera](./docs/screenshots/deteriored_sphere.png)
+* Figura 3.0: Scan-lines, Chrome aberration e dessaturação com Xangai skybox e uma esfera de vidro.
 
 ---
 
-## Decisões de Arquitetura
+## // ARQUITETURA E STACK TECNOLOGICA
 
-### Separação estrita entre React e Babylon
+### A) Núcleo Gráfico e Físico
+* **Babylon.js 9.x (`@babylonjs/core`, `@babylonjs/loaders`, `@babylonjs/materials`)**:
+  - Motor de renderizacao WebGL com controle direto de `ShaderMaterial`, `PostProcess` e Render Target Textures (RTT).
+  - Pipeline de profundidade e normais desacoplado (`DepthNormalManager`) para iluminacao e efeitos de superficie.
+* **Havok Physics (`@babylonjs/havok`)**:
+  - Motor de fisica de alta performance executado nativamente via WebAssembly (`~2.1 MB WASM`).
+  - Dinamica de corpos rigidos interativos (`PhysicsAggregate`) e limites espaciais calculados dinamicamente via frustum da camera.
+* **TypeScript 5.x / 6.x**:
+  - Tipagem estrita de uniforms, presets de cena, vetores, matrizes e barramento de eventos pub/sub (`EventBus`).
 
-- O `Engine`/`Scene` do Babylon é criado e gerenciado dentro de um `useEffect` (mount único), guardado em uma `ref`, com `dispose()` no unmount.
-- O render loop do Babylon roda de forma independente do ciclo de vida do React.
-- Comunicação majoritariamente de mão única: React envia comandos imperativos para o Babylon (trocar modelo, trocar shader). O Babylon não deve chamar `setState` a cada frame.
-- Cuidado com `React.StrictMode`, que invoca `useEffect` duas vezes em dev — o cleanup precisa estar correto para não duplicar o `Engine`.
-- Valores de alta frequência (tempo do shader, FPS) ficam fora do state do React.
+### B) Interface e Telemetria
+* **React 19 (`react`, `react-dom`)**:
+  - Camada estrutural externa de baixo ciclo de re-renderizacao.
+  - Controle de atalhos globais, cursor customizado SVG, barras de carregamento e montagem de containers DOM.
+* **Tweakpane v4 (`tweakpane`, `@tweakpane/core`)**:
+  - Manipulacao imperativa de uniforms em tempo real sem intermediacao de state do React.
+  - Estilizacao customizada com identidade Industrial Brutalist (`#B84A4A` oxidado, cantos retos `0px`, fonte `JetBrains Mono`).
+* **HUD Telemetry (`PerformanceBar`)**:
+  - Monitoramento continuo de FPS, frametime (ms), draw calls, contagem de triangulos, active meshes e memoria de particulas/fisica via `SceneInstrumentation`.
 
-### Posicionamento do Tweakpane
-
-- O painel de parâmetros **não** é um componente React — é instanciado pelo controller do Babylon, usando um container DOM reservado pelo React (`<div ref={panelContainerRef} />`), mas cujo conteúdo é gerenciado pelo Tweakpane.
-- Ao trocar de shader, o controller Babylon destrói os bindings antigos e recria os controles para os uniforms do novo shader.
-- Essa divisão mantém a responsabilidade clara: **React decide o quê está ativo** (seleção estrutural); **Babylon + Tweakpane decidem como aquilo se comporta em tempo real** (valores contínuos, frame a frame).
-
-### Mapeamento de features → API do Babylon
-
-| Feature                                        | Abordagem técnica                                                                                                                                                                                                                                            |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Dithering, ASCII, Edge Detector, Portal Effect | `BABYLON.PostProcess` customizados, encadeados em uma `PostProcessRenderPipeline` (liga/desliga e reordena efeitos). Edge Detector como Sobel filter escrito à mão. Portal Effect via stencil buffer + render-to-texture (mais complexo, deixar por último). |
-| Cartoon, Pixel Art                             | `ShaderMaterial` próprio (vertex + fragment escritos do zero).                                                                                                                                                                                               |
-| Vidro                                          | `PBRMaterial` com `subSurface.isRefractionEnabled`, ou `ShaderMaterial` próprio com Fresnel + refração de env map para fins de aprendizado.                                                                                                                  |
-| Espelho                                        | `MirrorTexture` / reflection probe nativa do Babylon (recurso pronto, ganho de aprendizado menor em reescrever).                                                                                                                                             |
-| Ondas, Flickering                              | `ShaderMaterial` com deslocamento de `position` no vertex shader, usando `time` como uniform.                                                                                                                                                                |
-| Upload de modelo                               | `SceneLoader.ImportMeshAsync` a partir de um `Blob URL` gerado por `<input type="file">` — 100% client-side.                                                                                                                                                 |
-| Confete / interações físicas                   | `PhysicsAggregate` (Havok) com massa baixa, gravidade e restituição, disparado por interação do usuário.                                                                                                                                                     |
+### C) Build & Pipeline
+* **Vite 8.x**:
+  - Compilacao relampago, HMR instantaneo e resolucao universal de caminhos relativos (`base: './'`).
+* **Orquestrador Headless (`scripts/build-lively.mjs`)**:
+  - Pipeline especializado para Lively Wallpaper: executa Dead-Code Elimination de UI/Tweakpane em tempo de compilacao (`__LIVELY_BUILD__`), analisa dependencias estaticas do preset e realiza pruning cirurgico de assets de ~80 MB para ~10 MB.
 
 ---
 
-## Deploy
+## // RECURSOS DO SISTEMA
 
-- Hospedagem estática (Vercel, Netlify ou GitHub Pages) — projeto inteiramente client-side, sem necessidade de backend.
-- Possível feature futura: compartilhar uma configuração de parâmetros via URL (query string codificada em base64), também sem necessidade de backend.
+* **Shaders e Materiais Customizados**:
+  - GLSL custom shaders, deformacoes de vertice (ondas, flickering) e materiais estilizados (Toon Shading, Holograma, Dithering Duotone, Pixelation).
+* **Simulacao Climatica Dinamica**:
+  - Sistemas de particulas GPU integrados para neve, chuva torrencial, cinzas vulcanicas e tempestade de areia.
+* **Interacoes Fisicas em Tempo Real**:
+  - Ferramenta *Finger*: Arraste, arremesso e colisao direta de corpos rigidos.
+  - Ferramenta *Magnet*: Campo de atracao (botao esquerdo) e repulsao em alta forca (botao direito) via cursor vetorial reativo.
+* **Captura de Tela 4K sem Distorcao**:
+  - Redimensionamento instantaneo do backbuffer para `3840x2160`, reconfiguracao de RTTs, ocultacao de helpers graficos e exportacao direta em PNG sem perdas.
+
+---
+
+## // MAPA DE ATALHOS DO TECLADO
+
+```text
++----------+-----------------------------------------------------------+
+| ATALHO   | ACAO OPERACIONAL                                          |
++----------+-----------------------------------------------------------+
+| [ H ]    | Alternar visibilidade da UI (Interface Tweakpane / HUD)   |
+| [ F3 ]   | Alternar telemetria de performance em tempo real (HUD)    |
+| [ F9 ]   | Disparar captura de tela em resolucao 4K (3840x2160 PNG)  |
+| [ MOUSE ]| Borda/Arrasto (Finger) // Atracao (LMB) & Repulsao (RMB)   |
++----------+-----------------------------------------------------------+
+```
+
+---
+
+## // INSTALACAO E EXECUCAO LOCAL
+
+### Pre-requisitos
+* Node.js 20.x ou superior
+* Gerenciador de pacotes `npm` ou `pnpm`
+
+### Comandos de Inicializacao
+
+```bash
+# 1. Clonar o repositorio
+git clone https://github.com/SEU_USUARIO/Shader_Viewer.git
+cd Shader_Viewer
+
+# 2. Instalar dependencias
+npm install
+
+# 3. Executar o servidor de desenvolvimento
+npm run dev
+
+# 4. Validar linter e estilizacao de tipos
+npm run lint
+
+# 5. Compilar versao de producao (Web)
+npm run build
+```
+
+A aplicacao web estara disponivel em `http://localhost:5173`.
+
+---
+
+## // BUILD HEADLESS PARA LIVELY WALLPAPER
+
+O projeto possui suporte nativo para ser empacotado como papel de parede interativo leve para o **Lively Wallpaper**:
+
+```bash
+# Compilar pacote otimizado para o preset ativo
+npm run build:lively
+
+# Compilar pacote para um preset especifico (ex: dithering_planet, car_rain)
+node scripts/build-lively.mjs --preset=dithering_planet
+```
+
+O script ira gerar o diretorio `dist-lively/` com o manifesto `LivelyInfo.json` e apenas os modelos/texturas estritamente necessarios para aquele preset.
+
+---
+
+## // ESTRUTURA DO PROJETO
+
+```text
+Shader_Viewer/
+|-- public/                  # Assets estaticos (.glb, skyboxes .env, texturas)
+|-- scripts/                 # Scripts de build especializada (Lively Wallpaper)
+|-- src/
+|   |-- babylon/
+|   |   |-- controllers/     # Controladores mestres de cena, shaders e modelos
+|   |   |-- core/            # EventBus desacoplado e adaptadores de ciclo
+|   |   |-- entities/        # Entidades e agregadores de fisica
+|   |   |-- interactions/    # Efeitos de cursor (Finger, Magnet, Repulsor)
+|   |   `-- managers/        # Gerenciadores de camera, luz, clima, RTT e UI
+|   |-- components/          # Componentes React (Canvas3D, CustomCursor, HUD)
+|   |-- configs/             # Presets de cena, modelos, skyboxes e fisicas
+|   |-- styles/              # Tema Industrial Brutalist do Tweakpane v4
+|   |-- App.tsx              # Ponto de entrada React da interface
+|   `-- main.tsx             # Bootstrap da aplicacao
+|-- index.html               # Shell HTML brutalista com metadags SEO/OG
+|-- vite.config.ts           # Configuracao do bundler com base relativa './'
+`-- package.json             # Manifest de dependencias e scripts de automacao
+```

@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="100%" height="100%">
+  <defs>
+    <!-- Gradiente para dar efeito de iluminação 3D nas linhas do globo -->
+    <radialGradient id="wireGlow" cx="55%" cy="38%" r="55%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
+      <stop offset="55%" stop-color="#d8d8d8" stop-opacity="0.65" />
+      <stop offset="88%" stop-color="#888888" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#444444" stop-opacity="0.15" />
+    </radialGradient>
+
+    <!-- Gradiente para o anel orbital -->
+    <linearGradient id="ringGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#dcdcdc" />
+      <stop offset="50%" stop-color="#f0f0f0" />
+      <stop offset="100%" stop-color="#cccccc" />
+    </linearGradient>
+
+    <!-- Máscara de recorte para manter as linhas perfeitamente dentro da esfera -->
+    <clipPath id="globeClip">
+      <circle cx="500" cy="500" r="250" />
+    </clipPath>
+  </defs>
+
+  <!-- 1. PARTE TRASEIRA DO ANEL ORBITAL (passa por trás do globo) -->
+  <g transform="translate(500, 500) rotate(-25)">
+    <!-- Arco traseiro superior esquerdo -->
+    <path d="M -395,0 A 395,112 0 0,1 -180,-99 L -185,-91 A 375,92 0 0,0 -375,0 Z" fill="url(#ringGrad)" opacity="0.8" />
+    <!-- Arco traseiro superior direito -->
+    <path d="M 150,-103 A 395,112 0 0,1 395,0 L 375,0 A 375,92 0 0,0 145,-95 Z" fill="url(#ringGrad)" />
+  </g>
+
+  <!-- 2. GLOBO EM WIREFRAME (Esfera 3D com eixo inclinado) -->
+  <g clip-path="url(#globeClip)">
+    
+    <!-- Malha traseira sutil (simula a transparência 3D da parte de trás da esfera) -->
+    <g transform="translate(500, 500) rotate(-35)" stroke="#ffffff" stroke-width="0.7" fill="none" opacity="0.16">
+      <ellipse cx="0" cy="0" rx="250" ry="250" />
+      <ellipse cx="0" cy="0" rx="216" ry="250" />
+      <ellipse cx="0" cy="0" rx="125" ry="250" />
+      <ellipse cx="0" cy="0" rx="250" ry="216" />
+      <ellipse cx="0" cy="0" rx="250" ry="125" />
+    </g>
+
+    <!-- Malha frontal principal alinhada ao polo visível no canto superior direito -->
+    <g transform="translate(500, 500) rotate(35)" stroke="url(#wireGlow)" stroke-width="1.6" fill="none">
+      
+      <!-- Meridianos (Linhas de Longitude convergindo no polo) -->
+      <line x1="0" y1="-250" x2="0" y2="250" />
+      <line x1="-250" y1="0" x2="250" y2="0" />
+      <ellipse cx="0" cy="0" rx="45" ry="250" transform="rotate(12)" />
+      <ellipse cx="0" cy="0" rx="95" ry="250" transform="rotate(24)" />
+      <ellipse cx="0" cy="0" rx="145" ry="250" transform="rotate(36)" />
+      <ellipse cx="0" cy="0" rx="190" ry="250" transform="rotate(48)" />
+      <ellipse cx="0" cy="0" rx="225" ry="250" transform="rotate(60)" />
+      <ellipse cx="0" cy="0" rx="245" ry="250" transform="rotate(75)" />
+      
+      <ellipse cx="0" cy="0" rx="45" ry="250" transform="rotate(-12)" />
+      <ellipse cx="0" cy="0" rx="95" ry="250" transform="rotate(-24)" />
+      <ellipse cx="0" cy="0" rx="145" ry="250" transform="rotate(-36)" />
+      <ellipse cx="0" cy="0" rx="190" ry="250" transform="rotate(-48)" />
+      <ellipse cx="0" cy="0" rx="225" ry="250" transform="rotate(-60)" />
+      <ellipse cx="0" cy="0" rx="245" ry="250" transform="rotate(-75)" />
+
+      <!-- Paralelos (Anéis de Latitude ao redor do polo superior) -->
+      <!-- Calota polar -->
+      <ellipse cx="0" cy="-185" rx="12" ry="7" fill="#ffffff" fill-opacity="0.8" />
+      <ellipse cx="0" cy="-182" rx="48" ry="26" />
+      <ellipse cx="0" cy="-170" rx="92" ry="50" />
+      <ellipse cx="0" cy="-148" rx="138" ry="76" />
+      <ellipse cx="0" cy="-118" rx="180" ry="102" />
+      <ellipse cx="0" cy="-80" rx="215" ry="126" />
+      <ellipse cx="0" cy="-35" rx="240" ry="145" />
+      <ellipse cx="0" cy="15" rx="250" ry="155" />
+      <ellipse cx="0" cy="68" rx="244" ry="152" />
+      <ellipse cx="0" cy="120" rx="224" ry="140" />
+      <ellipse cx="0" cy="172" rx="188" ry="118" />
+      <ellipse cx="0" cy="220" rx="135" ry="85" />
+      <ellipse cx="0" cy="258" rx="75" ry="48" />
+    </g>
+
+    <!-- Contorno externo da esfera para acabamento nítido -->
+    <circle cx="500" cy="500" r="249" stroke="url(#wireGlow)" stroke-width="2" fill="none" />
+  </g>
+
+  <!-- 3. PARTE FRONTAL DO ANEL ORBITAL (passa pela frente do globo com espessura variável) -->
+  <g transform="translate(500, 500) rotate(-25)">
+    <path d="M -395,0 A 395,112 0 0,0 395,0 L 375,0 A 375,86 0 0,1 -375,0 Z" fill="url(#ringGrad)" />
+  </g>
+
+  <!-- 4. ESTRELA ORBITAL DE 4 PONTAS (Vermelho/Coral) -->
+  <path d="M 763,182 
+           C 770,262 775,286 860,295 
+           C 775,304 770,328 763,408 
+           C 756,328 751,304 666,295 
+           C 751,286 756,262 763,182 Z" fill="#c85a56" stroke="#2a1212" stroke-width="1.5" stroke-linejoin="miter" />
+</svg>
